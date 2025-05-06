@@ -1,0 +1,3 @@
+deployment:
+  - name: data_asset_platform
+    type: docker
