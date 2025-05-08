@@ -1,19 +1,22 @@
 <template>
   <div class="page-container">
+    <!-- ✅ 首次加载使用全屏 LoadingSpinner -->
+    <LoadingSpinner :visible="isLoading" />
+
     <!-- 页面头部 -->
     <div class="header">
-      <img src="../assets/header_image.jpg" alt="Header Image"> <!-- 使用 Webpack 处理图片路径 -->
+      <img src="../assets/header_image.jpg" alt="Header Image" />
       <div class="header-content">
         <div class="left">
-          <h1>中国企业数据资产<br>入表跟踪</h1>
-          <p>Discover the Power of<br>Partnership for<br>Sustainable Water Solutions</p> <!-- 英文翻译 -->
+          <h1>中国企业数据资产<br />入表跟踪</h1>
+          <p>Discover the Power of Partnership for<br />Sustainable Water Solutions</p>
         </div>
       </div>
     </div>
 
     <!-- 管理员登录按钮 -->
     <div class="admin">
-      <button class="admin-login-button" @click="openLoginModal">管理员登录</button> <!-- 点击按钮打开登录弹窗 -->
+      <button class="admin-login-button" @click="openLoginModal">管理员登录</button>
     </div>
 
     <!-- 登录弹窗 -->
@@ -37,91 +40,88 @@
         :class="{ clickable: label === '非上市公司入表' || label === '上市公司入表' }"
         @click="handleStatusBoxClick(label)"
       >
-      <h3>截至{{ currentMonth }}</h3>
-
+        <h3>截至{{ currentMonth }}</h3>
         <p class="status-title">{{ label }}</p>
-
         <p class="status-number">
           {{
             label === '上市公司入表'
               ? listedCompanyCount
               : label === '非上市公司入表'
-                ? nonListedCompanyCount
-                : '暂无数据'
+              ? nonListedCompanyCount
+              : '暂无数据'
           }} 家
         </p>
-
         <div class="status-note">点击查看详情</div>
       </div>
     </div>
 
-    <!-- 数据列表区 -->
+    <!-- 榜单标题 -->
     <div class="table-header-container">
-      <!-- 榜单小标题 -->
       <div class="table-header">
         <i class="fas fa-list"></i> <span>榜单</span>
       </div>
     </div>
 
+    <!-- 表格区域 -->
     <div class="grid-container">
-      <!-- 第一个表格：上市公司入表清单 -->
+      <!-- 表格 1：上市公司 -->
       <div class="grid-item">
-        <table>
-          <tr><th colspan="2">上市公司入表清单</th></tr>
-          <tr v-for="(company, index) in listedCompanies" :key="index">
-            <td>{{ company.company_name }}</td>
-          </tr>
-
-          <!-- 显示分页按钮 -->
-          <tr v-if="firstTablePages > 1">
-            <td colspan="2" class="pagination">
-              <button v-if="firstTablePage > 1" @click="changePage('firstTable', firstTablePage - 1)">上一页</button>
-              <span>{{ firstTablePage }} / {{ firstTablePages }}</span>
-              <button v-if="firstTablePage < firstTablePages" @click="changePage('firstTable', firstTablePage + 1)">下一页</button>
-            </td>
-          </tr>
-        </table>
+        <div class="table-wrapper">
+          <ChartSpinner :visible="isFirstTableLoading" />
+          <table>
+            <tr><th colspan="2">上市公司入表清单</th></tr>
+            <tr v-for="(company, index) in listedCompanies" :key="index">
+              <td>{{ company.company_name }}</td>
+            </tr>
+            <tr v-if="firstTablePages > 1">
+              <td colspan="2">
+                <div class="pagination">
+                  <button :disabled="firstTablePage === 1" @click="changePage('firstTable', firstTablePage - 1)">上一页</button>
+                  <span>{{ firstTablePage }} / {{ firstTablePages }}</span>
+                  <button :disabled="firstTablePage === firstTablePages" @click="changePage('firstTable', firstTablePage + 1)">下一页</button>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
 
-      <!-- 第二个表格：非上市公司表清单 -->
+      <!-- 表格 2：非上市公司 -->
       <div class="grid-item">
-        <table>
-          <tr><th colspan="2">非上市公司表清单</th></tr>
-          <tr v-for="(company, index) in nonListedCompanies" :key="index">
-            <td>{{ company.company_name }}</td>
-          </tr>
-          <tr v-if="secondTablePages > 1">
-            <td colspan="2" class="pagination">
-              <button v-if="secondTablePage > 1" @click="changePage('secondTable', secondTablePage - 1)">上一页</button>
-              <span>{{ secondTablePage }} / {{ secondTablePages }}</span>
-              <button v-if="secondTablePage < secondTablePages" @click="changePage('secondTable', secondTablePage + 1)">下一页</button>
-            </td>
-          </tr>
-        </table>
+        <div class="table-wrapper">
+          <ChartSpinner :visible="isSecondTableLoading" />
+          <table>
+            <tr><th colspan="2">非上市公司入表清单</th></tr>
+            <tr v-for="(company, index) in nonListedCompanies" :key="index">
+              <td>{{ company.company_name }}</td>
+            </tr>
+            <tr v-if="secondTablePages > 1">
+              <td colspan="2">
+                <div class="pagination">
+                  <button :disabled="secondTablePage === 1" @click="changePage('secondTable', secondTablePage - 1)">上一页</button>
+                  <span>{{ secondTablePage }} / {{ secondTablePages }}</span>
+                  <button :disabled="secondTablePage === secondTablePages" @click="changePage('secondTable', secondTablePage + 1)">下一页</button>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
 
-      <!-- 第三个表格：数据资产融资清单 -->
+      <!-- 表格 3：融资清单 -->
       <div class="grid-item">
         <table>
           <tr><th colspan="2">数据资产融资清单</th></tr>
           <tr><td>2025年3月</td></tr>
           <tr><td>2024年12月</td></tr>
-
-          <tr v-if="thirdTablePages > 1">
-            <td colspan="2" class="pagination">
-              <button v-if="thirdTablePage > 1" @click="changePage('thirdTable', thirdTablePage - 1)">上一页</button>
-              <span>{{ thirdTablePage }} / {{ thirdTablePages }}</span>
-              <button v-if="thirdTablePage < thirdTablePages" @click="changePage('thirdTable', thirdTablePage + 1)">下一页</button>
-            </td>
-          </tr>
         </table>
       </div>
     </div>
 
-    <!-- 底部链接区 -->
+    <!-- 页脚 -->
     <div class="footer">
       <div class="footer-overlay"></div>
-      <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image">
+      <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image" />
       <div class="footer-content">
         <a href="">联系我们</a>
         <a href="">反馈意见/申报</a>
@@ -130,129 +130,107 @@
   </div>
 </template>
 
-
-
 <script>
 import axios from 'axios';
-import LoginForm from '@/components/LoginForm.vue';
+import LoginForm from '@/components/common/LoginForm.vue';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import ChartSpinner from '@/components/common/ChartSpinner.vue';
 
 export default {
   name: 'App',
   components: {
-    LoginForm
+    LoginForm,
+    LoadingSpinner,
+    ChartSpinner
   },
   data() {
     return {
-      currentMonth: '',  // 当前月份
-      labels: [
-        '上市公司入表',
-        '非上市公司入表',
-        '凭数据资产融资'
-      ],
-      listedCompanyCount: 0,  // 用于存储上市公司数量
-      listedCompanies: [],    // 用于存储上市公司列表
-      nonListedCompanyCount: 0,  // 用于存储非上市公司数量
-      nonListedCompanies: [],    // 用于存储非上市公司列表
-      firstTablePage: 1,         // 第一个表格当前页
-      firstTablePages: 1,        // 第一个表格总页数
-      secondTablePage: 1,        // 第二个表格当前页
-      secondTablePages: 1,       // 第二个表格总页数
-      thirdTablePage: 1,         // 第三个表格当前页
-      thirdTablePages: 1,        // 第三个表格总页数
-      isLoginModalVisible: false,  // 控制弹窗显示
+      isLoading: true, // 首次进入页面时的全屏 loading
+      isFirstTableLoading: false, // 表格 1 翻页时的局部 loading
+      isSecondTableLoading: false, // 表格 2 翻页时的局部 loading
+      currentMonth: '', // 当前年月
+      labels: ['上市公司入表', '非上市公司入表', '凭数据资产融资'],
+      listedCompanyCount: 0,
+      listedCompanies: [],
+      nonListedCompanyCount: 0,
+      nonListedCompanies: [],
+      firstTablePage: 1,
+      firstTablePages: 1,
+      secondTablePage: 1,
+      secondTablePages: 1,
+      thirdTablePage: 1,
+      thirdTablePages: 1,
+      isLoginModalVisible: false
     };
   },
   mounted() {
-    // 获取当前日期
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     this.currentMonth = `${year}年${month}月`;
-
-    // 获取所有公司数量和名称（分页数据）
-    this.fetchCompanies();
+    this.loadAllData();
   },
   methods: {
-    // 获取所有表格的分页数据
-    fetchCompanies() {
-      // 获取第一个表格（上市公司数量）
-      axios.get('/api/company/listed-companies-count')  // 获取公司数量
-        .then((response) => {
-          this.listedCompanyCount = response.data.count;
-          this.firstTablePages = Math.ceil(this.listedCompanyCount / 10); // 计算总页数
-        })
-        .catch((error) => {
-          console.error('获取上市公司数量失败:', error);
-        });
-
-      // 获取第一个表格的上市公司名称列表（分页）
-      axios.get(`/api/company/listed-companies?page=${this.firstTablePage}`)
-        .then((response) => {
-          this.listedCompanies = response.data;  // 更新当前页的数据
-        })
-        .catch((error) => {
-          console.error('获取上市公司列表失败:', error);
-        });
-
-      // 获取第二个表格（非上市公司数量）
-      axios.get('/api/company/non-listed-companies-count')  // 获取公司数量
-        .then((response) => {
-          this.nonListedCompanyCount = response.data.count;
-          this.secondTablePages = Math.ceil(this.nonListedCompanyCount / 10); // 计算总页数
-        })
-        .catch((error) => {
-          console.error('获取非上市公司数量失败:', error);
-        });
-
-      // 获取第二个表格的非上市公司名称列表（分页）
-      axios.get(`/api/company/non-listed-companies?page=${this.secondTablePage}`)
-      .then((res) => {
-        this.nonListedCompanies = res.data.data; // 当前页数据
-        this.nonListedCompanyCount = res.data.total; // 总公司数
-        this.secondTablePages = Math.ceil(this.nonListedCompanyCount / 10); // 页数
-      });
-
-      // 获取第三个表格的分页数据（假设第一页没有数据时）
-      axios.get(`/api/company/non-listed-companies?page=${this.thirdTablePage}`)
-        .then(response => {
-          this.thirdTablePages = Math.ceil(response.data.count / 10);  // 计算总页数
-        });
+    // 首页初始加载
+    async loadAllData() {
+      this.isLoading = true;
+      try {
+        const res = await axios.get('/api/company/homepage-summary');
+        const data = res.data;
+        this.listedCompanyCount = data.listedCompanyCount;
+        this.nonListedCompanyCount = data.nonListedCompanyCount;
+        this.listedCompanies = data.listedCompanies;
+        this.nonListedCompanies = data.nonListedCompanies;
+        this.firstTablePages = Math.ceil(data.listedCompanyCount / 10);
+        this.secondTablePages = Math.ceil(data.nonListedCompanyCount / 10);
+      } catch (err) {
+        console.error('加载数据出错：', err);
+      } finally {
+        this.isLoading = false;
+      }
     },
 
-    // 切换页面
-    changePage(table, page) {
-      // 根据不同的表格处理不同的页码
-      if (page < 1 || page > this[`${table}Pages`]) return; // 不允许超出页码范围
-
+    // 分页逻辑
+    async changePage(table, page) {
+      if (page < 1 || page > this[`${table}Pages`]) return;
       this[`${table}Page`] = page;
-      this.fetchCompanies(); // 获取对应页的数据
+
+      try {
+        if (table === 'firstTable') {
+          this.isFirstTableLoading = true;
+          const res = await axios.get(`/api/company/listed-companies?page=${page}`);
+          this.listedCompanies = res.data.data;
+        } else if (table === 'secondTable') {
+          this.isSecondTableLoading = true;
+          const res = await axios.get(`/api/company/non-listed-companies?page=${page}`);
+          this.nonListedCompanies = res.data.data;
+        }
+      } catch (err) {
+        console.error('分页加载失败:', err);
+      } finally {
+        if (table === 'firstTable') this.isFirstTableLoading = false;
+        if (table === 'secondTable') this.isSecondTableLoading = false;
+      }
     },
 
-    // 打开登录弹窗
+    // 登录弹窗控制
     openLoginModal() {
       this.isLoginModalVisible = true;
     },
-
-    // 关闭登录弹窗
     closeLoginModal() {
       this.isLoginModalVisible = false;
     },
-
-    // 登录成功后的回调
     handleLoginSuccess() {
-      this.closeLoginModal();  // 关闭弹窗
-      this.$router.push('/admin-page');  // 跳转到 AdminPage
+      this.closeLoginModal();
+      this.$router.push('/admin-page');
     },
 
-    // 点击“上市公司/非上市公司”进入数据可视化界面
+    // 点击跳转控制
     handleStatusBoxClick(label) {
-      if (label === '非上市公司入表') {
-        this.$router.push('/dashboard');
-      } else if (label === '上市公司入表') {
-        this.$router.push('/lsdashboard');
-      }
+      if (label === '非上市公司入表') this.$router.push('/dashboard');
+      else if (label === '上市公司入表') this.$router.push('/lsdashboard');
     }
-  },
+  }
 };
 </script>
 
@@ -472,7 +450,7 @@ export default {
     font-size: 14px;
     color: #003049;
     text-align: right;
-    margin-top: 16px;
+    margin-top: 60px;
     text-transform: none;
     font-weight: normal;
   }
@@ -520,6 +498,11 @@ export default {
     margin-right: 50px;
   }
 
+  .grid-item {
+    position: relative; /* ✅ 这行你已经加了 */
+    min-height: 160px;  /* ✅ 建议添加：确保 spinner 有空间显示 */
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -552,11 +535,21 @@ export default {
     margin-top: 15px;
   }
 
-  .pagination .page-info {
-    font-size: 16px;
-    color: #003049;
-    flex: 2; /* 让页码占据中间区域 */
-    text-align: center; /* 居中显示页码 */
+  .pagination-left,
+  .pagination-center,
+  .pagination-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .pagination-left {
+    justify-content: flex-start;
+  }
+
+  .pagination-right {
+    justify-content: flex-end;
   }
 
   .pagination button {
@@ -566,14 +559,21 @@ export default {
     padding: 8px 16px;
     border-radius: 5px;
     cursor: pointer;
+    transition: 0.2s;
   }
 
-  .pagination button:hover {
+  .pagination button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+  }
+
+  .pagination button:hover:not(:disabled) {
     background-color: #003049;
     color: white;
   }
 
-  .pagination .page-info {
+  .page-info {
     font-size: 16px;
     color: #003049;
   }
@@ -629,6 +629,18 @@ export default {
     align-items: center;
     padding-right: 50px;
     gap: 30px;
+  }
+  .table-wrapper {
+    position: relative;
+    min-height: 180px;
+  }
+  .chart-spinner-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
   }
 
 </style>

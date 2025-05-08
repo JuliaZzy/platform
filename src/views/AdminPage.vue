@@ -144,283 +144,267 @@
 
 
 <script>
-  import axios from 'axios';
+import axios from 'axios';
 
-  export default {
-    name: 'AdminPage',
-    data() {
+export default {
+  name: 'AdminPage',
+  data() {
+    return {
+      currentTab: 'listed',
+      tableData: [],
+      tableHeaders: [],
+      lastUpdate: '',
+      currentPage: 1,
+      pageSize: 15,
+      isSidebarCollapsed: false,
+      filters: {},
+      pendingFilters: {},
+      filterSearch: {},
+      uniqueColumnValues: {},
+      searchKeyword: '',
+      showFilterDropdown: {},
+      rowStatus: {}
+    };
+  },
+  computed: {
+    filteredData() {
+      return this.tableData.filter(row => {
+        return Object.keys(this.filters).every(col => {
+          const selected = this.filters[col];
+          return !selected || selected.length === 0 || selected.includes(row[col]);
+        });
+      });
+    },
+    searchedData() {
+      if (!this.searchKeyword) return this.filteredData;
+      const keyword = this.searchKeyword.toLowerCase();
+      return this.filteredData.filter(row =>
+        Object.values(row).some(val =>
+          String(val).toLowerCase().includes(keyword)
+        )
+      );
+    },
+    pagedData() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = this.currentPage * this.pageSize;
+      return this.searchedData.slice(start, end);
+    },
+    totalPages() {
+      return Math.max(1, Math.ceil(this.searchedData.length / this.pageSize));
+    }
+  },
+  methods: {
+    getRowKey(row) {
+      return `${row.company_name}_${row.year_month}`;
+    },
+    getRowClass(row) {
+      const status = this.rowStatus[this.getRowKey(row)];
+      return status?.rowState === 'deleted' ? 'row-deleted' : '';
+    },
+    getRowButton(row) {
+      const status = this.rowStatus[this.getRowKey(row)];
+      if (!status || !status.changed?.length) return null;
+      const state = status.rowState || 'active';
       return {
-        currentTab: 'listed',
-        tableData: [],
-        tableHeaders: [],
-        lastUpdate: '',
-        currentPage: 1,
-        totalPages: 1,
-        pageSize: 15,
-        isSidebarCollapsed: false,
-        filters: {},
-        pendingFilters: {},
-        filterSearch: {},
-        uniqueColumnValues: {},
-        searchKeyword: '',
-        showFilterDropdown: {},
-        rowStatus: {}  // { rowKey: { changed: [col1, col2], rowState: 'active'|'deleted', cellState: { col1: 'active'|'deleted' } } }
+        label: state === 'deleted' ? '删除' : '变动',
+        color: state === 'deleted' ? 'red' : 'blue'
       };
     },
-    computed: {
-      filteredData() {
-        return this.tableData.filter(row => {
-          return Object.keys(this.filters).every(col => {
-            const selected = this.filters[col];
-            return !selected || selected.length === 0 || selected.includes(row[col]);
-          });
-        });
-      },
-      searchedData() {
-        if (!this.searchKeyword) return this.filteredData;
-        const keyword = this.searchKeyword.toLowerCase();
-        return this.filteredData.filter(row =>
-          Object.values(row).some(val =>
-            String(val).toLowerCase().includes(keyword)
-          )
-        );
-      },
-      pagedData() {
-        const start = (this.currentPage - 1) * this.pageSize;
-        const end = this.currentPage * this.pageSize;
-        return this.searchedData.slice(start, end);
+    toggleRowState(row) {
+      const key = this.getRowKey(row);
+      const status = this.rowStatus[key];
+      const next = status?.rowState === 'deleted' ? 'active' : 'deleted';
+      if (status) {
+        this.$set(status, 'rowState', next);
       }
     },
-    methods: {
-      getRowKey(row) {
-        return `${row.company_name}_${row.year_month}`;
-      },
-      getRowClass(row) {
-        const status = this.rowStatus[this.getRowKey(row)];
-        return status?.rowState === 'deleted' ? 'row-deleted' : '';
-      },
-      getRowButton(row) {
-        const status = this.rowStatus[this.getRowKey(row)];
-        if (!status || !status.changed?.length) return null;
-        const state = status.rowState || 'active';
-        return {
-          label: state === 'deleted' ? '删除' : '变动',
-          color: state === 'deleted' ? 'red' : 'blue'
-        };
-      },
-      toggleRowState(row) {
-        const key = this.getRowKey(row);
-        const status = this.rowStatus[key];
-        const next = status?.rowState === 'deleted' ? 'active' : 'deleted';
-        if (status) {
-          this.$set(status, 'rowState', next);
-        }
-      },
-      isCellChanged(row, col) {
-        const key = this.getRowKey(row);
-        return this.rowStatus[key]?.changed?.includes(col);
-      },
-      getCellClass(row, col) {
-        return this.isCellChanged(row, col) ? 'cell-changed' : '';
-      },
-      toggleCellState(row, col) {
-        const key = this.getRowKey(row);
-        if (!this.rowStatus[key]?.cellState) {
-          this.$set(this.rowStatus[key], 'cellState', {});
-        }
-        const current = this.rowStatus[key].cellState[col];
-        const next = current === 'deleted' ? 'active' : 'deleted';
-        this.$set(this.rowStatus[key].cellState, col, next);
-      },
-      getCellStatusLabel(row, col) {
-        const key = this.getRowKey(row);
-        const state = this.rowStatus[key]?.cellState?.[col];
-        return state === 'deleted' ? '使用' : '变动';
-      },
+    isCellChanged(row, col) {
+      const key = this.getRowKey(row);
+      return this.rowStatus[key]?.changed?.includes(col);
+    },
+    getCellClass(row, col) {
+      return this.isCellChanged(row, col) ? 'cell-changed' : '';
+    },
+    toggleCellState(row, col) {
+      const key = this.getRowKey(row);
+      if (!this.rowStatus[key]?.cellState) {
+        this.$set(this.rowStatus[key], 'cellState', {});
+      }
+      const current = this.rowStatus[key].cellState[col];
+      const next = current === 'deleted' ? 'active' : 'deleted';
+      this.$set(this.rowStatus[key].cellState, col, next);
+    },
+    getCellStatusLabel(row, col) {
+      const key = this.getRowKey(row);
+      const state = this.rowStatus[key]?.cellState?.[col];
+      return state === 'deleted' ? '使用' : '变动';
+    },
+    async handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const tableName = this.currentTab === 'listed'
+        ? 'non_listed_companies_20250414'
+        : 'non_listed_companies_2025q1';
 
-      async handleUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const formData = new FormData();
-        formData.append('file', file);
-        const tableName = this.currentTab === 'listed'
-          ? 'non_listed_companies_20250414'
-          : 'non_listed_companies_2025q1';
+      try {
+        const res = await axios.post(`/api/upload/append?tableName=${tableName}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
 
-        try {
-          const res = await axios.post(`/api/upload/append?tableName=${tableName}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-
-          const newRows = res.data?.newRows || [];
-          newRows.forEach(newRow => {
-            const key = this.getRowKey(newRow);
-            const existing = this.tableData.find(row =>
-              row.company_name === newRow.company_name &&
-              row.year_month === newRow.year_month
-            );
-            if (existing) {
-              const changed = [];
-              Object.keys(newRow).forEach(k => {
-                if (k !== 'id' && newRow[k] !== existing[k]) {
-                  changed.push(k);
-                }
-              });
-              if (changed.length) {
-                this.tableData.push({ ...newRow });
-                this.$set(this.rowStatus, key, {
-                  changed,
-                  rowState: 'active',
-                  cellState: {}
-                });
-              }
-            } else {
-              this.tableData.push({ ...newRow });
-            }
-          });
-
-          this.totalPages = Math.ceil(this.tableData.length / this.pageSize);
-        } catch (err) {
-          alert('上传失败：' + (err.response?.data?.error || err.message));
-        }
-      },
-
-      // UI 控制方法
-      toggleSidebar() {
-        this.isSidebarCollapsed = !this.isSidebarCollapsed;
-      },
-      switchTab(tab) {
-        this.currentTab = tab;
-        this.clearAllFilters();
-        this.loadData();
-      },
-      async loadData() {
-        try {
-          const url = this.currentTab === 'listed'
-            ? '/api/company/listed-companies-detail'
-            : '/api/company/non-listed-companies-detail';
-          const res = await axios.get(url);
-          this.tableData = res.data;
-          this.tableHeaders = res.data.length > 0 ? Object.keys(res.data[0]) : [];
-
-          const colVals = {};
-          res.data.forEach(row => {
-            for (const key in row) {
-              if (!colVals[key]) colVals[key] = new Set();
-              if (row[key] !== null && row[key] !== '') colVals[key].add(row[key]);
-            }
-          });
-          this.uniqueColumnValues = Object.fromEntries(
-            Object.entries(colVals).map(([k, set]) => [k, Array.from(set)])
+        const newRows = res.data?.newRows || [];
+        newRows.forEach(newRow => {
+          const key = this.getRowKey(newRow);
+          const existing = this.tableData.find(row =>
+            row.company_name === newRow.company_name &&
+            row.year_month === newRow.year_month
           );
-
-          this.totalPages = Math.max(1, Math.ceil(res.data.length / this.pageSize));
-
-          const now = new Date();
-          this.lastUpdate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
-            now.getDate()
-          ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(
-            now.getMinutes()
-          ).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        } catch (error) {
-          console.error('数据加载失败：', error);
-          this.tableData = [];
-          this.tableHeaders = [];
-        }
-      },
-      clearAllFilters() {
-        this.filters = {};
-        this.pendingFilters = {};
-        this.filterSearch = {};
-        this.searchKeyword = '';
-        this.currentPage = 1;
-      },
-
-      // 列名称筛选
-      toggleFilterDropdown(col) {
-        this.closeAllDropdowns();
-        this.$set(this.showFilterDropdown, col, true);
-        this.$set(this.pendingFilters, col, [...(this.filters[col] || [])]);
-        
-        this.$nextTick(() => {
-          const icon = this.$el.querySelector(`[data-filter-icon="${col}"]`);
-          const dropdown = this.$el.querySelector(`[data-dropdown="${col}"]`);
-          if (icon && dropdown) {
-            const rect = icon.getBoundingClientRect();
-            dropdown.style.position = 'fixed';
-            dropdown.style.left = `${rect.left - dropdown.offsetWidth + icon.offsetWidth}px`;
-            dropdown.style.top = `${rect.bottom + 4}px`;
-            dropdown.style.zIndex = '9999';
+          if (existing) {
+            const changed = [];
+            Object.keys(newRow).forEach(k => {
+              if (k !== 'id' && newRow[k] !== existing[k]) {
+                changed.push(k);
+              }
+            });
+            if (changed.length) {
+              this.tableData.push({ ...newRow });
+              this.$set(this.rowStatus, key, {
+                changed,
+                rowState: 'active',
+                cellState: {}
+              });
+            }
+          } else {
+            this.tableData.push({ ...newRow });
           }
         });
-      },
-      confirmFilter(col) {
-        this.$set(this.filters, col, [...(this.pendingFilters[col] || [])]);
-        this.$set(this.showFilterDropdown, col, false);
-        this.currentPage = 1;
-      },
-      clearFilter(col) {
-        this.$set(this.pendingFilters, col, []);
-        this.$set(this.filters, col, []);
-        this.$set(this.showFilterDropdown, col, false);
-        this.currentPage = 1;
-      },
-      closeAllDropdowns() {
-        Object.keys(this.showFilterDropdown).forEach(col => {
-          this.$set(this.showFilterDropdown, col, false);
-        });
-      },
-      handleClickOutside(e) {
-        const dropdowns = this.$el.querySelectorAll('.filter-dropdown');
-        for (let el of dropdowns) {
-          if (el.contains(e.target)) return;
-        }
-        this.closeAllDropdowns();
-      },
-      getFilteredOptions(col) {
-        const search = (this.filterSearch[col] || '').toLowerCase();
-        return this.uniqueColumnValues[col].filter(val =>
-          String(val).toLowerCase().includes(search)
-        );
-      },
-      handleSearch() {
-        this.currentPage = 1;
-      },
-      highlight(value, key) {
-        // 用于防止 ESLint 报告未使用变量 key
-        if (key) void key;
-        if (!this.searchKeyword || typeof value !== 'string') return value;
-        const safeKeyword = this.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${safeKeyword})`, 'gi');
-        return value.replace(regex, '<mark>$1</mark>');
-      },
-      changePage(page) {
-        if (page < 1 || page > this.totalPages) return;
-        this.currentPage = page;
-      },
-      exportExcel() {
-        const table = this.currentTab === 'listed'
-          ? 'non_listed_companies_20250414'
-          : 'non_listed_companies_2025q1';
-        window.open(`/api/export/${table}`);
+      } catch (err) {
+        alert('上传失败：' + (err.response?.data?.error || err.message));
       }
     },
-    watch: {
-      searchedData(newVal) {
-        this.totalPages = Math.max(1, Math.ceil(newVal.length / this.pageSize));
-        if (this.currentPage > this.totalPages) {
-          this.currentPage = 1;
-        }
-      }
+    toggleSidebar() {
+      this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
-    mounted() {
+    switchTab(tab) {
+      this.currentTab = tab;
+      this.clearAllFilters();
       this.loadData();
-      document.addEventListener('mousedown', this.handleClickOutside);
     },
-    beforeDestroy() {
-      document.removeEventListener('mousedown', this.handleClickOutside);
+    async loadData() {
+      try {
+        const url = this.currentTab === 'listed'
+          ? '/api/company/listed-companies-detail'
+          : '/api/company/non-listed-companies-detail';
+        const res = await axios.get(url);
+        this.tableData = res.data;
+        this.tableHeaders = res.data.length > 0 ? Object.keys(res.data[0]) : [];
+
+        const colVals = {};
+        res.data.forEach(row => {
+          for (const key in row) {
+            if (!colVals[key]) colVals[key] = new Set();
+            if (row[key] !== null && row[key] !== '') colVals[key].add(row[key]);
+          }
+        });
+        this.uniqueColumnValues = Object.fromEntries(
+          Object.entries(colVals).map(([k, set]) => [k, Array.from(set)])
+        );
+
+        const now = new Date();
+        this.lastUpdate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+          now.getDate()
+        ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(
+          now.getMinutes()
+        ).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      } catch (error) {
+        console.error('数据加载失败：', error);
+        this.tableData = [];
+        this.tableHeaders = [];
+      }
+    },
+    clearAllFilters() {
+      this.filters = {};
+      this.pendingFilters = {};
+      this.filterSearch = {};
+      this.searchKeyword = '';
+      this.currentPage = 1;
+    },
+    toggleFilterDropdown(col) {
+      this.closeAllDropdowns();
+      this.$set(this.showFilterDropdown, col, true);
+      this.$set(this.pendingFilters, col, [...(this.filters[col] || [])]);
+
+      this.$nextTick(() => {
+        const icon = this.$el.querySelector(`[data-filter-icon="${col}"]`);
+        const dropdown = this.$el.querySelector(`[data-dropdown="${col}"]`);
+        if (icon && dropdown) {
+          const rect = icon.getBoundingClientRect();
+          dropdown.style.position = 'fixed';
+          dropdown.style.left = `${rect.left - dropdown.offsetWidth + icon.offsetWidth}px`;
+          dropdown.style.top = `${rect.bottom + 4}px`;
+          dropdown.style.zIndex = '9999';
+        }
+      });
+    },
+    confirmFilter(col) {
+      this.$set(this.filters, col, [...(this.pendingFilters[col] || [])]);
+      this.$set(this.showFilterDropdown, col, false);
+      this.currentPage = 1;
+    },
+    clearFilter(col) {
+      this.$set(this.pendingFilters, col, []);
+      this.$set(this.filters, col, []);
+      this.$set(this.showFilterDropdown, col, false);
+      this.currentPage = 1;
+    },
+    closeAllDropdowns() {
+      Object.keys(this.showFilterDropdown).forEach(col => {
+        this.$set(this.showFilterDropdown, col, false);
+      });
+    },
+    handleClickOutside(e) {
+      const dropdowns = this.$el.querySelectorAll('.filter-dropdown');
+      for (let el of dropdowns) {
+        if (el.contains(e.target)) return;
+      }
+      this.closeAllDropdowns();
+    },
+    getFilteredOptions(col) {
+      const search = (this.filterSearch[col] || '').toLowerCase();
+      return this.uniqueColumnValues[col].filter(val =>
+        String(val).toLowerCase().includes(search)
+      );
+    },
+    handleSearch() {
+      this.currentPage = 1;
+    },
+    highlight(value, key) {
+      if (key) void key;
+      if (!this.searchKeyword || typeof value !== 'string') return value;
+      const safeKeyword = this.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeKeyword})`, 'gi');
+      return value.replace(regex, '<mark>$1</mark>');
+    },
+    changePage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+    },
+    exportExcel() {
+      const table = this.currentTab === 'listed'
+        ? 'non_listed_companies_20250414'
+        : 'non_listed_companies_2025q1';
+      window.open(`/api/export/${table}`);
     }
-  };
+  },
+  mounted() {
+    this.loadData();
+    document.addEventListener('mousedown', this.handleClickOutside);
+  },
+  beforeDestroy() {
+    document.removeEventListener('mousedown', this.handleClickOutside);
+  }
+};
 </script>
 
 

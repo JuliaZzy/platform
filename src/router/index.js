@@ -1,8 +1,8 @@
 import Vue from 'vue';
 import Router from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
-import DashboardPage from '@/views/DashboardPage.vue';
-import LSDashboardPage from '@/views/ListedCompanyDashboardPage.vue';
+import NLSDashboardPage from '@/views/NLSDashboardPage.vue';
+import LSDashboardPage from '@/views/LSDashboardPage.vue';
 import AdminPage from '@/views/AdminPage.vue';
 
 Vue.use(Router);
@@ -15,12 +15,12 @@ const routes = [
   },
   {
     path: '/dashboard',
-    name: 'DashboardPage',
-    component: DashboardPage
+    name: 'NLSDashboardPage',
+    component: NLSDashboardPage
   },
   {
     path: '/lsdashboard',
-    name: 'ListedCompanyDashboardPage',
+    name: 'LSDashboardPage',
     component: LSDashboardPage
   },
   {

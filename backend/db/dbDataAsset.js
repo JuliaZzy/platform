@@ -1,3 +1,4 @@
+/*
 const mysql = require('mysql2');
 const dbDataAsset = mysql.createConnection({
   host: 'localhost',
@@ -11,7 +12,6 @@ dbDataAsset.connect(err => {
 });
 module.exports = dbDataAsset;
 
-/*
 const mysql = require('mysql2');
 const dbDataAsset = mysql.createConnection({
   host: 'trolley.proxy.rlwy.net',

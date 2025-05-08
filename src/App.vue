@@ -24,4 +24,13 @@ html, body {
 #app {
   height: 100%; /* ✅ 让 router-view 填满视口，支持 flex 子页面布局 */
 }
+
+/* ✅ 所有页面通用的 loading 过渡效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
 </style>

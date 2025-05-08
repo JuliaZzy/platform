@@ -7,7 +7,7 @@ module.exports = {
     proxy: {
       '/api': {
         target: 'http://localhost:8080',  // 设置为后端服务器地址
-        // target: 'https://dataassetplatform-production.up.railway.app/api'
+        // target: 'https://dataassetplatform-production.up.railway.app/api',
         changeOrigin: true,
         secure: false,
       },
