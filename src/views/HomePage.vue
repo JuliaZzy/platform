@@ -9,7 +9,7 @@
       <div class="header-content">
         <div class="left">
           <h1>中国企业数据资产<br />入表跟踪</h1>
-          <p>Discover the Power of Partnership for<br />Sustainable Water Solutions</p>
+          <p>Discover the Power of <br />Partnership for Sustainable Water Solutions</p>
         </div>
       </div>
       <div class="description">
@@ -283,6 +283,7 @@ export default {
     border-left: 5px solid white;
     padding-left: 30px;
     margin-right: 30px;
+    line-height: 55px;
   }
 
   .header-content .left h1 {
@@ -303,7 +304,7 @@ export default {
     color: white;
     line-height: 1.0;
     text-align: right;
-    margin-top: 120px;
+    margin-top: 100px;
     letter-spacing: 2px;
     max-width: 97%;         /* 限制最大宽度不超出视口 */
     box-sizing: border-box; /* 避免 padding 导致溢出 */

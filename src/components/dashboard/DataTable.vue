@@ -17,8 +17,8 @@
             <th>数据资产内容</th>
             <th style="text-align: center;">入表会计科目</th>
             <th style="text-align: center;">评估方法</th>
-            <th>账面金额（万元）</th>
-            <th>评估金额（万元）</th>
+            <th>账面金额<br>（万元）</th>
+            <th>评估金额<br>（万元）</th>
             <th>数据资产登记机构</th>
           </tr>
         </thead>
@@ -259,19 +259,19 @@ export default {
     text-align: center;
   }
   .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 78px; min-width: 70px; }
-  .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 40px; min-width: 40px; }
+  .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 70px; min-width: 40px; text-align: center;}
   
-  .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 250px; }
-  .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 300px; }
-  .data-table th:nth-child(6),.data-table th:nth-child(6) { width: 85px; }
+  .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 220px; }
+  .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 260px; }
+  .data-table th:nth-child(6),.data-table th:nth-child(6) { width: 85px; text-align: center;}
   .data-table th:nth-child(7),.data-table th:nth-child(7) { 
-    width: 60px; 
+    width: 80px; 
     text-align: center;
   }
-  .data-table td:nth-child(8)，.data-table th:nth-child(8)，
+  .data-table td:nth-child(8)，.data-table th:nth-child(8),
   .data-table td:nth-child(9), .data-table th:nth-child(9) {
     width: 30px;
-    min-width: 30px;
+    min-width: 20px;
     text-align: right;
   }
   .data-table td:nth-child(10), .data-table th:nth-child(10) {

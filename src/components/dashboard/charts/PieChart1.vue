@@ -1,6 +1,6 @@
 <template>
   <div class="chart-wrapper" style="position: relative;">
-    <div class="chart-title">企业数量按企业类型分布</div>
+    <div class="chart-title">企业数量按企业性质分布</div>
     <ChartSpinner :visible="loading" />
     <v-chart
       :option="chartOption"
