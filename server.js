@@ -9,8 +9,8 @@ const port = process.env.PORT || 3000;
 // 中间件
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cors({
-  origin: 'http://localhost:8080',
-  // origin: 'http://https://dataassetplatform-production.up.railway.app',
+  //origin: 'http://localhost:8080',
+  origin: 'http://platform-production-717b.up.railway.app',
   methods: ['GET', 'POST'],
 }));
 
