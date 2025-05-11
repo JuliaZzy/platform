@@ -66,8 +66,8 @@
     </div>
 
     <!-- 第三行 -->
-    <div class="filter-row">
-      <div class="filter-item">
+    <div class="filter-row row-actions">
+      <div class="action-buttons">
         <button class="confirm-btn" @click="confirmFilters">确认</button>
         <button class="clear-all-btn" @click="clearFilters">清除筛选</button>
       </div>
@@ -214,16 +214,26 @@ export default {
     margin: 0 5px;
   }
 
+  .row-actions {
+    justify-content: flex-end; /* 让 row 最右对齐 */
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 30px; /* 按钮之间的间距 */
+    margin-right: 100px;
+  }
   .confirm-btn,
   .clear-all-btn {
     background-color: #003049;
     color: white;
     padding: 6px 22px;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 10px;
+    margin-top: 20px;
+    min-width: 100px; /* ✅ 设置一致的最小宽度 */
   }
 
   .confirm-btn:hover,

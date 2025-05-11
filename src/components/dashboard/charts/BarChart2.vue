@@ -50,7 +50,7 @@ export default defineComponent({
               },
               formatter: val => {
                           // 每5个字符换行，最多3行
-                          const lines = val.match(/.{1,6}/g)?.slice(0,3) || [val]; // 每5字一行，最多3行
+                          const lines = val.match(/.{1,5}/g)?.slice(0,4) || [val]; // 每5字一行，最多3行
                           return lines.map(line => `{customStyle|${line}}`).join('\n');
                                 }
             }
