@@ -31,7 +31,7 @@ pool.query('SELECT 1', (err) => {
   if (err) {
     console.error('❌ Neon 数据库连接失败:', err);
   } else {
-    console.log('✅ 已连接到 Railway PostgreSQL 数据库');
+    console.log('✅ 已连接到 Neon PostgreSQL 数据库');
   }
 });
 
