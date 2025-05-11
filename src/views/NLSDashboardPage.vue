@@ -116,6 +116,7 @@ export default {
 .dashboard-container {
   padding: 30px;
   background: #f9f9f9;
+  overflow-x: hidden; /* 彻底移除横向滚动条 */
 }
 
 .section {

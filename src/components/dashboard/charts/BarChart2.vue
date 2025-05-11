@@ -4,7 +4,7 @@
     <ChartSpinner :visible="loading" />
     <v-chart
       :option="chartOption"
-      style="width: 1000px; height: 450px;"
+      style="width: 100%; height: 450px;"
     />
   </div>
 </template>
@@ -42,8 +42,17 @@ export default defineComponent({
             data: props.chartData.map(item => item.name),
             axisLabel: {
               fontSize: 12,
-              rotate: 30,
-              formatter: val => val.length > 6 ? val.slice(0, 6) + '…' : val
+              rotate: 0,
+              rich: {
+                customStyle: {
+                  lineHeight: 20 // ✅ 设置你想要的行间距（单位是像素）
+                }
+              },
+              formatter: val => {
+                          // 每5个字符换行，最多3行
+                          const lines = val.match(/.{1,5}/g)?.slice(0,3) || [val]; // 每5字一行，最多3行
+                          return lines.map(line => `{customStyle|${line}}`).join('\n');
+                                }
             }
           },
           yAxis: {
@@ -79,12 +88,13 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   margin-bottom: 0;
+  min-width: 1000px;
 }
 
 .chart-title {
   font-size: 18px;
   font-weight: bold;
-  margin: 20px 0;
+  margin: 15px 0px;
   text-align: center;
   color: #003049;
 }

@@ -72,7 +72,7 @@ export default defineComponent({
             type: 'category',
             data: this.chartData.map(item => item.name),
             axisLabel: {
-              rotate: 30,
+              rotate: 0,
               formatter: val => val.length > 6 ? val.slice(0, 6) + '…' : val
             }
           },

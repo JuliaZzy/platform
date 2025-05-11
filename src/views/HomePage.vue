@@ -12,6 +12,9 @@
           <p>Discover the Power of Partnership for<br />Sustainable Water Solutions</p>
         </div>
       </div>
+      <div class="description">
+        说明：管理员拥有全部功能，可以实现对底层数据（入表企业清单）的日常维护；普通用户无法增删改，只能浏览、查询和下载。
+      </div>
     </div>
 
     <!-- 管理员登录按钮 -->
@@ -27,9 +30,7 @@
       </div>
     </div>
 
-    <div class="description">
-      说明：管理员拥有全部功能，可以实现对底层数据（入表企业清单）的日常维护；普通用户无法增删改，只能浏览、查询和下载。
-    </div>
+    
 
     <!-- 状态展示区 -->
     <div class="status-row">
@@ -242,6 +243,7 @@ export default {
     padding: 0; /* 去掉整体的上下左右间隙 */
     background-color: #F5F3F4; /* 浅灰色背景 */
     color: #333;
+    overflow-x: hidden; /* 彻底移除横向滚动条 */
   }
 
   .header {
@@ -294,6 +296,17 @@ export default {
     font-size: 36px; /* 英文稍小 */
     letter-spacing: 10px;
     margin: 10px 0 0;
+  }
+
+  .description {
+    font-size: 14px;
+    color: white;
+    line-height: 1.0;
+    text-align: right;
+    margin-top: 120px;
+    letter-spacing: 2px;
+    max-width: 97%;         /* 限制最大宽度不超出视口 */
+    box-sizing: border-box; /* 避免 padding 导致溢出 */
   }
 
   /* 主界面 "管理员登录" 按钮的样式 */
@@ -369,16 +382,6 @@ export default {
     color: #003049;  /* 鼠标悬停时字体颜色变为深蓝色 */
     text-decoration: underline;
     background-color: transparent !important; /* 确保背景色不会改变 */
-  }
-
-  .description {
-    color: white;
-    position: absolute;
-    bottom: 200px;
-    right: 10px;
-    padding: 20px;
-    font-size: 14px;
-    z-index: 2; /* 确保描述在内容之上 */
   }
 
   .status-row {

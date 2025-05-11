@@ -116,12 +116,12 @@ export default defineComponent({
           graphic: [
             {
               type: 'line',
-              shape: { x1: 495, y1: 36, x2: 925, y2: 54 },
+              shape: { x1: 495, y1: 36, x2: 920, y2: 55 },
               style: { stroke: '#888', lineWidth: 1 }
             },
             {
               type: 'line',
-              shape: { x1: 495, y1: 216, x2: 925, y2: 198 },
+              shape: { x1: 495, y1: 216, x2: 920, y2: 197 },
               style: { stroke: '#888', lineWidth: 1 }
             }
           ]
