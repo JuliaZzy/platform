@@ -9,10 +9,10 @@ function isValidTableName(name) {
 }
 
 // ✅ 分页查询接口：/api/dataTable/:tableName/page?page=1&pageSize=30
-router.get('/:tableName/page', (req, res) => {
+router.get('/:tableName/page', async (req, res) => {
   const { tableName } = req.params;
-  let page = parseInt(req.query.page) || 1;
-  let pageSize = parseInt(req.query.pageSize) || 30;
+  const page = parseInt(req.query.page, 10) || 1;
+  const pageSize = parseInt(req.query.pageSize, 10) || 30;
   const offset = (page - 1) * pageSize;
 
   if (!isValidTableName(tableName)) {
@@ -22,32 +22,27 @@ router.get('/:tableName/page', (req, res) => {
   const queryData = `SELECT * FROM ${tableName} LIMIT $1 OFFSET $2`;
   const queryCount = `SELECT COUNT(*) AS total FROM ${tableName}`;
 
-  // const queryData = `SELECT * FROM \`${tableName}\` LIMIT ? OFFSET ?`;
-  // const queryCount = `SELECT COUNT(*) AS total FROM \`${tableName}\``;
+  const label = `分页查询 - ${tableName} - ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  console.time(label);
+  console.log(`🔍 正在查询表：${tableName}，第 ${page} 页，每页 ${pageSize} 条`);
 
-  db.query(queryCount, [], (err, countResult) => {
-    if (err) return res.status(500).json({ error: '统计失败' });
-    const total = countResult.rows[0].total;
+  try {
+    const countResult = await db.query(queryCount);
+    const dataResult = await db.query(queryData, [pageSize, offset]);
 
-    db.query(queryData, [pageSize, offset], (err, dataResult) => {
-      if (err) return res.status(500).json({ error: '查询失败' });
-      res.json({ rows: dataResult.rows, total });
+    console.timeEnd(label);
+    res.json({
+      rows: dataResult.rows,
+      total: parseInt(countResult.rows[0].total, 10),
+      page,
+      pageSize
     });
-  });
+  } catch (err) {
+    console.error(`❌ 查询失败 - 表 ${tableName}：`, err);
+    res.status(500).json({ error: '分页数据查询失败', detail: err.message });
+  }
 });
 
-/*
-db.query(queryCount, (err, countResult) => {
-  if (err) return res.status(500).json({ error: '统计失败' });
-  const total = countResult[0].total;
-
-  db.query(queryData, [pageSize, offset], (err, dataResult) => {
-    if (err) return res.status(500).json({ error: '查询失败' });
-    res.json({ rows: dataResult, total });
-  });
-});
-});
-*/
 
 module.exports = router;
 

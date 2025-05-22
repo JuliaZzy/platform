@@ -64,6 +64,14 @@ export default defineComponent({
     updateChart() {
       this.loading = true;
       setTimeout(() => {
+        const barLabelOption = {
+          show: true,         // 是否显示标签
+          position: 'top',    // 标签的位置，'top'表示在柱子顶部
+          formatter: '{c}',   // 标签内容格式器：{c}会自动显示该数据点的值
+          fontSize: 10,       // 标签字体大小
+          color: '#005f73',   // 标签字体颜色，深灰色
+          // distance: 5,     // 可选：标签与图形的距离
+        };
         // 模拟加载时间，真实项目中可替换为 await axios 逻辑
         this.barChartOption = {
           color: chartColors,
@@ -86,7 +94,8 @@ export default defineComponent({
           series: [{
             type: 'bar',
             data: this.chartData.map(item => item.value)
-          }]
+          }],
+          label: barLabelOption
         };
         this.loading = false;
       }, 500);

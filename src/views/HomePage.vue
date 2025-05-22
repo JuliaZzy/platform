@@ -12,9 +12,6 @@
           <p>Discover the Power of <br />Partnership for Sustainable Water Solutions</p>
         </div>
       </div>
-      <div class="description">
-        说明：管理员拥有全部功能，可以实现对底层数据（入表企业清单）的日常维护；普通用户无法增删改，只能浏览、查询和下载。
-      </div>
     </div>
 
     <!-- 管理员登录按钮 -->
@@ -49,10 +46,12 @@
               ? listedCompanyCount
               : label === '非上市公司入表'
               ? nonListedCompanyCount
+              : label === '凭数据资产融资'
+              ? financeCompanyCount
               : '暂无数据'
           }} 家
         </p>
-        <div class="status-note">点击查看详情</div>
+        <div class="status-note" v-if="label === '非上市公司入表' || label === '上市公司入表'">点击查看详情</div>
       </div>
     </div>
 
@@ -70,22 +69,32 @@
         <div class="table-wrapper">
           <ChartSpinner :visible="isFirstTableLoading" />
           <table>
-            <tr><th colspan="2">上市公司入表清单</th></tr>
-            <tr v-for="(company, index) in listedCompanies" :key="index">
-              <td>{{ company.company_name }}</td>
+            <tr><th colspan="4">上市公司入表清单</th></tr>
+            <tr>
+              <th>2024Q1</th>
+              <th>2024Q2</th>
+              <th>2024Q3</th>
+              <th>2024Q4</th>
             </tr>
-            <tr v-if="firstTablePages > 1">
-              <td colspan="2">
+            <tr v-for="index in quarterTableMaxRows" :key="index">
+              <td>{{ pagedQ1[index - 1] || '' }}</td>
+              <td>{{ pagedQ2[index - 1] || '' }}</td>
+              <td>{{ pagedQ3[index - 1] || '' }}</td>
+              <td>{{ pagedQ4[index - 1] || '' }}</td>
+            </tr>
+            <tr v-if="quarterTablePages > 1">
+              <td colspan="4">
                 <div class="pagination">
-                  <button :disabled="firstTablePage === 1" @click="changePage('firstTable', firstTablePage - 1)">上一页</button>
-                  <span>{{ firstTablePage }} / {{ firstTablePages }}</span>
-                  <button :disabled="firstTablePage === firstTablePages" @click="changePage('firstTable', firstTablePage + 1)">下一页</button>
+                  <button :disabled="quarterTablePage === 1" @click="quarterTablePage--">上一页</button>
+                  <span>{{ quarterTablePage }} / {{ quarterTablePages }}</span>
+                  <button :disabled="quarterTablePage === quarterTablePages" @click="quarterTablePage++">下一页</button>
                 </div>
               </td>
             </tr>
           </table>
         </div>
       </div>
+
 
       <!-- 表格 2：非上市公司 -->
       <div class="grid-item">
@@ -94,7 +103,7 @@
           <table>
             <tr><th colspan="2">非上市公司入表清单</th></tr>
             <tr v-for="(company, index) in nonListedCompanies" :key="index">
-              <td>{{ company.company_name }}</td>
+              <td v-text="company.company_name"></td>
             </tr>
             <tr v-if="secondTablePages > 1">
               <td colspan="2">
@@ -109,13 +118,26 @@
         </div>
       </div>
 
-      <!-- 表格 3：融资清单 -->
+      <!-- 表格 3：融资企业清单 -->
       <div class="grid-item">
-        <table>
-          <tr><th colspan="2">数据资产融资清单</th></tr>
-          <tr><td>2025年3月</td></tr>
-          <tr><td>2024年12月</td></tr>
-        </table>
+        <div class="table-wrapper">
+          <ChartSpinner :visible="false" />
+          <table>
+            <tr><th colspan="2">数据资产融资企业清单</th></tr>
+            <tr v-for="(company, index) in pagedFinancingCompanies" :key="index">
+              <td>{{ company }}</td>
+            </tr>
+            <tr v-if="thirdTablePages > 1">
+              <td colspan="2">
+                <div class="pagination">
+                  <button :disabled="thirdTablePage === 1" @click="changePage('thirdTable', thirdTablePage - 1)">上一页</button>
+                  <span>{{ thirdTablePage }} / {{ thirdTablePages }}</span>
+                  <button :disabled="thirdTablePage === thirdTablePages" @click="changePage('thirdTable', thirdTablePage + 1)">下一页</button>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -152,17 +174,51 @@ export default {
       currentMonth: '', // 当前年月
       labels: ['上市公司入表', '非上市公司入表', '凭数据资产融资'],
       listedCompanyCount: 0,
-      listedCompanies: [],
       nonListedCompanyCount: 0,
+      financeCompanyCount: 0, // ✅ 新增融资状态数量
+
+      listedQ1: [],
+      listedQ2: [],
+      listedQ3: [],
+      listedQ4: [],
+
+      quarterTablePage: 1,
+      quarterTablePages: 1,
+      quarterTableMaxRows: 10,
+
       nonListedCompanies: [],
-      firstTablePage: 1,
-      firstTablePages: 1,
       secondTablePage: 1,
       secondTablePages: 1,
+
+      financingCompanies: [], // ✅ 确保一开始就是数组
       thirdTablePage: 1,
       thirdTablePages: 1,
+
       isLoginModalVisible: false
     };
+  },
+  computed: {
+    pagedQ1() {
+      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
+      return this.listedQ1.slice(start, start + this.quarterTableMaxRows);
+    },
+    pagedQ2() {
+      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
+      return this.listedQ2.slice(start, start + this.quarterTableMaxRows);
+    },
+    pagedQ3() {
+      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
+      return this.listedQ3.slice(start, start + this.quarterTableMaxRows);
+    },
+    pagedQ4() {
+      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
+      return this.listedQ4.slice(start, start + this.quarterTableMaxRows);
+    },
+    pagedFinancingCompanies() {
+      const list = this.financingCompanies || [];
+      const start = (this.thirdTablePage - 1) * 10;
+      return list.slice(start, start + 10);
+    }
   },
   mounted() {
     const now = new Date();
@@ -174,15 +230,37 @@ export default {
   methods: {
     // 首页初始加载
     async loadAllData() {
+      console.log('✅ financingCompanies', this.financingCompanies);
+      console.log('✅ financeCompanyCount', this.financeCompanyCount);
+      console.log('✅ pagedFinancingCompanies', this.pagedFinancingCompanies);
+
       this.isLoading = true;
       try {
         const res = await axios.get('/api/company/homepage-summary');
         const data = res.data;
         this.listedCompanyCount = data.listedCompanyCount;
         this.nonListedCompanyCount = data.nonListedCompanyCount;
-        this.listedCompanies = data.listedCompanies;
+        this.financeCompanyCount = data.financeCompanyCount;
+        this.financingCompanies = data.financingCompanies;
+        this.thirdTablePages = Math.ceil(data.financeCompanyCount / 10);
+
+        // 拆分季度
+        const allListed = data.listedCompanies || [];
+        this.listedQ1 = allListed.filter(c => c['报告时间'] === 'Q1').map(c => c['公司']);
+        this.listedQ2 = allListed.filter(c => c['报告时间'] === 'Q2').map(c => c['公司']);
+        this.listedQ3 = allListed.filter(c => c['报告时间'] === 'Q3').map(c => c['公司']);
+        this.listedQ4 = allListed.filter(c => c['报告时间'] === 'Q4').map(c => c['公司']);
+
+        const maxLength = Math.max(
+          this.listedQ1.length,
+          this.listedQ2.length,
+          this.listedQ3.length,
+          this.listedQ4.length
+        );
+        this.quarterTablePages = Math.ceil(maxLength / this.quarterTableMaxRows);
+
+        // 非上市公司
         this.nonListedCompanies = data.nonListedCompanies;
-        this.firstTablePages = Math.ceil(data.listedCompanyCount / 10);
         this.secondTablePages = Math.ceil(data.nonListedCompanyCount / 10);
       } catch (err) {
         console.error('加载数据出错：', err);
@@ -197,19 +275,17 @@ export default {
       this[`${table}Page`] = page;
 
       try {
-        if (table === 'firstTable') {
-          this.isFirstTableLoading = true;
-          const res = await axios.get(`/api/company/listed-companies?page=${page}`);
-          this.listedCompanies = res.data.data;
-        } else if (table === 'secondTable') {
+        if (table === 'secondTable') {
           this.isSecondTableLoading = true;
           const res = await axios.get(`/api/company/non-listed-companies?page=${page}`);
           this.nonListedCompanies = res.data.data;
+        } else if (table === 'thirdTable') {
+          this.thirdTablePage = page;
+          // 此表内容是一次性加载，前端分页，无需额外请求
         }
       } catch (err) {
         console.error('分页加载失败:', err);
       } finally {
-        if (table === 'firstTable') this.isFirstTableLoading = false;
         if (table === 'secondTable') this.isSecondTableLoading = false;
       }
     },
@@ -223,13 +299,27 @@ export default {
     },
     handleLoginSuccess() {
       this.closeLoginModal();
-      this.$router.push('/admin-page');
+      // 原来的: this.$router.push('/admin-page');
+      // 修改后:
+      const routeData = this.$router.resolve({ name: 'AdminPage' }); // 或者 path: '/admin-page'
+      window.open(routeData.href, '_blank');
     },
 
     // 点击跳转控制
     handleStatusBoxClick(label) {
-      if (label === '非上市公司入表') this.$router.push('/dashboard');
-      else if (label === '上市公司入表') this.$router.push('/lsdashboard');
+      let routeData;
+      if (label === '非上市公司入表') {
+        // 原来的: this.$router.push('/dashboard');
+        // 修改后:
+        routeData = this.$router.resolve({ name: 'NLSDashboardPage' }); // 对应路由配置中的 name
+        window.open(routeData.href, '_blank');
+      } else if (label === '上市公司入表') {
+        // 原来的: this.$router.push('/lsdashboard');
+        // 修改后:
+        routeData = this.$router.resolve({ name: 'LSDashboardPage' }); // 对应路由配置中的 name
+        window.open(routeData.href, '_blank');
+      }
+      // 对于 "凭数据资产融资" 这个label，你目前没有设置跳转，所以它保持不变
     }
   }
 };
@@ -256,6 +346,7 @@ export default {
     color: white;
     font-size: 36px;
     letter-spacing: 8px;
+    box-sizing: border-box;
   }
 
   .header img {
@@ -294,20 +385,9 @@ export default {
   }
 
   .header-content .left p {
-    font-size: 36px; /* 英文稍小 */
-    letter-spacing: 10px;
+    font-size: 32px; /* 英文稍小 */
+    letter-spacing: 3px;
     margin: 10px 0 0;
-  }
-
-  .description {
-    font-size: 14px;
-    color: white;
-    line-height: 1.0;
-    text-align: right;
-    margin-top: 100px;
-    letter-spacing: 2px;
-    max-width: 97%;         /* 限制最大宽度不超出视口 */
-    box-sizing: border-box; /* 避免 padding 导致溢出 */
   }
 
   /* 主界面 "管理员登录" 按钮的样式 */
@@ -439,7 +519,7 @@ export default {
     font-size: 30px;
     font-weight: normal;
     margin: 0;
-    margin-top: 20px;
+    margin-top: 40px;
     color: #003049;
   }
 
@@ -454,7 +534,7 @@ export default {
     font-size: 14px;
     color: #003049;
     text-align: right;
-    margin-top: 60px;
+    margin-top: 50px;
     text-transform: none;
     font-weight: normal;
   }

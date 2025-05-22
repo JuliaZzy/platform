@@ -33,8 +33,8 @@
 </template>
 
 <script>
-import FilterSection from '@/components/dashboard/filters/FilterSection.vue';
-import ChartRow from '@/components/dashboard/ChartRow.vue';
+import FilterSection from '@/components/dashboard/filters/NLFilterSection.vue';
+import ChartRow from '@/components/dashboard/NLChartRow.vue';
 import DataTable from '@/components/dashboard/DataTable.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import axios from 'axios';
@@ -119,11 +119,5 @@ export default {
   overflow-x: hidden; /* 彻底移除横向滚动条 */
 }
 
-.section {
-  background-color: white;
-  padding: 20px;
-  margin-bottom: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
+
 </style>

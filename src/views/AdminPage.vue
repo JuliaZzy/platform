@@ -13,6 +13,20 @@
         <div class="menu-item" :class="{ active: currentTab === 'nonlisted' }" @click="switchTab('nonlisted')">
           非上市公司数据
         </div>
+
+        <!-- ✅ 新增：数据资产融资菜单，三张表作为子项 -->
+        <div class="menu-item" :class="{ active: isFinanceTab }">
+          数据资产融资
+        </div>
+        <div class="menu-subitem" :class="{ active: currentTab === 'finance-bank' }" @click="switchTab('finance-bank')">
+          数据资产增信银行贷款
+        </div>
+        <div class="menu-subitem" :class="{ active: currentTab === 'finance-stock' }" @click="switchTab('finance-stock')">
+          数据资产作价入股
+        </div>
+        <div class="menu-subitem" :class="{ active: currentTab === 'finance-other' }" @click="switchTab('finance-other')">
+          其他数据类融资
+        </div>
       </nav>
     </aside>
 
@@ -191,7 +205,10 @@ export default {
     },
     totalPages() {
       return Math.max(1, Math.ceil(this.searchedData.length / this.pageSize));
-    }
+    },
+    isFinanceTab() {
+      return ['finance-bank', 'finance-stock', 'finance-other'].includes(this.currentTab);
+    },
   },
   methods: {
     getRowKey(row) {
@@ -244,9 +261,15 @@ export default {
       if (!file) return;
       const formData = new FormData();
       formData.append('file', file);
-      const tableName = this.currentTab === 'listed'
-        ? 'non_listed_companies_20250414'
-        : 'non_listed_companies_2025q1';
+
+      const tableMap = {
+        listed: 'dataasset_listed_companies_2024',
+        nonlisted: 'dataasset_non_listed_companies',
+        'finance-stock': 'dataasset_finance_stock',
+        'finance-other': 'dataasset_finance_other'
+      };
+      const tableName = tableMap[this.currentTab];
+      if (!tableName) return alert('该表不支持上传');
 
       try {
         const res = await axios.post(`/api/upload/append?tableName=${tableName}`, formData, {
@@ -293,15 +316,27 @@ export default {
     },
     async loadData() {
       try {
-        const url = this.currentTab === 'listed'
-          ? '/api/company/listed-companies-detail'
-          : '/api/company/non-listed-companies-detail';
+        let url = '';
+        if (this.currentTab === 'listed') {
+          url = '/api/company/listed-companies-detail';
+        } else if (this.currentTab === 'nonlisted') {
+          url = '/api/company/non-listed-companies-detail';
+        } else if (this.currentTab === 'finance-bank') {
+          url = '/api/finance/bank-detail';
+        } else if (this.currentTab === 'finance-stock') {
+          url = '/api/dataTable/dataasset_finance_stock/page?page=1&pageSize=1000';
+        } else if (this.currentTab === 'finance-other') {
+          url = '/api/dataTable/dataasset_finance_other/page?page=1&pageSize=1000';
+        }
+
         const res = await axios.get(url);
-        this.tableData = res.data;
-        this.tableHeaders = res.data.length > 0 ? Object.keys(res.data[0]) : [];
+        const rows = res.data?.rows || res.data || [];
+
+        this.tableData = rows;
+        this.tableHeaders = rows.length > 0 ? Object.keys(rows[0]) : [];
 
         const colVals = {};
-        res.data.forEach(row => {
+        rows.forEach(row => {
           for (const key in row) {
             if (!colVals[key]) colVals[key] = new Set();
             if (row[key] !== null && row[key] !== '') colVals[key].add(row[key]);
@@ -323,6 +358,7 @@ export default {
         this.tableHeaders = [];
       }
     },
+
     clearAllFilters() {
       this.filters = {};
       this.pendingFilters = {};
@@ -391,9 +427,15 @@ export default {
       this.currentPage = page;
     },
     exportExcel() {
-      const table = this.currentTab === 'listed'
-        ? 'non_listed_companies_20250414'
-        : 'non_listed_companies_2025q1';
+      const tableMap = {
+        listed: 'dataasset_listed_companies_2024',
+        nonlisted: 'dataasset_non_listed_companies',
+        'finance-stock': 'dataasset_finance_stock',
+        'finance-other': 'dataasset_finance_other',
+        'finance-bank': '' // 不支持导出逻辑表（除非你另外构建）
+      };
+      const table = tableMap[this.currentTab];
+      if (!table) return alert('该表不支持导出');
       window.open(`/api/export/${table}`);
     }
   },
@@ -748,4 +790,21 @@ export default {
     background-color: yellow;
     font-weight: bold;
   }
+
+  .menu-subitem {
+    padding: 6px 30px;
+    font-size: 13px;
+    color: #eee;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .menu-subitem:hover {
+    background-color: #1e4462;
+  }
+  .menu-subitem.active {
+    background-color: white;
+    color: #003049;
+    font-weight: bold;
+  }
+
 </style>

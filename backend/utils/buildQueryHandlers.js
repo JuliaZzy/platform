@@ -3,36 +3,54 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 
-function buildWhereClause(filters, values, enableHideFlag = false) {
+function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-listed') { // 添加 mode 参数
   const conditions = [];
 
   if (enableHideFlag) {
-    conditions.push(`hide_flag NOT LIKE '%是%'`);
+    // 确保 "hide_flag" 是正确的列名，并用双引号包裹以防是保留字或含特殊字符
+    conditions.push(`"hide_flag" NOT LIKE '%是%'`); 
   }
 
-  if (filters.startDate && filters.endDate) {
-    conditions.push(`month_time BETWEEN $${values.length + 1} AND $${values.length + 2}`);
-    values.push(filters.startDate, filters.endDate);
-  }
-
-  if (filters.province) {
-    conditions.push(`province_area = $${values.length + 1}`);
-    values.push(filters.province);
-  }
-
-  if (filters.company) {
-    conditions.push(`company_name ILIKE $${values.length + 1}`);
-    values.push(`%${filters.company.trim().slice(0, 30)}%`);
-  }
-
-  if (filters.content) {
-    conditions.push(`dataasset_content ILIKE $${values.length + 1}`);
-    values.push(`%${filters.content.trim().slice(0, 30)}%`);
-  }
-
-  if (filters.company_type) {
-    conditions.push(`company_type = $${values.length + 1}`);
-    values.push(filters.company_type);
+  if (mode === 'non-listed') {
+    // 非上市公司筛选逻辑 (来自你之前的代码)
+    if (filters.startDate && filters.endDate) {
+      conditions.push(`"month_time" BETWEEN $${values.length + 1} AND $${values.length + 2}`);
+      values.push(filters.startDate, filters.endDate);
+    }
+    if (filters.province) { // 非上市用 'province' 对应数据库 'province_area'
+      conditions.push(`"province_area" = $${values.length + 1}`);
+      values.push(filters.province);
+    }
+    if (filters.company) { // 非上市用 'company' 对应数据库 'company_name'
+      conditions.push(`"company_name" ILIKE $${values.length + 1}`);
+      values.push(`%${String(filters.company || '').trim().slice(0, 30)}%`);
+    }
+    if (filters.content) { // 非上市用 'content' 对应数据库 'dataasset_content'
+      conditions.push(`"dataasset_content" ILIKE $${values.length + 1}`);
+      values.push(`%${String(filters.content || '').trim().slice(0, 30)}%`);
+    }
+    if (filters.company_type) {
+      conditions.push(`"company_type" = $${values.length + 1}`);
+      values.push(filters.company_type);
+    }
+  } else if (mode === 'listed') {
+    // 上市公司筛选逻辑
+    if (filters.quarter && String(filters.quarter).trim() !== '') {
+      conditions.push(`"报告时间" = $${values.length + 1}`);
+      values.push(filters.quarter);
+    }
+    if (filters.province_area && String(filters.province_area).trim() !== '') { // 前端用 'province_area'
+      conditions.push(`"省份" = $${values.length + 1}`); // 数据库列名是 "省份"
+      values.push(filters.province_area);
+    }
+    if (filters.company && String(filters.company).trim() !== '') { // 前端用 'company'
+      conditions.push(`"公司" ILIKE $${values.length + 1}`); // 数据库列名是 "公司"
+      values.push(`%${String(filters.company).trim().slice(0, 30)}%`);
+    }
+    if (filters.dataasset_content && String(filters.dataasset_content).trim() !== '') { // 前端用 'dataasset_content'
+      conditions.push(`"所属证券行业分布" ILIKE $${values.length + 1}`); // 数据库列名是 "所属证券行业分布"
+      values.push(`%${String(filters.dataasset_content).trim().slice(0, 30)}%`);
+    }
   }
 
   return conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -202,187 +220,3 @@ module.exports = {
   handleSearch,
   handleExport
 };
-
-
-
-/*
-const XLSX = require('xlsx');
-const fs = require('fs');
-const path = require('path');
-
-// 通用 WHERE 子句构造器
-function buildWhereClause(filters, values, enableHideFlag = false) {
-  const conditions = [];
-
-  if (enableHideFlag) {
-    conditions.push('hide_flag NOT LIKE "%是%"');
-  }
-
-  if (filters.startDate && filters.endDate) {
-    conditions.push('month_time BETWEEN ? AND ?');
-    values.push(filters.startDate, filters.endDate);
-  }
-
-  if (filters.province) {
-    conditions.push('province_area = ?');
-    values.push(filters.province);
-  }
-
-  if (filters.company) {
-    conditions.push('company_name LIKE ?');
-    values.push(`%${filters.company}%`);
-  }
-
-  if (filters.content) {
-    conditions.push('dataasset_content LIKE ?');
-    values.push(`%${filters.content}%`);
-  }
-
-  if (filters.company_type) {
-    conditions.push('company_type = ?');
-    values.push(filters.company_type);
-  }
-
-  return conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-}
-
-// 通用分页查询处理函数
-function handleQuery(db, tableName, enableHideFlag) {
-  return (req, res) => {
-    const { page = 1, pageSize = 10, filters = {} } = req.body;
-    const offset = (page - 1) * pageSize;
-    const values = [];
-
-    const whereClause = buildWhereClause(filters, values, enableHideFlag);
-
-    const countSql = `SELECT COUNT(*) AS count FROM \`${tableName}\` ${whereClause}`;
-    db.query(countSql, [...values], (err, countResult) => {
-      if (err) return res.status(500).json({ error: '统计失败' });
-
-      const total = countResult[0].count;
-
-      const dataSql = `
-        SELECT month_time, province_area, company_name, dataasset_type,
-               accounting_subject, valuation_method, dataasset_register_addr,
-               book_value, finance_value
-        FROM \`${tableName}\`
-        ${whereClause}
-        LIMIT ? OFFSET ?
-      `;
-      db.query(dataSql, [...values, pageSize, offset], (err, results) => {
-        if (err) return res.status(500).json({ error: '查询失败' });
-        res.json({ rows: results, total });
-      });
-    });
-  };
-}
-
-// 通用聚合统计处理函数
-function handleStats(db, tableName, enableHideFlag) {
-  return (req, res) => {
-    const { field, filters = {} } = req.body;
-    const values = [];
-    const whereClause = buildWhereClause(filters, values, enableHideFlag);
-
-    const sql = `
-      SELECT \`${field}\` AS name, COUNT(*) AS value
-      FROM \`${tableName}\`
-      ${whereClause}
-      GROUP BY \`${field}\`
-      ORDER BY value DESC
-    `;
-
-    db.query(sql, values, (err, results) => {
-      if (err) return res.status(500).json({ error: '统计失败' });
-      res.json(results);
-    });
-  };
-}
-
-// 通用静态选项处理函数（field 为数组）
-function handleOptions(db, tableName, fields, enableHideFlag) {
-  return async (req, res) => {
-    try {
-      const results = {};
-      for (const field of fields) {
-        const sql = `
-          SELECT DISTINCT \`${field}\` AS value
-          FROM \`${tableName}\`
-          ${enableHideFlag ? 'WHERE hide_flag NOT LIKE "%是%"' : ''}
-          ORDER BY \`${field}\`
-        `;
-        const rows = await new Promise((resolve, reject) => {
-          db.query(sql, (err, result) => (err ? reject(err) : resolve(result)));
-        });
-        results[field] = rows.map(r => r.value);
-      }
-      res.json(results);
-    } catch (err) {
-      res.status(500).json({ error: '获取选项失败' });
-    }
-  };
-}
-
-// 通用模糊搜索处理函数
-function handleSearch(db, tableName, field, enableHideFlag) {
-  return (req, res) => {
-    const query = req.query.q;
-    if (!query) return res.json([]);
-
-    const sql = `
-      SELECT DISTINCT \`${field}\` FROM \`${tableName}\`
-      ${enableHideFlag ? 'WHERE hide_flag NOT LIKE "%是%" AND' : 'WHERE'} \`${field}\` LIKE ?
-      LIMIT 20
-    `;
-
-    db.query(sql, [`%${query}%`], (err, results) => {
-      if (err) return res.status(500).json({ error: '搜索失败' });
-      res.json(results.map(r => r[field]));
-    });
-  };
-}
-
-// 通用导出处理函数
-function handleExport(db, tableName, enableHideFlag) {
-  return (req, res) => {
-    const filters = req.body.filters || {};
-    const values = [];
-
-    const whereClause = buildWhereClause(filters, values, enableHideFlag);
-
-    const sql = `
-      SELECT month_time, province_area, company_name, dataasset_type,
-             accounting_subject, valuation_method, dataasset_register_addr,
-             book_value, finance_value
-      FROM \`${tableName}\`
-      ${whereClause}
-    `;
-
-    db.query(sql, values, (err, results) => {
-      if (err) return res.status(500).json({ error: '导出失败' });
-
-      const worksheet = XLSX.utils.json_to_sheet(results);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, '导出数据');
-
-      const tempDir = path.join(__dirname, '../../temp');
-      const tempPath = path.join(tempDir, 'export.xlsx');
-      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-      XLSX.writeFile(workbook, tempPath);
-
-      res.download(tempPath, '导出结果.xlsx', () => {
-        fs.unlinkSync(tempPath);
-      });
-    });
-  };
-}
-
-module.exports = {
-  buildWhereClause,
-  handleQuery,
-  handleStats,
-  handleOptions,
-  handleSearch,
-  handleExport
-};
-*/

@@ -44,7 +44,7 @@
       <div class="pagination-left">
         <el-dropdown @command="handleExportCommand">
           <el-button class="export-small-btn" type="primary">
-            下载 Excel<i class="el-icon-arrow-down el-icon--right"></i>
+            下载数据<i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item command="all">下载全部数据</el-dropdown-item>
@@ -130,63 +130,92 @@ export default {
       });
     },
     handleExportCommand(command) {
+      console.log('[DataTable] handleExportCommand called with command:', command); // 新增日志
       if (command === 'all') {
-        this.downloadFull();
+        this.downloadPdfAll(); // 改为调用PDF下载
       } else if (command === 'current') {
-        this.downloadCurrent();
+        this.downloadPdfCurrent(); // 改为调用PDF下载
       }
     },
-    async exportToExcel(apiUrl, filters, filename) {
+
+    // ▼▼▼ 将 exportToExcel 修改为 exportToPdf ▼▼▼
+    async exportToPdf(apiUrl, filters, filename) {
+      console.log('[DataTable] exportToPdf called. API:', apiUrl, 'Filters:', JSON.parse(JSON.stringify(filters))); // 新增日志
+      this.loading = true;
       try {
-        this.loading = true;
-        const res = await axios.post(apiUrl, { filters }, { responseType: 'json' });
-        const rows = res.data?.rows || [];
-        if (!rows.length) return;
+        const response = await axios.post(apiUrl, 
+          { filters }, // filters 对象会根据 downloadPdfAll 或 downloadPdfCurrent 传递
+          { responseType: 'blob' } //  重要：告诉axios期望接收一个二进制大对象 (PDF)
+        );
 
-        const columnKeys = Object.keys(rows[0]);
-        const ExcelJS = await import('exceljs');
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('导出数据');
-
-        worksheet.columns = columnKeys.map(col => ({
-          header: col,
-          key: col,
-          width: 20
-        }));
-
-        rows.forEach(row => worksheet.addRow(row));
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-
-        this.saveBlob(blob, filename);
+        // 检查响应是否真的是 blob (PDF)
+        if (response.data instanceof Blob && response.data.type === 'application/pdf') {
+          this.saveBlob(response.data, filename);
+        } else {
+          // 如果后端返回的不是PDF，而是JSON错误信息（例如校验失败）
+          // 尝试将其作为文本读取并解析为JSON
+          console.error('[DataTable] Expected a PDF blob, but received:', response.data);
+          if (response.data instanceof Blob) { // 如果是Blob但类型不对
+              const errorText = await response.data.text();
+              try {
+                  const errorJson = JSON.parse(errorText);
+                  if (errorJson && errorJson.error) {
+                      alert(`导出失败: ${errorJson.error}`);
+                      return;
+                  }
+              } catch (e) {
+                  // 不是JSON格式的Blob
+              }
+          }
+          alert('导出失败：服务器未返回有效的PDF文件。');
+        }
       } catch (err) {
-        console.error('❌ 导出失败:', err);
+        console.error('❌ 导出PDF失败 (DataTable):', err.response || err);
+        let errorMessage = '导出数据失败，请稍后重试。';
+        if (err.response && err.response.data && err.response.data instanceof Blob) {
+              try {
+                  const errorText = await err.response.data.text();
+                  const errorJson = JSON.parse(errorText);
+                  if (errorJson && errorJson.error) {
+                      errorMessage = `导出失败: ${errorJson.error}`;
+                  }
+              } catch (e) { /* Blob 不是JSON */ }
+          } else if (err.response && err.response.data && err.response.data.error) {
+              errorMessage = `导出失败: ${err.response.data.error}`;
+          } else if (err.message) {
+              errorMessage = `导出失败: ${err.message}`;
+          }
+        alert(errorMessage);
       } finally {
         this.loading = false;
       }
     },
-    async downloadFull() {
-      const filename = `export_full_${Date.now()}.xlsx`;
-      await this.exportToExcel(`${this.apiPrefix}/export`, {}, filename);
+
+    async downloadPdfAll() { // 原 downloadFull
+      const filename = `非上市公司数据报告_全部_${Date.now()}.pdf`; // 修改文件名
+      // 假设非上市公司的导出接口也是 /export
+      await this.exportToPdf(`${this.apiPrefix}/export`, {}, filename); 
     },
-    async downloadCurrent() {
-      const filename = `export_filter_${Date.now()}.xlsx`;
-      await this.exportToExcel(`${this.apiPrefix}/export`, this.filters, filename);
+
+    async downloadPdfCurrent() { // 原 downloadCurrent
+      const filename = `非上市公司数据报告_筛选后_${Date.now()}.pdf`; // 修改文件名
+      // 假设非上市公司的导出接口也是 /export
+      await this.exportToPdf(`${this.apiPrefix}/export`, this.filters, filename); 
     },
-    saveBlob(data, filename) {
-      const url = window.URL.createObjectURL(data);
+    // ▲▲▲ 修改结束 ▲▲▲
+
+    saveBlob(data, filename) { // 这个方法保持不变，它可以保存任何Blob类型的文件
+      const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' })); // 确保指定MIME类型
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     }
   }
-};
+}
 </script>
 
 

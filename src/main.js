@@ -9,6 +9,26 @@ import 'element-ui/lib/theme-chalk/index.css'
 // ✅ 引入字体图标（你已有）
 import 'font-awesome/css/font-awesome.min.css';
 import axios from 'axios';
+import * as echarts from 'echarts';
+import { BarChart, LineChart } from 'echarts/charts';
+import {
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([
+  BarChart,
+  LineChart, // ✅ 必须加这个
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  CanvasRenderer
+]);
+
+Vue.prototype.$echarts = echarts;
+
 
 axios.defaults.timeout = 20000; // ⏰ 设置超时时间 60秒
 
