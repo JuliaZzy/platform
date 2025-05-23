@@ -169,7 +169,16 @@ export default defineComponent({
             axisLabel: {
               fontSize: 12,
               rotate: 0,
-              formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val)
+              rich: {
+                customStyle: {
+                  lineHeight: 20 // ✅ 设置你想要的行间距（单位是像素）
+                }
+              },
+              formatter: val => {
+                          // 每6个字符换行，最多3行
+                          const lines = val.match(/.{1,6}/g)|| [val]; // 每5字一行，最多3行
+                          return lines.map(line => `{customStyle|${line}}`).join('\n');
+                                }
             }
           },
           yAxis: {

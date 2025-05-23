@@ -75,7 +75,7 @@ export default defineComponent({
         // 模拟加载时间，真实项目中可替换为 await axios 逻辑
         this.barChartOption = {
           color: chartColors,
-          tooltip: {},
+          tooltip: {trigger: 'axis', axisPointer: { type: 'shadow' }},
           xAxis: {
             type: 'category',
             data: this.chartData.map(item => item.name),
@@ -93,9 +93,9 @@ export default defineComponent({
           },
           series: [{
             type: 'bar',
-            data: this.chartData.map(item => item.value)
+            data: this.chartData.map(item => item.value),
+            label: barLabelOption
           }],
-          label: barLabelOption
         };
         this.loading = false;
       }, 500);

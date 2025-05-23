@@ -73,9 +73,9 @@ export default defineComponent({
           },
           series: [{
             type: 'bar',
-            data: props.chartData.map(item => item.value)
+            data: props.chartData.map(item => item.value),
+            label: barLabelOption
           }],
-          label: barLabelOption
         };
         loading.value = false;
       }, 500); // 可换成真实请求时间

@@ -110,15 +110,6 @@ export default {
 </script>
 
 <style scoped>
-/* TransposedTable.vue */
-.table-section {
-  position: relative; /* 重要：为Spinner提供定位上下文 */
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  width: 100%; 
-}
 .section-title {
   font-size: 18px;
   font-weight: bold;
