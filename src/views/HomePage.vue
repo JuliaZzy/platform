@@ -102,7 +102,7 @@
           <ChartSpinner :visible="isSecondTableLoading" />
           <table>
             <tr><th colspan="2">非上市公司入表清单</th></tr>
-            <tr v-for="(company, index) in nonListedCompanies" :key="index">
+            <tr v-for="(company, index) in pagedNonListedCompanies" :key="index">
               <td v-text="company.company_name"></td>
             </tr>
             <tr v-if="secondTablePages > 1">
@@ -214,6 +214,11 @@ export default {
       const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
       return this.listedQ4.slice(start, start + this.quarterTableMaxRows);
     },
+    pagedNonListedCompanies() {
+      const list = this.nonListedCompanies || [];
+      const start = (this.secondTablePage - 1) * 10; // 假设每页还是显示10条
+      return list.slice(start, start + 10);
+    },
     pagedFinancingCompanies() {
       const list = this.financingCompanies || [];
       const start = (this.thirdTablePage - 1) * 10;
@@ -273,21 +278,6 @@ export default {
     async changePage(table, page) {
       if (page < 1 || page > this[`${table}Pages`]) return;
       this[`${table}Page`] = page;
-
-      try {
-        if (table === 'secondTable') {
-          this.isSecondTableLoading = true;
-          const res = await axios.get(`/api/company/non-listed-companies?page=${page}`);
-          this.nonListedCompanies = res.data.data;
-        } else if (table === 'thirdTable') {
-          this.thirdTablePage = page;
-          // 此表内容是一次性加载，前端分页，无需额外请求
-        }
-      } catch (err) {
-        console.error('分页加载失败:', err);
-      } finally {
-        if (table === 'secondTable') this.isSecondTableLoading = false;
-      }
     },
 
     // 登录弹窗控制

@@ -86,8 +86,7 @@ router.get('/homepage-summary', async (req, res) => {
         END AS company_name
       FROM ${NON_LISTED_TABLE} 
       WHERE hide_flag NOT LIKE '%是%' 
-      ORDER BY finance_value DESC 
-      LIMIT 10 OFFSET 0`
+      ORDER BY finance_value DESC `
     );
 
     res.json({
