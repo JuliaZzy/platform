@@ -95,6 +95,19 @@ export default {
 </script>
 
 <style scoped>
+.table-section {
+  /* 1. 去除产生视觉背景和边框效果的样式 */
+  background: transparent; /* 或者完全不设置 background */
+  padding: 0;              /* 移除内边距，让父容器的padding生效 */
+  border-radius: 0;        /* 移除圆角 */
+  box-shadow: none;          /* 移除阴影 */
+
+  /* 2. 保留或添加必要的结构和布局样式 */
+  width: 100%;             /* 确保它撑满父容器（例如 .chart-full） */
+  position: relative;      /* 非常重要：为内部的 ChartSpinner 提供定位上下文 */
+                           /* ChartSpinner 会根据这个相对定位的父元素来居中 */
+  box-sizing: border-box;  /* 好习惯，确保 padding 和 border 不会增加元素的总宽高 */
+}
 .section-title {
   font-size: 18px;
   font-weight: bold;
