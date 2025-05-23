@@ -1,7 +1,7 @@
 <template>
   <div class="table-section"> 
     <ChartSpinner :visible="loading" /> 
-    <h3 class="section-title">入表趋势数据详情</h3>
+    <h3 class="section-title">2024年数据资源入表详情</h3>
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
@@ -41,7 +41,13 @@ export default {
   methods: {
     format(val) {
       const num = parseFloat(val);
-      return isNaN(num) ? '—' : num.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      if (isNaN(num)) {
+        return '-';
+      }
+      return num.toLocaleString(undefined, { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 // 确保最多也只显示两位小数
+      });
     }
   }
 };

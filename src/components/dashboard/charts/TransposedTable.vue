@@ -96,7 +96,14 @@ export default {
   methods: {
     formatNumber(val) {
       const num = parseFloat(val);
-      return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        if (isNaN(num)) {
+        return '-'; // 对于非数字或无法解析的值，显示破折号
+      }
+      // 格式化为整数，并使用本地化的千分位分隔符
+      return num.toLocaleString(undefined, { 
+        minimumFractionDigits: 0, // 最少0位小数
+        maximumFractionDigits: 0
+      });
     }
   }
 };

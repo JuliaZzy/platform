@@ -68,7 +68,7 @@ export default defineComponent({
           show: true,         // 是否显示标签
           position: 'top',    // 标签的位置，'top'表示在柱子顶部
           formatter: '{c}',   // 标签内容格式器：{c}会自动显示该数据点的值
-          fontSize: 10,       // 标签字体大小
+          fontSize: 12,       // 标签字体大小
           color: '#005f73',   // 标签字体颜色，深灰色
           // distance: 5,     // 可选：标签与图形的距离
         };

@@ -2,12 +2,16 @@
   <div class="chart-wrapper" style="position: relative;">
     <div class="chart-title">{{ chartTitle }}</div>
     <ChartSpinner :visible="loading" />
-    <v-chart :option="chartOption" style="width: 100%; height: 440px;" />
+    <v-chart 
+      ref="vueChartRef"
+      :option="chartOption" 
+      style="width: 100%; height: 440px;" 
+    />
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, nextTick } from 'vue';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
@@ -39,6 +43,7 @@ export default defineComponent({
   setup(props) {
     const chartOption = ref({});
     const loading = ref(false);
+    const vueChartRef = ref(null);
 
     const updateChart = () => {
       // 在 GroupedBarChart.vue 的 setup -> updateChart 方法开头
@@ -75,7 +80,18 @@ export default defineComponent({
         const barLabelOption = {
           show: true,         // 是否显示标签
           position: 'top',    // 标签的位置，'top'表示在柱子顶部
-          formatter: '{c}',   // 标签内容格式器：{c}会自动显示该数据点的值
+          formatter: function (params) {
+            if (params.value == null || isNaN(parseFloat(params.value))) { // 增加 parseFloat 检查
+              return ''; // 如果值是 null, undefined 或无法转为数字，显示空
+            }
+            const value = parseFloat(params.value);
+            // 检查 props.chartTitle 是否存在并且包含“金额”
+            if (props.chartTitle && props.chartTitle.includes("亿")) {
+              return value.toFixed(2); // 金额类，保留两位小数
+            } else {
+              return value.toFixed(0); // 其他（如数量类），取整数
+            }
+          },
           fontSize: 10,       // 标签字体大小
           color: '#005f73',   // 标签字体颜色，深灰色
           // distance: 5,     // 可选：标签与图形的距离
@@ -104,7 +120,41 @@ export default defineComponent({
           color: colorPaletteForChart, 
           tooltip: {
             trigger: 'axis',
-            axisPointer: { type: 'shadow' }
+            axisPointer: { type: 'shadow' },
+            formatter: function (params) {
+              let tooltipString = '';
+              if (params && params.length > 0) {
+                // 获取X轴类目名
+                tooltipString = params[0].axisValueLabel || params[0].name; 
+                tooltipString += '<br/>';
+              }
+              
+              // 判断当前图表是否是“金额”相关图表
+              // 我们继续使用 props.chartTitle.includes('金额') 作为判断依据
+              // 如果你的“金额”图表标题中更统一地使用“亿”作为标识，也可以用 props.chartTitle.includes('亿')
+              const isAmountChart = props.chartTitle && props.chartTitle.includes('金额'); 
+
+              params.forEach(param => {
+                let valueToShow = param.value; // ECharts 提供的原始值
+                
+                if (valueToShow != null && !isNaN(parseFloat(valueToShow))) {
+                  const num = parseFloat(valueToShow);
+                  if (isAmountChart) {
+                    valueToShow = num.toFixed(2); // 金额类，保留两位小数
+                  } else {
+                    valueToShow = num.toFixed(0); // 其他（如数量类），取整数
+                  }
+                } else if (valueToShow == null) { // 处理 null 或 undefined
+                  valueToShow = '—'; 
+                } else {
+                  valueToShow = String(valueToShow); // 如果不是有效数字且非null，原样显示
+                }
+                
+                // 构建每条系列信息的字符串，不加粗，默认对齐
+                tooltipString += param.marker + ' ' + param.seriesName + ': ' + valueToShow + '<br/>';
+              });
+              return tooltipString;
+            }
           },
           legend: { top: 10 },
           grid: {
@@ -133,6 +183,15 @@ export default defineComponent({
         };
 
         loading.value = false;
+        nextTick(() => {
+          if (vueChartRef.value && vueChartRef.value.chart) {
+            // console.log(`[${props.chartTitle}] Resizing GroupedBarChart after update`); // 调试日志
+            vueChartRef.value.chart.resize();
+          } else if (vueChartRef.value && typeof vueChartRef.value.resize === 'function') {
+            // console.log(`[${props.chartTitle}] Resizing GroupedBarChart component after update`); // 调试日志
+            vueChartRef.value.resize();
+          }
+        });
       }, 300);
     };
 
@@ -140,7 +199,8 @@ export default defineComponent({
 
     return {
       chartOption,
-      loading
+      loading,
+      vueChartRef
     };
   }
 });

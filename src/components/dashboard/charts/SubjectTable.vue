@@ -7,8 +7,8 @@
         <thead>
           <tr>
             <th>报告时间</th>
-            <th>{{ title }}-数据资源入表数量</th>
-            <th>{{ title }}-数据资源入表总额（万元）</th>
+            <th>{{ title }}--数据资源入表数量</th>
+            <th>{{ title }}--数据资源入表总额（万元）</th>
           </tr>
         </thead>
         <tbody>
@@ -79,7 +79,13 @@ export default {
   methods: {
     formatNumber(val) {
       const num = parseFloat(val);
-      return isNaN(num) ? '—' : num.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      if (isNaN(num)) {
+        return '-';
+      }
+      return num.toLocaleString(undefined, { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 // 确保最多也只显示两位小数
+      });
     },
     formatValue(val) {
       return (val === null || val === undefined || isNaN(val)) ? '—' : val;

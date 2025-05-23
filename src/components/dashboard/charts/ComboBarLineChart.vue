@@ -58,8 +58,8 @@ export default defineComponent({
         const barLabelOption = {
           show: true,         // 是否显示标签
           position: 'top',    // 标签的位置，'top'表示在柱子顶部
-          formatter: '{c}',   // 标签内容格式器：{c}会自动显示该数据点的值
-          fontSize: 10,       // 标签字体大小
+          formatter: '{c}',
+          fontSize: 12,       // 标签字体大小
           color: '#005f73',   // 标签字体颜色，深灰色
           // distance: 5,     // 可选：标签与图形的距离
         };
@@ -76,8 +76,9 @@ export default defineComponent({
         }));
 
         const customLineColor = '#ee9b00';
+        const actualLineSeriesName = props.lineSeries?.name || '折线';
         const line = {
-          name: props.lineSeries?.name || '折线',
+          name: actualLineSeriesName, // 使用这个名称
           type: 'line',
           data: props.lineSeries?.data || [],
           yAxisIndex: 1,
@@ -95,7 +96,48 @@ export default defineComponent({
           color: chartColors,
           tooltip: {
             trigger: 'axis',
-            axisPointer: { type: 'shadow' }
+            axisPointer: { type: 'shadow' },
+            formatter: function (params) {
+              let tooltipContent = '';
+              if (params && params.length > 0) {
+                // params[0].name 是X轴的类目名 (例如 'Q1')
+                // params[0].axisValueLabel 也是X轴的类目名，更推荐使用这个
+                tooltipContent += (params[0].axisValueLabel || params[0].name) + '<br />'; 
+                
+                params.forEach(param => {
+                  // param 是每个系列在该点的数据对象
+                  // param.seriesName 是系列名 (例如 "数据资源入表数量", "数据资源入表总额")
+                  // param.value 是数据值
+                  // param.marker 是图例颜色块的HTML标记
+
+                  let valueToShow = param.value; // 默认直接显示值
+
+                  // 判断是否是金额系列 (折线图系列)
+                  if (param.seriesName === actualLineSeriesName) {
+                    const num = parseFloat(param.value);
+                    if (!isNaN(num)) {
+                      valueToShow = num.toFixed(2); // 金额保留两位小数
+                    } else if (param.value == null) {
+                        valueToShow = '-'; // 处理 null 或 undefined
+                    } else {
+                        valueToShow = String(param.value); // 如果不是数字，原样显示
+                    }
+                  } else {
+                    // 其他系列（例如柱状图的数量），可以格式化为整数
+                    const num = parseFloat(param.value);
+                    if (!isNaN(num)) {
+                      valueToShow = num.toFixed(0); // 数量取整
+                    } else if (param.value == null) {
+                        valueToShow = '—';
+                    } else {
+                        valueToShow = String(param.value);
+                    }
+                  }
+                  tooltipContent += param.marker + ' ' + param.seriesName + ': <b>' + valueToShow + '</b><br />';
+                });
+              }
+              return tooltipContent;
+            }
           },
           legend: { top: 10 },
           grid: {
@@ -118,7 +160,7 @@ export default defineComponent({
               type: 'value',
               name: props.yAxisBarName,
               min: 0,                  // 设置最小值为 0
-              max: 100,                // 设置最大值为 100
+              max: 120,                // 设置最大值为 100
               interval: 20,            // 设置刻度间隔为 20
               nameLocation: 'middle',
               nameGap: 45,
@@ -127,6 +169,9 @@ export default defineComponent({
             {
               type: 'value',
               name: props.yAxisLineName,
+              min: 0,                  // 设置最小值为 0
+              max: 24,                // 设置最大值为 100
+              interval: 4,            // 设置刻度间隔为 20
               nameLocation: 'middle',
               nameGap: 45,
               nameTextStyle: { fontSize: 14 }

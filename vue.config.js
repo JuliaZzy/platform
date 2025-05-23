@@ -6,8 +6,8 @@ module.exports = {
   devServer: {
     proxy: {
       '/api': {
-        //target: 'http://localhost:3000',  // 设置为后端服务器地址
-        target: 'https://platform-production-717b.up.railway.app',
+        target: 'http://localhost:3000',  // 设置为后端服务器地址
+        //target: 'https://platform-production-717b.up.railway.app',
         changeOrigin: true,
         secure: false,
       },
