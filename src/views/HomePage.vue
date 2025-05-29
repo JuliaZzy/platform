@@ -1,9 +1,7 @@
 <template>
   <div class="page-container">
-    <!-- ✅ 首次加载使用全屏 LoadingSpinner -->
     <LoadingSpinner :visible="isLoading" />
 
-    <!-- 页面头部 -->
     <div class="header">
       <img src="../assets/header_image.jpg" alt="Header Image" />
       <div class="header-content">
@@ -14,12 +12,10 @@
       </div>
     </div>
 
-    <!-- 管理员登录按钮 -->
     <div class="admin">
       <button class="admin-login-button" @click="openLoginModal">管理员登录</button>
     </div>
 
-    <!-- 登录弹窗 -->
     <div v-if="isLoginModalVisible" class="login-modal">
       <div class="modal-content">
         <LoginForm @login-success="handleLoginSuccess" />
@@ -27,67 +23,84 @@
       </div>
     </div>
 
-    
-
-    <!-- 状态展示区 -->
-    <div class="status-row">
-      <div
-        class="status-box"
-        v-for="(label, index) in labels"
-        :key="index"
-        :class="{ clickable: label === '非上市公司入表' || label === '上市公司入表' }"
-        @click="handleStatusBoxClick(label)"
-      >
-        <h3>截至{{ currentMonth }}</h3>
-        <p class="status-title">{{ label }}</p>
-        <p class="status-number">
-          {{
-            label === '上市公司入表'
-              ? listedCompanyCount
-              : label === '非上市公司入表'
-              ? nonListedCompanyCount
-              : label === '凭数据资产融资'
-              ? financeCompanyCount
-              : '暂无数据'
-          }} 家
-        </p>
-        <div class="status-note" v-if="label === '非上市公司入表' || label === '上市公司入表'">点击查看详情</div>
+    <div v-if="isFeedbackModalVisible" class="feedback-modal">
+      <div class="feedback-modal-content">
+        <h2>反馈意见 / 信息申报</h2>
+        <form @submit.prevent="submitFeedback" class="feedback-form">
+          <div class="form-group">
+            <label for="name">您的姓名：</label>
+            <input type="text" id="name" v-model="feedbackForm.name" required />
+          </div>
+          <div class="form-group">
+            <label for="contact">您的联系方式：</label>
+            <input type="text" id="contact" v-model="feedbackForm.contact" required />
+          </div>
+          <div class="form-group">
+            <label for="organization">您的单位：</label>
+            <input type="text" id="organization" v-model="feedbackForm.organization" />
+          </div>
+          <div class="form-group">
+            <label for="details">反馈/申报事项：</label>
+            <textarea id="details" v-model="feedbackForm.details" rows="6" required></textarea>
+          </div>
+          <div class="form-buttons">
+            <button type="submit" class="submit-button">提交</button>
+            <button type="button" class="close-button" @click="closeFeedbackModal">关闭</button>
+          </div>
+        </form>
       </div>
     </div>
 
-    <!-- 榜单标题 -->
+    <div class="status-row">
+      <div class="status-box clickable" @click="handleStatusBoxClick('上市公司入表')">
+        <h3>2024年度</h3>
+        <p class="status-title">上市公司入表</p>
+        <p class="status-number">
+          {{ listedCompanyCount }} 家
+        </p>
+        <div class="status-note">点击查看详情</div>
+      </div>
+
+      <div class="status-box clickable" @click="handleStatusBoxClick('非上市公司入表')">
+        <h3>{{ nonListedMonthDisplay }}</h3>
+        <p class="status-title">非上市公司入表</p>
+        <p class="status-number">
+          {{ nonListedCompanyCount }} 家
+        </p>
+        <div class="status-note">点击查看详情</div>
+      </div>
+
+      <div class="status-box clickable" @click="handleStatusBoxClick('数据相关融资')">
+        <h3>截至2025年03月</h3>
+        <p class="status-title">数据相关融资</p>
+        <p class="status-number">
+          {{ financeCompanyCount }} 项
+        </p>
+        <div class="status-note">点击查看详情</div>
+        </div>
+    </div>
+
     <div class="table-header-container">
       <div class="table-header">
         <i class="fas fa-list"></i> <span>榜单</span>
       </div>
     </div>
 
-    <!-- 表格区域 -->
     <div class="grid-container">
-      <!-- 表格 1：上市公司 -->
       <div class="grid-item">
         <div class="table-wrapper">
           <ChartSpinner :visible="isFirstTableLoading" />
           <table>
-            <tr><th colspan="4">上市公司入表清单</th></tr>
-            <tr>
-              <th>2024Q1</th>
-              <th>2024Q2</th>
-              <th>2024Q3</th>
-              <th>2024Q4</th>
+            <tr><th colspan="2">上市公司入表清单</th></tr>
+            <tr v-for="(company, index) in pagedListedCompanies" :key="index">
+              <td v-text="company.company_name"></td>
             </tr>
-            <tr v-for="index in quarterTableMaxRows" :key="index">
-              <td>{{ pagedQ1[index - 1] || '' }}</td>
-              <td>{{ pagedQ2[index - 1] || '' }}</td>
-              <td>{{ pagedQ3[index - 1] || '' }}</td>
-              <td>{{ pagedQ4[index - 1] || '' }}</td>
-            </tr>
-            <tr v-if="quarterTablePages > 1">
-              <td colspan="4">
+            <tr v-if="firstTablePages > 1">
+              <td colspan="2">
                 <div class="pagination">
-                  <button :disabled="quarterTablePage === 1" @click="quarterTablePage--">上一页</button>
-                  <span>{{ quarterTablePage }} / {{ quarterTablePages }}</span>
-                  <button :disabled="quarterTablePage === quarterTablePages" @click="quarterTablePage++">下一页</button>
+                  <button :disabled="firstTablePage === 1" @click="changePage('firstTable', firstTablePage - 1)">上一页</button>
+                  <span>{{ firstTablePage }} / {{ firstTablePages }}</span>
+                  <button :disabled="firstTablePage === firstTablePages" @click="changePage('firstTable', firstTablePage + 1)">下一页</button>
                 </div>
               </td>
             </tr>
@@ -95,8 +108,6 @@
         </div>
       </div>
 
-
-      <!-- 表格 2：非上市公司 -->
       <div class="grid-item">
         <div class="table-wrapper">
           <ChartSpinner :visible="isSecondTableLoading" />
@@ -118,15 +129,13 @@
         </div>
       </div>
 
-      <!-- 表格 3：融资企业清单 -->
       <div class="grid-item">
         <div class="table-wrapper">
-          <ChartSpinner :visible="false" />
+          <ChartSpinner :visible="isThirdTableLoading" />
           <table>
-            <tr><th colspan="2">数据资产融资企业清单</th></tr>
+            <tr><th colspan="2">数据相关融资企业清单</th></tr>
             <tr v-for="(company, index) in pagedFinancingCompanies" :key="index">
-              <td>{{ company }}</td>
-            </tr>
+              <td>{{ company.name }}</td> </tr>
             <tr v-if="thirdTablePages > 1">
               <td colspan="2">
                 <div class="pagination">
@@ -141,13 +150,13 @@
       </div>
     </div>
 
-    <!-- 页脚 -->
     <div class="footer">
       <div class="footer-overlay"></div>
       <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image" />
-      <div class="footer-content">
-        <a href="">联系我们</a>
-        <a href="">反馈意见/申报</a>
+      <div class="footer-content"> <div class="footer-links">
+          <p>联系我们：wpan@saif.sjtu.edu.cn</p>
+          <a href="#" @click.prevent="openFeedbackModal">反馈意见/申报</a>
+        </div>
       </div>
     </div>
   </div>
@@ -160,7 +169,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 
 export default {
-  name: 'App',
+  name: 'HomePage', // 建议使用多词名称
   components: {
     LoginForm,
     LoadingSpinner,
@@ -168,119 +177,107 @@ export default {
   },
   data() {
     return {
-      isLoading: true, // 首次进入页面时的全屏 loading
-      isFirstTableLoading: false, // 表格 1 翻页时的局部 loading
-      isSecondTableLoading: false, // 表格 2 翻页时的局部 loading
-      currentMonth: '', // 当前年月
-      labels: ['上市公司入表', '非上市公司入表', '凭数据资产融资'],
+      isLoading: true,
+      isFirstTableLoading: false, // 改为 false，让主 loading 控制
+      isSecondTableLoading: false,
+      isThirdTableLoading: false,
+      // currentMonth: '', // 移除，不再需要
+      latestNonListedMonth: '', // 新增：存储非上市公司最新月份
+      labels: ['上市公司入表', '非上市公司入表', '数据相关融资'], // 修改第三个标签
       listedCompanyCount: 0,
       nonListedCompanyCount: 0,
-      financeCompanyCount: 0, // ✅ 新增融资状态数量
+      financeCompanyCount: 0,
 
-      listedQ1: [],
-      listedQ2: [],
-      listedQ3: [],
-      listedQ4: [],
-
-      quarterTablePage: 1,
-      quarterTablePages: 1,
-      quarterTableMaxRows: 10,
+      listedCompanies: [],
+      firstTablePage: 1,
+      firstTablePages: 1,
 
       nonListedCompanies: [],
       secondTablePage: 1,
       secondTablePages: 1,
 
-      financingCompanies: [], // ✅ 确保一开始就是数组
+      financingCompanies: [],
       thirdTablePage: 1,
       thirdTablePages: 1,
 
-      isLoginModalVisible: false
+      isLoginModalVisible: false,
+      isFeedbackModalVisible: false, // 新增：控制反馈弹窗
+      feedbackForm: { // 新增：存储反馈表单数据
+        name: '',
+        contact: '',
+        organization: '',
+        details: ''
+      }
     };
   },
   computed: {
-    pagedQ1() {
-      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
-      return this.listedQ1.slice(start, start + this.quarterTableMaxRows);
-    },
-    pagedQ2() {
-      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
-      return this.listedQ2.slice(start, start + this.quarterTableMaxRows);
-    },
-    pagedQ3() {
-      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
-      return this.listedQ3.slice(start, start + this.quarterTableMaxRows);
-    },
-    pagedQ4() {
-      const start = (this.quarterTablePage - 1) * this.quarterTableMaxRows;
-      return this.listedQ4.slice(start, start + this.quarterTableMaxRows);
+    pagedListedCompanies() {
+      const list = this.listedCompanies || [];
+      const start = (this.firstTablePage - 1) * 10;
+      return list.slice(start, start + 10);
     },
     pagedNonListedCompanies() {
       const list = this.nonListedCompanies || [];
-      const start = (this.secondTablePage - 1) * 10; // 假设每页还是显示10条
+      const start = (this.secondTablePage - 1) * 10;
       return list.slice(start, start + 10);
     },
     pagedFinancingCompanies() {
       const list = this.financingCompanies || [];
       const start = (this.thirdTablePage - 1) * 10;
       return list.slice(start, start + 10);
+    },
+    nonListedMonthDisplay() {
+      // 如果后端还没有返回数据，显示一个默认值
+      if (!this.latestNonListedMonth) {
+        return '截至....年..月'; 
+      }
+      // 如果后端已经返回了 "xxxx年xx月"，直接加上 "截至"
+      return `截至${this.latestNonListedMonth}`; 
     }
   },
   mounted() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    this.currentMonth = `${year}年${month}月`;
+    // 移除 currentMonth 的设置
     this.loadAllData();
   },
   methods: {
-    // 首页初始加载
     async loadAllData() {
-      console.log('✅ financingCompanies', this.financingCompanies);
-      console.log('✅ financeCompanyCount', this.financeCompanyCount);
-      console.log('✅ pagedFinancingCompanies', this.pagedFinancingCompanies);
-
       this.isLoading = true;
+      // 可以在这里设置表格 loading 为 true
+      this.isFirstTableLoading = true;
+      this.isSecondTableLoading = true;
+      this.isThirdTableLoading = true;
       try {
         const res = await axios.get('/api/company/homepage-summary');
         const data = res.data;
         this.listedCompanyCount = data.listedCompanyCount;
+        this.listedCompanies = data.listedCompanies || [];
+        this.firstTablePages = Math.ceil(data.listedCompanyCount / 10);
+
         this.nonListedCompanyCount = data.nonListedCompanyCount;
-        this.financeCompanyCount = data.financeCompanyCount;
-        this.financingCompanies = data.financingCompanies;
-        this.thirdTablePages = Math.ceil(data.financeCompanyCount / 10);
-
-        // 拆分季度
-        const allListed = data.listedCompanies || [];
-        this.listedQ1 = allListed.filter(c => c['报告时间'] === 'Q1').map(c => c['公司']);
-        this.listedQ2 = allListed.filter(c => c['报告时间'] === 'Q2').map(c => c['公司']);
-        this.listedQ3 = allListed.filter(c => c['报告时间'] === 'Q3').map(c => c['公司']);
-        this.listedQ4 = allListed.filter(c => c['报告时间'] === 'Q4').map(c => c['公司']);
-
-        const maxLength = Math.max(
-          this.listedQ1.length,
-          this.listedQ2.length,
-          this.listedQ3.length,
-          this.listedQ4.length
-        );
-        this.quarterTablePages = Math.ceil(maxLength / this.quarterTableMaxRows);
-
-        // 非上市公司
-        this.nonListedCompanies = data.nonListedCompanies;
+        this.nonListedCompanies = data.nonListedCompanies || [];
         this.secondTablePages = Math.ceil(data.nonListedCompanyCount / 10);
+        this.latestNonListedMonth = data.latestNonListedMonth; // 接收后端传来的最新月份
+
+        this.financeCompanyCount = data.financeCompanyCount;
+        this.financingCompanies = data.financingCompanies || [];
+        this.thirdTablePages = Math.ceil(this.financingCompanies.length / 10); 
+
       } catch (err) {
         console.error('加载数据出错：', err);
+        // 可以添加用户友好的错误提示
       } finally {
         this.isLoading = false;
+        // 关闭表格 loading
+        this.isFirstTableLoading = false;
+        this.isSecondTableLoading = false;
+        this.isThirdTableLoading = false;
       }
     },
-
-    // 分页逻辑
-    async changePage(table, page) {
+    changePage(table, page) {
       if (page < 1 || page > this[`${table}Pages`]) return;
       this[`${table}Page`] = page;
+      // 注意：这里是前端分页，如果数据量很大，未来可能需要改为后端分页
     },
-
-    // 登录弹窗控制
     openLoginModal() {
       this.isLoginModalVisible = true;
     },
@@ -289,27 +286,53 @@ export default {
     },
     handleLoginSuccess() {
       this.closeLoginModal();
-      // 原来的: this.$router.push('/admin-page');
-      // 修改后:
-      const routeData = this.$router.resolve({ name: 'AdminPage' }); // 或者 path: '/admin-page'
+      const routeData = this.$router.resolve({ name: 'AdminPage' });
       window.open(routeData.href, '_blank');
     },
-
-    // 点击跳转控制
     handleStatusBoxClick(label) {
       let routeData;
       if (label === '非上市公司入表') {
-        // 原来的: this.$router.push('/dashboard');
-        // 修改后:
-        routeData = this.$router.resolve({ name: 'NLSDashboardPage' }); // 对应路由配置中的 name
+        routeData = this.$router.resolve({ name: 'NLSDashboardPage' });
         window.open(routeData.href, '_blank');
       } else if (label === '上市公司入表') {
-        // 原来的: this.$router.push('/lsdashboard');
-        // 修改后:
-        routeData = this.$router.resolve({ name: 'LSDashboardPage' }); // 对应路由配置中的 name
+        routeData = this.$router.resolve({ name: 'LSDashboardPage' });
+        window.open(routeData.href, '_blank');
+      } else if (label === '数据相关融资') { 
+        // ⚠️ 请确保 'FinanceDashboardPage' 是您在路由中定义的正确名称
+        routeData = this.$router.resolve({ name: 'FinanceDashboardPage' });
         window.open(routeData.href, '_blank');
       }
-      // 对于 "凭数据资产融资" 这个label，你目前没有设置跳转，所以它保持不变
+    },
+    // --- 新增方法 ---
+    openFeedbackModal() {
+      this.isFeedbackModalVisible = true;
+    },
+    closeFeedbackModal() {
+      this.isFeedbackModalVisible = false;
+      // 可以选择性地清空表单
+      this.feedbackForm = { name: '', contact: '', organization: '', details: '' };
+    },
+    async submitFeedback() {
+      console.log('提交反馈:', this.feedbackForm);
+      
+      // 简单的前端验证 (可选，但推荐)
+      if (!this.feedbackForm.name || !this.feedbackForm.contact || !this.feedbackForm.details) {
+          alert('请填写所有必填项（姓名、联系方式、反馈事项）。');
+          return;
+      }
+
+      try {
+        // 调用后端 API 发送反馈
+        await axios.post('/api/feedback', this.feedbackForm);
+        // 根据后端返回结果提示用户
+        alert('反馈提交成功！感谢您的参与。'); 
+        this.closeFeedbackModal(); // 提交成功后关闭弹窗
+      } catch (error) {
+        console.error('提交反馈失败:', error);
+        // 显示更具体的错误信息 (如果后端返回了)
+        const errorMessage = error.response?.data?.error || '反馈提交失败，请稍后再试或联系管理员。';
+        alert(errorMessage); 
+      }
     }
   }
 };
@@ -583,6 +606,10 @@ export default {
     font-size: 16px;
   }
 
+  .grid-container .grid-item:first-child table td {
+    text-align: center;
+  }
+
   th {
     color: #003049;
     font-weight: bold;
@@ -708,6 +735,130 @@ export default {
     position: relative;
     min-height: 180px;
   }
+
+  .footer-content {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end; /* 整体靠右 */
+  align-items: center;
+  padding-right: 50px;
+}
+
+.footer-links {
+  text-align: left; /* 内部左对齐 */
+}
+
+.footer-links p {
+  margin: 5px 0; /* 上下间距 */
+  color: white;
+  font-size: 16px; /* 调整字体大小 */
+}
+
+.footer-links a {
+  color: white;
+  font-size: 16px; /* 调整字体大小 */
+  text-decoration: none;
+  transition: border-bottom 0.2s;
+  border-bottom: 1px solid transparent; /* 默认无下划线 */
+  display: inline-block; /* 允许设置 margin */
+  margin: 5px 0;
+  cursor: pointer; /* 显示可点击手势 */
+}
+
+.footer-links a:hover {
+  border-bottom: 1px solid white; /* 悬停时显示下划线 */
+}
+
+/* --- 反馈弹窗样式 (基本样式，你可以根据需要调整) --- */
+.feedback-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* 比登录弹窗更高 */
+}
+
+.feedback-modal-content {
+  background-color: white;
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 600px;
+  max-width: 90%;
+  box-sizing: border-box;
+}
+
+.feedback-modal-content h2 {
+    text-align: center;
+    color: #003049;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+.feedback-form .form-group {
+  margin-bottom: 20px;
+}
+
+.feedback-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: bold;
+}
+
+.feedback-form input[type="text"],
+.feedback-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box; /* 确保 padding 不会增加宽度 */
+}
+
+.feedback-form textarea {
+  resize: vertical; /* 允许垂直调整大小 */
+}
+
+.feedback-form .form-buttons {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end; /* 按钮靠右 */
+  gap: 15px; /* 按钮间距 */
+}
+
+.feedback-form button {
+  padding: 10px 25px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.feedback-form .submit-button {
+  background-color: #003049;
+  color: white;
+}
+.feedback-form .submit-button:hover {
+  background-color: #005f73;
+}
+
+.feedback-form .close-button {
+  background-color: #ccc;
+  color: #333;
+}
+.feedback-form .close-button:hover {
+  background-color: #b3b3b3;
+}
+
   .chart-spinner-container {
     position: absolute;
     top: 50%;

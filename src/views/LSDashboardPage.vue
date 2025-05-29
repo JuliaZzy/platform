@@ -7,87 +7,169 @@
       <p class="dashboard-subtitle">Overview of Listed Company Data Assets</p>
     </div>
     
+    <div class="dashboard-container" v-show="!isLoading">
+      <LChartRow :filters="chartRowActiveFilters" /> 
+    </div>
+
     <transition name="slide-fade">
-    <LFilterSection
-      v-if="!isLoading && initialOptionsLoaded" 
-      :filters="currentFilters"    
-      :options="filterDropdownOptions" 
-      :api-prefix="'/api/lasset'"   
-      @filter-change="handleFilterApply" 
-      ref="lFilterSectionRef"
-    />
+      <LFilterSection
+        v-if="!isLoading && initialOptionsLoaded" 
+        :filters="currentFilters"   
+        :options="filterDropdownOptions" 
+        :api-prefix="'/api/lasset'"   
+        @filter-change="handleFilterApplyForTable" ref="lFilterSectionRef"
+      />
     </transition>
 
-    <div class="dashboard-container" v-show="!isLoading">
-      <LChartRow :filters="activeFilters" /> 
+    <div class="data-table-container" v-show="!isLoading && initialOptionsLoaded" style="margin: 20px 30px;">
+      <LSDataTable
+        ref="lsDataTableRef" :filters="lsTableActiveFilters" :tableData="lsTableData"
+        :totalRows="lsTableTotalRows"
+        :pageSize="lsTablePageSize"
+        :apiPrefix="'/api/lasset'" @page-change="handleLSPageChange"
+      />
     </div>
+
   </div>
 </template>
 
 <script>
-import LFilterSection from '@/components/dashboard/filters/LFilterSection.vue'; 
 import LChartRow from '@/components/dashboard/LChartRow.vue';
+import LFilterSection from '@/components/dashboard/filters/LFilterSection.vue'; 
+import LSDataTable from '@/components/dashboard/LDataTable.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import axios from 'axios';
 
 export default {
   name: 'LSDashboardPage',
   components: {
-    LFilterSection,
     LChartRow,
+    LSDataTable,
+    LFilterSection,
     LoadingSpinner
   },
   data() {
     return {
       isLoading: true,
-      initialOptionsLoaded: false, // 新增状态，用于控制 LFilterSection 的渲染
+      initialOptionsLoaded: false,
       currentFilters: { 
-        quarter: '',
+        quarter: 'Q4',
         province_area: '',
         company: '',
         dataasset_content: '',
       },
-      activeFilters: {}, 
+      chartRowActiveFilters: {},
+      lsTableActiveFilters: {quarter: 'Q4', }, 
+
       filterDropdownOptions: { 
-        quarter: [], 
+        quarter: ['Q1', 'Q2', 'Q3', 'Q4'], 
         province_area: [] 
-      }
+      },
+
+      // 新表格 LSDataTable 的数据和分页状态
+      lsTableData: [],
+      lsTableTotalRows: 0,
+      lsTableCurrentPage: 1,
+      lsTablePageSize: 10, // 您可以根据需要调整
+      isLsTableLoading: false // 新表格的加载状态
     };
   },
   methods: {
-    handleFilterApply(confirmedFilters) {
-      // console.log('LSDashboardPage: Filters confirmed and applied', confirmedFilters);
-      this.activeFilters = { ...confirmedFilters }; 
-      this.currentFilters = { ...confirmedFilters }; // 保持筛选框状态与激活状态一致
+    handleFilterApplyForTable(confirmedFilters) {
+      this.currentFilters = { ...confirmedFilters };
+
+      // 如果清除筛选后 quarter 为空，则恢复默认 Q4
+      if (confirmedFilters.quarter === '') {
+        this.lsTableActiveFilters = { ...confirmedFilters, quarter: 'Q4' };
+        this.currentFilters.quarter = 'Q4'; // 同时更新筛选框显示为 Q4
+      } else {
+        this.lsTableActiveFilters = { ...confirmedFilters };
+      }
+
+      this.lsTableCurrentPage = 1;
+      this.fetchLSDataTableData(this.lsTableCurrentPage);
     },
+
+    // 新增：处理 LSDataTable 的翻页事件
+    handleLSPageChange(newPage) {
+      this.lsTableCurrentPage = newPage;
+      this.fetchLSDataTableData(newPage);
+    },
+
+    // 新增：获取 LSDataTable 数据的函数
+    async fetchLSDataTableData(page = 1) {
+      if (this.$refs.lsDataTableRef && typeof this.$refs.lsDataTableRef.showLoading === 'function') {
+          this.$refs.lsDataTableRef.showLoading();
+      } else {
+          this.isLsTableLoading = true;
+      }
+      
+      try {
+        const params = {
+          filters: this.lsTableActiveFilters,
+          page: page,
+          pageSize: this.lsTablePageSize
+        };
+
+        console.log('[LSDashboardPage] Requesting /api/lasset/summary with params:', JSON.stringify(params)); // 添加日志
+        const response = await axios.post('/api/lasset/summary', params); 
+        console.log('[LSDashboardPage] Received response from /api/lasset/summary:', response.data); // 添加日志
+        
+        // ▼▼▼ 修正数据提取的路径 ▼▼▼
+        if (response.data && response.data.table) {
+          this.lsTableData = response.data.table.rows || [];
+          this.lsTableTotalRows = response.data.table.total || 0;
+          console.log('[LSDashboardPage] Updated lsTableData count:', this.lsTableData.length);
+          console.log('[LSDashboardPage] Updated lsTableTotalRows:', this.lsTableTotalRows);
+        } else {
+          console.error('[LSDashboardPage] Error: Response data or response.data.table is missing!', response.data);
+          this.lsTableData = [];
+          this.lsTableTotalRows = 0;
+        }
+        // ▲▲▲ 修正数据提取的路径 ▲▲▲
+
+      } catch (error) {
+        console.error("获取 LSDataTable 数据失败:", error.response || error.message || error); // 打印更详细的错误
+        this.lsTableData = [];
+        this.lsTableTotalRows = 0;
+      } finally {
+        if (this.$refs.lsDataTableRef && typeof this.$refs.lsDataTableRef.stopLoading === 'function') {
+          this.$refs.lsDataTableRef.stopLoading();
+        } else {
+          this.isLsTableLoading = false;
+        }
+      }
+    },
+
     async fetchInitialData() {
       this.isLoading = true;
       try {
-        // 从后端获取筛选下拉框的选项数据
-        // 假设上市公司筛选选项的API是 '/api/lasset/summary' (基于你提供的后端文件名和结构)
         const response = await axios.post('/api/lasset/summary', { 
-            filters: {}, // 初始获取选项时可能不需要筛选条件
-            page: 1,     // summary接口可能也用于其他数据，带上默认分页参数
-            pageSize: 1 
+          filters: {}, 
+          page: 1,    
+          pageSize: 1 
         }); 
         
         if (response.data && response.data.options) {
-          this.filterDropdownOptions.quarter = response.data.options.quarter || [];
+          this.filterDropdownOptions.quarter = response.data.options.quarter || ['Q1', 'Q2', 'Q3', 'Q4'];
           this.filterDropdownOptions.province_area = response.data.options.province_area || [];
-          this.initialOptionsLoaded = true; // 标记选项已加载
+          this.initialOptionsLoaded = true;
         } else {
-          console.error('Failed to load filter options: No options data in response');
-          this.filterDropdownOptions = { quarter: [], province_area: [] }; // 保证是数组
+          this.filterDropdownOptions.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
 
-        // 初始化 activeFilters 以便 LChartRow 首次加载数据
-        // 可以在这里从路由参数或其他地方读取初始筛选条件并设置 currentFilters
-        this.activeFilters = { ...this.currentFilters }; 
+        // 1. 初始化图表的筛选条件 (例如，空对象表示不筛选，图表将加载全量数据)
+        this.chartRowActiveFilters = {}; 
+        // LChartRow 会在其 mounted 或 watch:filters 中根据这个初始 filters 加载数据
+
+        // 2. 初始化并加载新表格的初始数据 (使用当前的 currentFilters，初始为空)
+        this.lsTableActiveFilters = { ...this.currentFilters }; 
+        await this.fetchLSDataTableData(1); // 加载新表格的第一页数据
 
       } catch (error) {
         console.error('Error fetching initial data for LSDashboardPage:', error);
-        this.filterDropdownOptions = { quarter: [], province_area: [] }; // 出错时保证是数组
-        this.initialOptionsLoaded = true; // 即使出错也允许页面继续，避免筛选区不显示
+        this.filterDropdownOptions = { quarter: [], province_area: [] };
+        this.initialOptionsLoaded = true; 
       } finally {
         this.isLoading = false;
       }
@@ -149,11 +231,8 @@ export default {
   .slide-fade-leave-from {
     opacity: 1;
     transform: translateY(0);
-    /* LFilterSection 自身有 margin: 0 30px 30px 30px; 和 padding: 20px 30px; */
-    /* 我们需要一个足够大的 max-height 来容纳它 */
-    max-height: 500px; /* ！！！重要：这个值需要大于 LFilterSection 的实际最大高度 */
-                        /* 你可以根据 LFilterSection 的内容估算一个值，例如它的3行内容+padding+margin */
-    overflow: hidden; /* 动画结束前保持 hidden，动画结束后Vue会移除这些class，恢复正常overflow */
+    max-height: 500px; 
+    overflow: hidden; 
   }
 
 </style>

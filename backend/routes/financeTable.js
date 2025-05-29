@@ -4,7 +4,7 @@ const db = require('../db/db');
 
 // ✅ 增信银行贷款逻辑表：分页数据接口
 router.get('/bank-detail', async (req, res) => {
-  console.log('📥 收到 /api/finance/bank-detail 请求');
+  console.log('📥 收到 /api/financeupload/bank-detail 请求');
   const page = parseInt(req.query.page, 10) || 1;
   const pageSize = parseInt(req.query.pageSize, 10) || 1000;
   const offset = (page - 1) * pageSize;
@@ -22,19 +22,29 @@ router.get('/bank-detail', async (req, res) => {
       dataasset_content, 
       finance_value,
       finance_type,
-      finance_orgs 
+      finance_orgs,
+      status
     FROM dataasset_non_listed_companies
     WHERE finance_value > 0 
       AND finance_type NOT ILIKE '%作价入股%'
       AND finance_type NOT ILIKE '%交易收入%' 
       AND hide_flag NOT LIKE '%是%'
+      AND "status" IS DISTINCT FROM 'delete'
     LIMIT $1 OFFSET $2
   `;
 
   try {
     const result = await db.query(query, [pageSize, offset]);
     console.timeEnd(label);
-    res.json(result.rows);
+
+    // ✨ 在这里应用格式化 ✨
+    const formattedRows = result.rows.map(row => ({
+      ...row, // 保留所有其他字段
+      finance_value: formatNumberWithCommas(row.finance_value) // 格式化 'finance_value'
+    }));
+
+    res.json(formattedRows); // 发送格式化后的数据
+    
   } catch (err) {
     console.error('❌ 增信银行贷款数据查询失败：', err);
     res.status(500).json({ error: '增信银行贷款数据查询失败' });
@@ -65,6 +75,7 @@ router.post('/sync-bank-table', async (req, res) => {
       AND finance_type NOT ILIKE '%作价入股%'
       AND finance_type NOT ILIKE '%交易收入%' 
       AND hide_flag NOT LIKE '%是%'
+      AND "status" IS DISTINCT FROM 'delete'
   `;
 
   try {

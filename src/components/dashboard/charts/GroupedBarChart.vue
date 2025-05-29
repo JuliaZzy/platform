@@ -167,18 +167,41 @@ export default defineComponent({
             type: 'category',
             data: categories,
             axisLabel: {
-              fontSize: 12,
+              fontSize: 11,
               rotate: 0,
+              interval: 0,
               rich: {
                 customStyle: {
                   lineHeight: 20 // ✅ 设置你想要的行间距（单位是像素）
                 }
               },
-              formatter: val => {
-                          // 每6个字符换行，最多3行
-                          const lines = val.match(/.{1,6}/g)|| [val]; // 每5字一行，最多3行
-                          return lines.map(line => `{customStyle|${line}}`).join('\n');
-                                }
+              formatter: (value) => { // value 就是原始的类别名，如 '个人', '中央'等
+                const chartTitle = props.chartTitle; // 获取当前图表的标题
+
+                if (chartTitle === 'A股数据资源入表公司分实控人分布情况') {
+                  // 这是“实控人”图表，应用新的标签
+                  switch (value) {
+                    case '个人':
+                      return '{customStyle|个人}'; // 如果只有一行，也用 rich text 保证样式一致性
+                    case '中央':
+                      // 使用 \n 进行换行，ECharts rich text 会处理
+                      return '{customStyle|中央}\n{customStyle|（国资委、中央国家机关、中央国有企业）}';
+                    case '地方':
+                      return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、地方国有企业）}';
+                    case '其他':
+                      return '{customStyle|其他}\n{customStyle|（大学、个人境外、境外）}';
+                    default:
+                      return `{customStyle|${value}}`; // 对于未匹配到的，也应用样式
+                  }
+                } else if (chartTitle === 'A股数据资源入表公司分行业分布情况') {
+                  // 您已有的针对“行业分布”图表的换行逻辑
+                  const lines = value.match(/.{1,6}/g) || [value];
+                  return lines.map(line => `{customStyle|${line}}`).join('\n');
+                } else {
+                  // 其他图表，直接返回原始标签值 (或者也应用 customStyle)
+                  return value; // 或者 return `{customStyle|${value}}`;
+                }
+              }
             }
           },
           yAxis: {

@@ -1,13 +1,17 @@
 <template>
-  <div class="chart-spinner-container">
-    <div
-      v-for="(position, index) in watermarkPositions"
-      :key="'watermark-' + index"
-      class="chart-watermark"
-      :style="{ top: position.top, left: position.left }"
-    >
-      {{ watermarkText }}
-    </div>
+  <div class="chart-spinner-wrapper" v-if="visible || showWatermark"> 
+    <div class="spinner" v-if="visible"></div>
+
+    <template v-if="showWatermark">
+      <div
+        v-for="(position, index) in watermarkPositions"
+        :key="'watermark-' + index"
+        class="chart-watermark"
+        :style="{ top: position.top, left: position.left }"
+      >
+        {{ watermarkText }}
+      </div>
+    </template>
   </div>
 </template>
 
@@ -18,90 +22,69 @@ export default {
     visible: {
       type: Boolean,
       default: false
+    },
+    showWatermark: {
+      type: Boolean,
+      default: true // 保持默认值为 true 很好
     }
   },
   data() {
     return {
-      watermarkText: '上海高级金融学院', // 水印文字
-      watermarkPositions: [ // 定义多个水印的位置 (top, left 的百分比或像素值)
-        // 你可以根据需要调整这些位置和数量，以达到“铺满”的效果
-        // 示例 5 个水印：
+      watermarkText: '高金智库数据资产研究课题组',
+      watermarkPositions: [
         { top: '20%', left: '15%' },
+        { top: '50%', left: '50%' },
         { top: '70%', left: '75%' },
-        // 如果需要更多，可以继续添加：
-        // { top: '10%', left: '70%' },
-        // { top: '45%', left: '70%' },
-        // { top: '65%', left: '5%' },
       ]
     };
-  },
-  methods: {
-    getStyle(index) {
-      const angle = (index - 1) * 45;
-      return {
-        transform: `rotate(${angle}deg) translate(0, -12px)`
-      };
-    }
   }
 };
 </script>
 
 <style scoped>
-.chart-spinner-container {
+.chart-spinner-wrapper { /* 之前是 .chart-spinner-container */
   position: absolute;
-  top: 0; /* 让容器覆盖整个父相对定位元素 */
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex; /* 用于居中spinner和水印 */
+  display: flex;
   justify-content: center;
   align-items: center;
-  transform: none; /* 移除之前的 translate(-50%, -50%)，因为现在是覆盖整个图表区域 */
-  z-index: 10;     /* 确保它在图表内容之上 */
-  pointer-events: none; /* 关键：允许鼠标事件穿透到下面的图表 */
-  overflow: hidden; /* 防止旋转的水印文字超出边界太多 */
+  z-index: 10; 
+  /* background-color: rgba(255, 255, 255, 0.5); */ /* 可选：半透明背景遮罩 */
+  pointer-events: none; /* 通常允许点击穿透，除非加载时需要阻止下方操作 */
+  overflow: hidden;
 }
 
-/* 新增：水印样式 */
 .chart-watermark {
-  position: absolute; /* 相对于 .chart-spinner-container 定位 */
-  transform: rotate(-30deg); /* 所有水印统一旋转角度，你可以调整 */
-  transform-origin: center center; /* 让旋转围绕自身中心进行 */
-  font-size: 24px; /* 考虑到多个水印，字号可能需要比单个水印时小一些 */
-  color: rgba(0, 0, 0, 0.15); /* 更淡一些的颜色，因为有很多个，避免过于干扰 */
+  position: absolute; 
+  transform: rotate(-30deg);
+  transform-origin: center center;
+  font-size: 20px; /* 水印字号调整 */
+  color: rgba(0, 0, 0, 0.06); /* 水印颜色调得更淡 */
   font-weight: bold;
   white-space: nowrap; 
-  z-index: 1; /* 确保在图表内容之上，但在spinner加载动画之下 */
+  z-index: 1; /* 在 Spinner 之下 */
   pointer-events: none;
-  padding: 5px; /* 轻微内边距，防止旋转后文字边缘被裁剪 */
-  /* top 和 left 将通过内联 :style 动态设置 */
+  padding: 5px;
 }
 
-/* Spinner 动画的样式 (基本保持不变，但现在它在 flex 容器中会被居中) */
+/* ✅ 更新 Spinner 动画样式为一个常见的边框旋转动画 */
 .spinner {
-  position: relative; /* 改为 relative 或 static，因为它会被 flex 居中 */
-                      /* 如果希望它覆盖水印，可以给它更高的 z-index */
-  width: 48px;
-  height: 48px;
+  width: 40px; /* Spinner 大小 */
+  height: 40px;
+  border: 4px solid #f3f3f3; /* 浅灰色轨道 */
+  border-top: 4px solid #003049; /* 主题色旋转部分 */
+  border-radius: 50%;
   animation: spin 1s linear infinite;
-  z-index: 2; /* 确保 spinner 在水印之上（如果同时显示） */
+  z-index: 2; /* 确保 spinner 在水印之上 */
 }
 
-/* spinner-dot 和 keyframes spin 的样式保持不变 */
-.spinner-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #003049; /* 这是你之前的主题色 */
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin: -4px 0 0 -4px;
-}
+/* 移除旧的 .spinner-dot 样式，因为新的 spinner 不需要它 */
 
 @keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

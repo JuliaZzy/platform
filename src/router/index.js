@@ -3,6 +3,7 @@ import Router from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
 import NLSDashboardPage from '@/views/NLSDashboardPage.vue';
 import LSDashboardPage from '@/views/LSDashboardPage.vue';
+import FinanceDashboardPage from '../views/FinanceDashboardPage.vue'; // 确保路径正确
 import AdminPage from '@/views/AdminPage.vue';
 
 Vue.use(Router);
@@ -22,6 +23,11 @@ const routes = [
     path: '/lsdashboard',
     name: 'LSDashboardPage',
     component: LSDashboardPage
+  },
+  {
+    path: '/financedashboard',
+    name: 'FinanceDashboardPage',
+    component: FinanceDashboardPage
   },
   {
     path: '/admin-page',

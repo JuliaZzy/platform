@@ -50,16 +50,16 @@ export default defineComponent({
             type: 'category',
             data: props.chartData.map(item => item.name),
             axisLabel: {
-              fontSize: 12,
+              fontSize: 11,
               rotate: 0,
+              interval: 0,
               rich: {
                 customStyle: {
                   lineHeight: 20 // ✅ 设置你想要的行间距（单位是像素）
                 }
               },
               formatter: val => {
-                          // 每5个字符换行，最多3行
-                          const lines = val.match(/.{1,5}/g)?.slice(0,4) || [val]; // 每5字一行，最多3行
+                          const lines = val.match(/.{1,5}/g)?.slice(0,5) || [val];
                           return lines.map(line => `{customStyle|${line}}`).join('\n');
                                 }
             }
@@ -98,7 +98,7 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   margin-bottom: 0;
-  min-width: 1000px;
+  min-width: 1100px;
 }
 
 .chart-title {

@@ -29,6 +29,13 @@ echarts.use([
 
 Vue.prototype.$echarts = echarts;
 
+if (process.env.VUE_APP_API_URL !== undefined) { // 检查是否已定义 (空字符串也是已定义)
+  axios.defaults.baseURL = process.env.VUE_APP_API_URL;
+  console.log('API baseURL set to:', `'${process.env.VUE_APP_API_URL}'`); 
+} else {
+  // 这个 else 分支理论上不应该进入了，因为我们会在 .env 文件中定义 VUE_APP_API_URL
+  console.warn('VUE_APP_API_URL is not set. API calls might use relative paths or need full URLs.');
+}
 
 axios.defaults.timeout = 20000; // ⏰ 设置超时时间 60秒
 

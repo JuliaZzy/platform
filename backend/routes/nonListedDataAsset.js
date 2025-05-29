@@ -5,173 +5,83 @@ const {
   buildWhereClause, // 期望这是增加了 mode 参数的版本
   handleSearch      // 如果此文件也需要搜索功能
 } = require('../utils/buildQueryHandlers'); // 确保路径正确
-
-const fs = require('fs');
-const path = require('path');
-const Pdfmake = require('pdfmake');
-
-// --- 全局 PDFMake 字体及VFS配置 ---
-// (这整块字体配置代码与 lassetRoutes.js 中的应保持一致或提取为共享模块)
-let FONT_DESCRIPTORS; 
-try {
-  const vfsFontsModule = require('pdfmake/build/vfs_fonts.js');
-  let vfsObject = null;
-  if (vfsFontsModule && vfsFontsModule.pdfMake && vfsFontsModule.pdfMake.vfs) {
-    vfsObject = vfsFontsModule.pdfMake.vfs;
-  } else if (typeof vfsFontsModule === 'object' && vfsFontsModule['Roboto-Regular.ttf']) {
-    vfsObject = vfsFontsModule;
-  }
-
-  // ▼▼▼ 重要：根据你的项目结构修改这里的字体文件路径 ▼▼▼
-  const customFontPathNormal = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Regular.otf'); 
-  const customFontPathBold = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Bold.otf');   
-
-  FONT_DESCRIPTORS = { Roboto: {}, MyChineseFont: { normal: null, bold: null } };
-  if (vfsObject) {
-    if (vfsObject['Roboto-Regular.ttf']) FONT_DESCRIPTORS.Roboto.normal = Buffer.from(vfsObject['Roboto-Regular.ttf'], 'base64');
-    if (vfsObject['Roboto-Medium.ttf']) FONT_DESCRIPTORS.Roboto.bold = Buffer.from(vfsObject['Roboto-Medium.ttf'], 'base64');
-    if (vfsObject['Roboto-Italic.ttf']) FONT_DESCRIPTORS.Roboto.italics = Buffer.from(vfsObject['Roboto-Italic.ttf'], 'base64');
-    if (vfsObject['Roboto-MediumItalic.ttf']) FONT_DESCRIPTORS.Roboto.bolditalics = Buffer.from(vfsObject['Roboto-MediumItalic.ttf'], 'base64');
-    Object.keys(FONT_DESCRIPTORS.Roboto).forEach(key => FONT_DESCRIPTORS.Roboto[key] === undefined && delete FONT_DESCRIPTORS.Roboto[key]);
-    if (Object.keys(FONT_DESCRIPTORS.Roboto).length === 0) delete FONT_DESCRIPTORS.Roboto;
-  } else { console.warn("pdfmake/build/vfs_fonts.js 加载异常，Roboto字体可能无法使用。"); delete FONT_DESCRIPTORS.Roboto; }
-
-  if (fs.existsSync(customFontPathNormal)) { FONT_DESCRIPTORS.MyChineseFont.normal = fs.readFileSync(customFontPathNormal); } 
-  else { console.error(`错误：常规中文字体文件未找到! 路径: ${customFontPathNormal}`); }
-  if (fs.existsSync(customFontPathBold)) { FONT_DESCRIPTORS.MyChineseFont.bold = fs.readFileSync(customFontPathBold); } 
-  else { console.warn(`警告：粗体中文字体文件未找到: ${customFontPathBold}。将使用常规体。`); FONT_DESCRIPTORS.MyChineseFont.bold = FONT_DESCRIPTORS.MyChineseFont.normal; }
-  if (!FONT_DESCRIPTORS.MyChineseFont.normal) { console.error("CRITICAL: 中文字体未能加载，PDF导出（中文内容）将失败。"); }
-} catch (err) { console.error("CRITICAL: 初始化PDF字体配置时发生严重错误:", err); FONT_DESCRIPTORS = FONT_DESCRIPTORS || {}; }
-// --- 字体配置结束 ---
-
+const { createPdfDocument } = require('../utils/pdfGenerator'); // ✅ 导入新的工具函数
 
 const tableName = 'dataasset_non_listed_companies';
-const enableHideFlag = true;
+const enableHideFlag = true; // 此表启用 hide_flag 筛选
 
-// ✅ 1. 模糊搜索公司名称
+// ✅ 搜索路由 - status 过滤逻辑应在 handleSearch 内部 (buildQueryHandlers.js)
 router.get('/search/company', handleSearch(db, tableName, 'company_name', enableHideFlag));
-
-// ✅ 2. 模糊搜索数据资产内容
 router.get('/search/content', handleSearch(db, tableName, 'dataasset_content', enableHideFlag));
 
-// ✅ 3. 导出 PDF 文件
-router.post('/export', async (req, res) => { // 保持路由为 /export
+// ✅ 导出 PDF 文件
+router.post('/export', async (req, res) => {
   try {
-    if (!FONT_DESCRIPTORS || (!FONT_DESCRIPTORS.Roboto && !FONT_DESCRIPTORS.MyChineseFont) || !FONT_DESCRIPTORS.MyChineseFont?.normal) {
-        console.error('PDF导出因字体未正确初始化而被中止 (非上市公司)。');
-        return res.status(500).json({ error: '导出PDF失败: 服务器字体配置不完整。' });
-    }
-
     const filters = req.body.filters || {}; // 获取前端传递的筛选条件
     const values = [];
-    // 使用 'non-listed' mode 
-    const whereClause = buildWhereClause(filters, values, enableHideFlag, 'non-listed'); 
+    
+    // 1. 从 buildWhereClause 获取基础的筛选条件
+    let whereClauseFromBuilder = buildWhereClause(filters, values, enableHideFlag, 'non-listed');
 
-    // 1. SQL 查询语句 (来自你原有的 handleExport 函数)
+    // 2. 准备最终的 WHERE 子句，确保包含 status 过滤
+    const finalConditions = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
+    if (whereClauseFromBuilder) {
+      // 如果 buildWhereClause 返回的是完整的 "WHERE ..." 子句
+      if (whereClauseFromBuilder.toUpperCase().startsWith('WHERE ')) {
+        finalConditions.push(`(${whereClauseFromBuilder.substring(6)})`); // 去掉 "WHERE " 并用括号包裹
+      } else { // 如果返回的只是 "condition1 AND condition2"
+        finalConditions.push(`(${whereClauseFromBuilder})`);
+      }
+    }
+    const whereClause = `WHERE ${finalConditions.join(' AND ')}`;
+    
     const sql = `
-      SELECT month_time, province_area, company_name, dataasset_content,
-             accounting_subject, valuation_method, book_value, assess_value,
-             dataasset_register_addr
-      FROM ${tableName} ${whereClause}
-    `; // 使用正确的表名
+      SELECT id, month_time, province_area, company_name, dataasset_content, dataasset_register_addr 
+      FROM "${tableName}" ${whereClause}
+      ORDER BY "id" ASC 
+    `; // ✅ 增加了 id 列以备用, 并添加了排序
     const result = await db.query(sql, values);
     const rows = result.rows;
 
     if (!rows.length) {
-      return res.status(404).send('没有符合当前筛选条件的数据可导出');
+      return res.status(404).send('没有符合当前筛选条件的数据可导出（或所有相关数据已标记删除）。');
     }
 
-    // 2. 中文列名映射和顺序 (来自你原有的 handleExport 函数)
+    // 2. 中文列名映射和顺序 (不包含id和status)
     const columnMap = {
       month_time: '入表月份',
       province_area: '省级行政区',
       company_name: '入表企业',
       dataasset_content: '数据资产内容',
-      accounting_subject: '入表会计科目',
-      valuation_method: '评估方法',
-      book_value: '账面金额（万元）',
-      assess_value: '评估金额（万元）',
       dataasset_register_addr: '数据资产登记机构'
     };
-    // orderedDbKeys 决定了PDF中列的顺序和要从row中取哪些数据
     const orderedDbKeys = Object.keys(columnMap); 
 
-    // PDF 表头使用映射后的中文名
     const pdfTableHeaders = orderedDbKeys.map(dbKey => ({ text: columnMap[dbKey], style: 'tableHeader' }));
-
-    // PDF 表格内容
     const pdfTableBody = [
       pdfTableHeaders,
       ...rows.map(row => orderedDbKeys.map(dbKey => {
-        let originalValue = row[dbKey]; // 使用原始数据库键名从行数据中取值
+        let originalValue = row[dbKey];
         let cellText = originalValue !== null && originalValue !== undefined ? String(originalValue) : '';
         let cellProperties = { text: cellText, margin: [0, 2, 0, 2] };
-
-        // 对特定列进行格式化 (例如：金额列右对齐，并格式化数字)
-        if (dbKey === 'book_value' || dbKey === 'assess_value') {
-          const num = parseFloat(originalValue);
-          if (!isNaN(num)) {
-            cellProperties.text = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          } else {
-            cellProperties.text = (String(originalValue).trim() === '') ? '-' : String(originalValue);
-          }
-          cellProperties.alignment = 'right';
-        }
-        // 你可以根据非上市公司数据的其他列，在这里添加更多的 else if (dbKey === 'xxx') 来进行格式化
-
+        // ... (原有的格式化逻辑，如 book_value, assess_value，如果这些列存在于上面的 SELECT 中)
         return cellProperties;
       }))
     ];
     
-    // 3. PDF 列宽 (所有列暂时设为 'auto')
-    const tableWidths = [];
-    const numPdfColumns = orderedDbKeys.length; // 这应该是9，基于你的columnMap
+    // 3. PDF 列宽 (与 columnMap 中的列对应)
+    const tableWidths = [80, 50, 'auto', 'auto', 'auto']; // 请根据实际列数和内容调整
 
-    if (numPdfColumns === 9) { // 严格按照9列来设置宽度
-      tableWidths.push('auto'); // 第1列: month_time
-      tableWidths.push('auto'); // 第2列: province_area
-      tableWidths.push(130);    // 第3列: company_name
-      tableWidths.push(130);    // 第4列: dataasset_content
-      tableWidths.push(40);     // 第5列: accounting_subject
-      tableWidths.push(50);     // 第6列: valuation_method
-      tableWidths.push(50);     // 第7列: book_value
-      tableWidths.push(50);     // 第8列: assess_value
-      tableWidths.push(130);    // 第9列 (最后一列): dataasset_register_addr
-    } else {
-      // 如果列数不是预期的9列，提供一个备选方案，例如所有列自动或平分
-      console.warn(`PDF Export (Non-Listed): Expected 9 columns for width setup, but got ${numPdfColumns}. Defaulting all to 'auto'.`);
-      for (let i = 0; i < numPdfColumns; i++) {
-        tableWidths.push('auto');
-      }
+    const pdfDoc = createPdfDocument({
+        title: `非上市公司数据资产报告`,
+        tableBody: pdfTableBody,
+        tableWidths: tableWidths,
+    });
+
+    if (!pdfDoc) {
+      return res.status(500).json({ error: '导出PDF失败: 服务器字体或PDF生成配置错误。' });
     }
 
-    const printer = new Pdfmake(FONT_DESCRIPTORS); 
-
-    const documentDefinition = {
-      defaultStyle: { font: 'MyChineseFont', fontSize: 8 }, 
-      pageOrientation: 'landscape', // 横向页面
-      pageMargins: [ 20, 30, 20, 30 ], // 左右边距20，上下边距30
-      content: [
-        { text: `非上市公司数据资产报告`, style: 'header' }, // 修改报告标题
-        {
-          table: {
-            headerRows: 1,
-            widths: tableWidths, 
-            body: pdfTableBody
-          },
-          layout: 'lightHorizontalLines'
-        }
-      ],
-      background: function(currentPage, pageSize) { /* 水印配置，与上市公司PDF一致 */
-        return { text: '上海高级金融学院', color: 'gray', opacity: 0.2, bold: true, fontSize: 50, angle: -45, alignment: 'center', absolutePosition: { x: pageSize.width / 2, y: pageSize.height / 2 } };
-      },
-      styles: {
-        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10], alignment: 'center' },
-        tableHeader: { bold: true, fontSize: 9, fillColor: '#eeeeee', alignment: 'center', font: 'MyChineseFont', margin: [0, 2, 0, 2] }
-      }
-    };
-
-    const pdfDoc = printer.createPdfKitDocument(documentDefinition);
     const filename = `非上市公司数据报告_${Date.now()}.pdf`; 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`); 
@@ -184,61 +94,73 @@ router.post('/export', async (req, res) => { // 保持路由为 /export
   }
 });
 
-// ✅ 4. 合并图表 + 表格 + 筛选项的 summary 接口
+// ✅ Summary 接口 (通常用于前端Dashboard页面的图表和表格数据加载)
 router.post('/summary', async (req, res) => {
   const filters = req.body.filters || {};
-  const page = req.body.page || 1;
-  const pageSize = req.body.pageSize || 10;
+  const page = parseInt(req.query.page || req.body.page, 10) || 1;
+  const pageSize = parseInt(req.query.pageSize || req.body.pageSize, 10) || 10;
   const offset = (page - 1) * pageSize;
-  const values = [];
+  const values = []; // 用于参数化查询的值
 
-  const whereClause = buildWhereClause(filters, values, enableHideFlag);
+  // 1. 从 buildWhereClause 获取基础的筛选条件
+  let whereClauseFromBuilder = buildWhereClause(filters, values, enableHideFlag); // 假设这个不包含 'non-listed' mode 参数
+
+  // 2. 准备最终的 WHERE 子句，确保包含 status 过滤
+  const finalConditions = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
+  if (whereClauseFromBuilder) {
+    if (whereClauseFromBuilder.toUpperCase().startsWith('WHERE ')) {
+      finalConditions.push(`(${whereClauseFromBuilder.substring(6)})`);
+    } else {
+      finalConditions.push(`(${whereClauseFromBuilder})`);
+    }
+  }
+  const whereClause = `WHERE ${finalConditions.join(' AND ')}`;
 
   try {
-    // 📊 图表字段
+    // 📊 图表字段 (这些查询也需要应用 status 过滤)
     const chartFields = [
-      'province_area',
-      'company_business_type',
-      'company_type',
-      'admin_level',
-      'dataasset_type',
-      'dataasset_register_addrtype'
+      'province_area', 'company_business_type', 'company_type',
+      'admin_level', 'dataasset_type', 'dataasset_register_addrtype'
     ];
-
-    // 📊 图表统计（并行执行）
     const chartData = {};
     await Promise.all(chartFields.map(async field => {
+      // 确保字段名在SQL中是安全的，或者使用白名单验证
+      if (!/^[a-zA-Z0-9_]+$/.test(field)) return; // 简单的字段名安全检查
       const chartSql = `
-        SELECT ${field} AS name, COUNT(*) AS value
-        FROM ${tableName}
-        ${whereClause}
-        GROUP BY ${field}
+        SELECT "${field}" AS name, COUNT(*) AS value
+        FROM "${tableName}"
+        ${whereClause} /* whereClause 已包含 status 过滤 */
+        GROUP BY "${field}"
         ORDER BY value DESC
       `;
-      const result = await db.query(chartSql, values);
+      const result = await db.query(chartSql, values); // values 只对应 filters 中的参数
       chartData[field] = result.rows;
     }));
 
-    // 📋 表格分页
-    const countSql = `SELECT COUNT(*) FROM ${tableName} ${whereClause}`;
+    // 📋 表格分页 (查询也需要应用 status 过滤)
+    const countSql = `SELECT COUNT(*) FROM "${tableName}" ${whereClause}`;
     const countRes = await db.query(countSql, values);
     const total = parseInt(countRes.rows[0].count, 10);
 
+    // ✅ SELECT * 会包含 id 和 status，前端 AdminPage 会用到 status
     const dataSql = `
-      SELECT month_time, province_area, company_name, dataasset_content,
-             accounting_subject, valuation_method, book_value, assess_value,
-             dataasset_register_addr
-      FROM ${tableName}
+      SELECT * FROM "${tableName}"
       ${whereClause}
+      ORDER BY "id" ASC -- ✅ 建议为分页添加稳定的排序
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}
     `;
     const tableRes = await db.query(dataSql, [...values, pageSize, offset]);
 
-    // 🎯 静态筛选项（可提速）
-    const staticWhere = enableHideFlag ? `WHERE hide_flag NOT LIKE '%是%'` : '';
+    // 🎯 静态筛选项（获取唯一值用于筛选下拉框，也应排除已删除数据）
+    const distinctBaseConditions = [`"status" IS DISTINCT FROM 'delete'`];
+    if (enableHideFlag) {
+        distinctBaseConditions.push(`"hide_flag" NOT LIKE '%是%'`);
+    }
+    const distinctWhereClause = `WHERE ${distinctBaseConditions.join(' AND ')}`;
+
     const [opt1Res, opt2Res] = await Promise.all([
-      db.query(`SELECT DISTINCT month_time FROM ${tableName} ${staticWhere} ORDER BY month_time`),
-      db.query(`SELECT DISTINCT province_area FROM ${tableName} ${staticWhere} ORDER BY province_area`)
+      db.query(`SELECT DISTINCT month_time FROM "${tableName}" ${distinctWhereClause} ORDER BY month_time`),
+      db.query(`SELECT DISTINCT province_area FROM "${tableName}" ${distinctWhereClause} ORDER BY province_area`)
     ]);
 
     res.json({

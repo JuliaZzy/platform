@@ -35,7 +35,7 @@
 <script>
 import FilterSection from '@/components/dashboard/filters/NLFilterSection.vue';
 import ChartRow from '@/components/dashboard/NLChartRow.vue';
-import DataTable from '@/components/dashboard/DataTable.vue';
+import DataTable from '@/components/dashboard/NLDataTable.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import axios from 'axios';
 

@@ -94,6 +94,7 @@
 
 <script>
 import axios from 'axios';
+import { downloadPdf } from '@/utils/pdfDownloader.js';
 
 export default {
   name: 'LFilterSection',
@@ -191,12 +192,8 @@ export default {
         });
     },
     handleImmediateFilterChange() {
-      // 根据你之前的要求“点击确认之后再触发”，这个方法目前是空的，
-      // 意味着选择“报告时间”或“省份”不会立即触发筛选。
-      // 这是正确的，除非你希望它们立即触发。
     },
     handleElSelectChange() {
-      // 同上，选择“公司”或“所属证券行业分布”也不会立即触发筛选。
     },
     confirmFilters() {
       this.$emit('filter-change', { ...this.internalFilters });
@@ -212,52 +209,16 @@ export default {
     },
     async handleDownloadCommand(quarter) {
       if (!quarter) return;
-      this.loading.download = true;
-      try {
-        const response = await axios.post(`${this.apiPrefix}/export`, 
-          { filters: { quarter: quarter } }, 
-          { responseType: 'blob' }
-        );
-        
-        const contentDisposition = response.headers['content-disposition'];
-        let filename = `上市公司数据报告_${quarter}_${Date.now()}.pdf`;
-        if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename\*?=UTF-8''([^"]+)"?/i) || contentDisposition.match(/filename="?([^"]+)"?/i);
-            if (filenameMatch && filenameMatch[1]) {
-                filename = decodeURIComponent(filenameMatch[1]);
-            }
-        }
-        this.saveBlob(response.data, filename);
-      } catch (error) {
-        let errorMessage = '下载失败，请检查网络或联系管理员。';
-        if (error.response && error.response.data && error.response.data instanceof Blob) {
-            try {
-                const errorText = await error.response.data.text(); // 等待 Blob 转文本完成
-                const errorJson = JSON.parse(errorText); // 然后解析 JSON
-                if (errorJson && errorJson.error) {
-                    errorMessage = `下载失败: ${errorJson.error}`;
-                }
-            } catch (e) {
-                // console.error("Failed to parse error blob as JSON", e);
-            }
-        } else if (error.message) {
-            errorMessage = `下载失败: ${error.message}`;
-        }
-        console.error(`Error downloading data for ${quarter}:`, error);
-        alert(errorMessage); 
-      } finally {
-        this.loading.download = false;
-      }
-    },
-    saveBlob(blob, filename) {
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      await downloadPdf({
+        apiUrl: `${this.apiPrefix}/export`,
+        filters: { quarter: quarter },
+        // 如果上市公司下载需要排除列，可以在这里添加：
+        // excludedColumns: ["实控人", "市值（亿元）", "市值规模"], 
+        defaultFilename: `上市公司数据报告_${quarter}.pdf`,
+        onStart: () => { this.loading.download = true; },
+        onFinish: () => { this.loading.download = false; },
+        onError: (msg) => { alert(msg); } // 或者使用 Element UI 的 Message 组件
+      });
     }
   }
 };

@@ -77,6 +77,24 @@ export default defineComponent({
 
         const customLineColor = '#ee9b00';
         const actualLineSeriesName = props.lineSeries?.name || '折线';
+
+        const lineLabelOption = {
+          show: true,         // 是否显示标签
+          position: 'top',    // 标签的位置，'top'表示在柱子顶部
+          formatter: function (params) {
+            // 检查 null/undefined 或无法转换为数字的情况
+            if (params.value == null || isNaN(parseFloat(params.value))) { 
+              return ''; // 返回空字符串
+            }
+            // 转换为数字并格式化
+            const value = parseFloat(params.value);
+            return value.toFixed(2); // 保留两位小数
+          }, // <--- 在这里加上逗号 ,
+          fontSize: 12,       // 标签字体大小
+          color: '#ee9b00',   // 标签字体颜色，深灰色
+          // distance: 5,     // 可选：标签与图形的距离
+        };
+
         const line = {
           name: actualLineSeriesName, // 使用这个名称
           type: 'line',
@@ -89,7 +107,8 @@ export default defineComponent({
           },
           itemStyle: { // ▼▼▼ 修改这里：为数据点标记物设置颜色，通常与线条颜色一致 ▼▼▼
             color: customLineColor
-          }
+          },
+          label: lineLabelOption
         };
 
         chartOption.value = {
@@ -150,8 +169,9 @@ export default defineComponent({
             type: 'category',
             data: props.categories || [],
             axisLabel: {
-              fontSize: 12,
+              fontSize: 11,
               rotate: 0,
+              interval: 0,
               formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val)
             }
           },

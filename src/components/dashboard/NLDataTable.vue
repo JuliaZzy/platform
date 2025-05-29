@@ -15,10 +15,10 @@
             <th>省级行政区</th>
             <th>入表企业</th>
             <th>数据资产内容</th>
-            <th style="text-align: center;">入表会计科目</th>
+            <!--<th style="text-align: center;">入表会计科目</th>
             <th style="text-align: center;">评估方法</th>
             <th>账面金额<br>（万元）</th>
-            <th>评估金额<br>（万元）</th>
+            <th>评估金额<br>（万元）</th>-->
             <th>数据资产登记机构</th>
           </tr>
         </thead>
@@ -29,10 +29,10 @@
             <td>{{ row.province_area }}</td>
             <td>{{ row.company_name }}</td>
             <td>{{ row.dataasset_content }}</td>
-            <td>{{ row.accounting_subject }}</td>
+            <!--<td>{{ row.accounting_subject }}</td>
             <td>{{ row.valuation_method }}</td>
             <td class="number-cell">{{ formatNumber(row.book_value) }}</td>
-            <td class="number-cell">{{ formatNumber(row.assess_value) }}</td>
+            <td class="number-cell">{{ formatNumber(row.assess_value) }}</td>-->
             <td>{{ row.dataasset_register_addr }}</td>
           </tr>
         </tbody>
@@ -65,11 +65,12 @@
 </template>
 
 <script>
-import axios from 'axios';
+// import axios from 'axios';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
+import { downloadPdf } from '@/utils/pdfDownloader.js';
 
 export default {
-  name: 'DataTable',
+  name: 'NLDataTable',
   components: { ChartSpinner },
   props: {
     filters: { type: Object, required: true },
@@ -132,87 +133,33 @@ export default {
     handleExportCommand(command) {
       console.log('[DataTable] handleExportCommand called with command:', command); // 新增日志
       if (command === 'all') {
-        this.downloadPdfAll(); // 改为调用PDF下载
+        this.downloadPdfAll();
       } else if (command === 'current') {
-        this.downloadPdfCurrent(); // 改为调用PDF下载
+        this.downloadPdfCurrent();
       }
     },
-
-    // ▼▼▼ 将 exportToExcel 修改为 exportToPdf ▼▼▼
-    async exportToPdf(apiUrl, filters, filename) {
-      console.log('[DataTable] exportToPdf called. API:', apiUrl, 'Filters:', JSON.parse(JSON.stringify(filters))); // 新增日志
-      this.loading = true;
-      try {
-        const response = await axios.post(apiUrl, 
-          { filters }, // filters 对象会根据 downloadPdfAll 或 downloadPdfCurrent 传递
-          { responseType: 'blob' } //  重要：告诉axios期望接收一个二进制大对象 (PDF)
-        );
-
-        // 检查响应是否真的是 blob (PDF)
-        if (response.data instanceof Blob && response.data.type === 'application/pdf') {
-          this.saveBlob(response.data, filename);
-        } else {
-          // 如果后端返回的不是PDF，而是JSON错误信息（例如校验失败）
-          // 尝试将其作为文本读取并解析为JSON
-          console.error('[DataTable] Expected a PDF blob, but received:', response.data);
-          if (response.data instanceof Blob) { // 如果是Blob但类型不对
-              const errorText = await response.data.text();
-              try {
-                  const errorJson = JSON.parse(errorText);
-                  if (errorJson && errorJson.error) {
-                      alert(`导出失败: ${errorJson.error}`);
-                      return;
-                  }
-              } catch (e) {
-                  // 不是JSON格式的Blob
-              }
-          }
-          alert('导出失败：服务器未返回有效的PDF文件。');
-        }
-      } catch (err) {
-        console.error('❌ 导出PDF失败 (DataTable):', err.response || err);
-        let errorMessage = '导出数据失败，请稍后重试。';
-        if (err.response && err.response.data && err.response.data instanceof Blob) {
-              try {
-                  const errorText = await err.response.data.text();
-                  const errorJson = JSON.parse(errorText);
-                  if (errorJson && errorJson.error) {
-                      errorMessage = `导出失败: ${errorJson.error}`;
-                  }
-              } catch (e) { /* Blob 不是JSON */ }
-          } else if (err.response && err.response.data && err.response.data.error) {
-              errorMessage = `导出失败: ${err.response.data.error}`;
-          } else if (err.message) {
-              errorMessage = `导出失败: ${err.message}`;
-          }
-        alert(errorMessage);
-      } finally {
-        this.loading = false;
-      }
+    // exportToPdf
+    async downloadPdfAll() {
+      const filename = `非上市公司数据报告_全部_${Date.now()}.pdf`;
+      await downloadPdf({
+          apiUrl: `${this.apiPrefix}/export`,
+          filters: {}, // 发送空对象，表示下载全部
+          defaultFilename: filename,
+          onStart: () => { this.loading = true; },
+          onFinish: () => { this.loading = false; },
+          onError: (msg) => { alert(msg); }
+      });
     },
-
-    async downloadPdfAll() { // 原 downloadFull
-      const filename = `非上市公司数据报告_全部_${Date.now()}.pdf`; // 修改文件名
-      // 假设非上市公司的导出接口也是 /export
-      await this.exportToPdf(`${this.apiPrefix}/export`, {}, filename); 
-    },
-
-    async downloadPdfCurrent() { // 原 downloadCurrent
-      const filename = `非上市公司数据报告_筛选后_${Date.now()}.pdf`; // 修改文件名
-      // 假设非上市公司的导出接口也是 /export
-      await this.exportToPdf(`${this.apiPrefix}/export`, this.filters, filename); 
-    },
-    // ▲▲▲ 修改结束 ▲▲▲
-
-    saveBlob(data, filename) { // 这个方法保持不变，它可以保存任何Blob类型的文件
-      const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' })); // 确保指定MIME类型
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+    async downloadPdfCurrent() {
+      const filename = `非上市公司数据报告_筛选后_${Date.now()}.pdf`;
+      await downloadPdf({
+          apiUrl: `${this.apiPrefix}/export`,
+          filters: this.filters, // 发送当前筛选条件
+          defaultFilename: filename,
+          onStart: () => { this.loading = true; },
+          onFinish: () => { this.loading = false; },
+          onError: (msg) => { alert(msg); }
+      });
     }
   }
 }
@@ -281,19 +228,26 @@ export default {
     padding: 10px 12px;
   }
 
+  .data-table tbody tr:hover {
+    background-color: #f1f1f1; /* 这是一个常用的浅灰色，与您 FinanceDashboardPage 中的一致 */
+    /* 您也可以选择其他浅灰色，例如: */
+    /* background-color: #f5f5f5; */
+    /* background-color: #e9e9e9; */
+  }
+
   .data-table th:nth-child(1),
   .data-table td:nth-child(1) {
     width: 28px;
     min-width: 25px;
     text-align: center;
   }
-  .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 78px; min-width: 70px; }
+  .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 78px; min-width: 70px; text-align: center;}
   .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 70px; min-width: 40px; text-align: center;}
   
-  .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 220px; }
-  .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 260px; }
-  .data-table th:nth-child(6),.data-table th:nth-child(6) { width: 85px; text-align: center;}
-  .data-table th:nth-child(7),.data-table th:nth-child(7) { 
+  .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 180px; }
+  .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 220px; }
+  .data-table th:nth-child(6),.data-table th:nth-child(6) { width: 130px; text-align: center;}
+  /*.data-table th:nth-child(7),.data-table th:nth-child(7) { 
     width: 80px; 
     text-align: center;
   }
@@ -306,7 +260,7 @@ export default {
   .data-table td:nth-child(10), .data-table th:nth-child(10) {
     width: 200px;
     min-width: 200px;
-  }
+  } */
 
   .data-table td.number-cell {
     text-align: right;
