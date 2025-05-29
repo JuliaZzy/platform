@@ -61,17 +61,21 @@ export default {
   },
   methods: {
     async handleFilterChange(newFilters) {
+      // ✨ 关键日志 ✨
+      console.log('【前端 NLSDashboardPage】handleFilterChange 接收到 newFilters:', JSON.stringify(newFilters, null, 2));
       this.filters = { ...newFilters };
+      console.log('【前端 NLSDashboardPage】this.filters 更新为:', JSON.stringify(this.filters, null, 2));
       await this.fetchSummaryData(1);
     },
     async handlePageChange(page) {
       await this.fetchSummaryData(page);
     },
     async fetchSummaryData(page) {
-      if (this.isLoading === false) this.$refs.dataTable?.startLoading?.(); // ✅ 页面加载后再允许局部 loading
+      // ✨ 关键日志 ✨
+      console.log('【前端 NLSDashboardPage】fetchSummaryData 发送的 filters:', JSON.stringify(this.filters, null, 2), '请求页码:', page);
       try {
         const res = await axios.post('/api/nlasset/summary', {
-          filters: this.filters,
+          filters: this.filters, // 这里的 this.filters 是否包含了正确的日期？
           page,
           pageSize: this.pageSize
         });

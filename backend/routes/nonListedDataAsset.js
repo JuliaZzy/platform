@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/db'); // 确保路径正确
+const db = require('../db/db');
 const {
-  buildWhereClause, // 期望这是增加了 mode 参数的版本
-  handleSearch      // 如果此文件也需要搜索功能
-} = require('../utils/buildQueryHandlers'); // 确保路径正确
-const { createPdfDocument } = require('../utils/pdfGenerator'); // ✅ 导入新的工具函数
+  buildWhereClause,
+  handleSearch
+} = require('../utils/buildQueryHandlers');
+const { createPdfDocument } = require('../utils/pdfGenerator');
 
 const tableName = 'dataasset_non_listed_companies';
 const enableHideFlag = true; // 此表启用 hide_flag 筛选
@@ -102,19 +102,7 @@ router.post('/summary', async (req, res) => {
   const offset = (page - 1) * pageSize;
   const values = []; // 用于参数化查询的值
 
-  // 1. 从 buildWhereClause 获取基础的筛选条件
-  let whereClauseFromBuilder = buildWhereClause(filters, values, enableHideFlag); // 假设这个不包含 'non-listed' mode 参数
-
-  // 2. 准备最终的 WHERE 子句，确保包含 status 过滤
-  const finalConditions = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
-  if (whereClauseFromBuilder) {
-    if (whereClauseFromBuilder.toUpperCase().startsWith('WHERE ')) {
-      finalConditions.push(`(${whereClauseFromBuilder.substring(6)})`);
-    } else {
-      finalConditions.push(`(${whereClauseFromBuilder})`);
-    }
-  }
-  const whereClause = `WHERE ${finalConditions.join(' AND ')}`;
+  const whereClauseForQueries = buildWhereClause(filters, values, enableHideFlag, 'non-listed'); 
 
   try {
     // 📊 图表字段 (这些查询也需要应用 status 过滤)
@@ -129,7 +117,7 @@ router.post('/summary', async (req, res) => {
       const chartSql = `
         SELECT "${field}" AS name, COUNT(*) AS value
         FROM "${tableName}"
-        ${whereClause} /* whereClause 已包含 status 过滤 */
+        ${whereClauseForQueries} /* whereClause 已包含 status 过滤 */
         GROUP BY "${field}"
         ORDER BY value DESC
       `;
@@ -138,14 +126,14 @@ router.post('/summary', async (req, res) => {
     }));
 
     // 📋 表格分页 (查询也需要应用 status 过滤)
-    const countSql = `SELECT COUNT(*) FROM "${tableName}" ${whereClause}`;
+    const countSql = `SELECT COUNT(*) FROM "${tableName}" ${whereClauseForQueries}`;
     const countRes = await db.query(countSql, values);
     const total = parseInt(countRes.rows[0].count, 10);
 
     // ✅ SELECT * 会包含 id 和 status，前端 AdminPage 会用到 status
     const dataSql = `
       SELECT * FROM "${tableName}"
-      ${whereClause}
+      ${whereClauseForQueries}
       ORDER BY "id" ASC -- ✅ 建议为分页添加稳定的排序
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}
     `;
@@ -159,15 +147,19 @@ router.post('/summary', async (req, res) => {
     const distinctWhereClause = `WHERE ${distinctBaseConditions.join(' AND ')}`;
 
     const [opt1Res, opt2Res] = await Promise.all([
-      db.query(`SELECT DISTINCT month_time FROM "${tableName}" ${distinctWhereClause} ORDER BY month_time`),
+      // month_time 现在直接是 YYYY-MM 格式，排序正确
+      db.query(`SELECT DISTINCT month_time FROM "${tableName}" ${distinctWhereClause} ORDER BY month_time`), 
       db.query(`SELECT DISTINCT province_area FROM "${tableName}" ${distinctWhereClause} ORDER BY province_area`)
     ]);
 
     res.json({
-      charts: chartData,
-      table: { rows: tableRes.rows, total },
+      charts: chartData, // 确保 chartData 变量存在且有数据
+      table: { 
+        rows: tableRes.rows, // 确保 tableRes.rows 存在且有数据
+        total: total         // 确保 total 变量存在且有数据
+      },
       options: {
-        month_time: opt1Res.rows.map(r => r.month_time),
+        month_time: opt1Res.rows.map(r => r.month_time), 
         province_area: opt2Res.rows.map(r => r.province_area)
       }
     });

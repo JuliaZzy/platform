@@ -31,9 +31,7 @@
 
     <main class="content">
       <h1 class="content-title">{{ currentContentTitle }}</h1>
-      <p class="update-time">上次更新时间：{{ lastUpdate }}</p>
-
-      <div class="search-bar">
+      <p class="update-time">上次更新时间：{{ formattedLastUpdate }}</p> <div class="search-bar">
         <button class="clear-all-btn" @click="clearAllFilters">清空全部筛选</button>
         <label>关键词检索：</label>
         <input v-model="searchKeyword" @input="handleSearchDebounced" placeholder="请输入关键词..." />
@@ -131,14 +129,19 @@
                   v-for="colName in displayableTableHeaders"
                   :key="colName"
                 >
-                  <span v-html="highlight(row[colName], colName)"></span>
+                  <span v-if="shouldFormatThisDateColumn(currentTab, colName)">
+                    {{ formatToChineseYearMonth(row[colName]) }}
+                  </span>
+                  <span v-else v-html="highlight(row[colName], colName)"></span>
                 </td>
               </tr>
             </tbody>
           </table>
           <p v-else class="no-data">暂无数据或结果为空</p>
-        </template> </div>
-      <div class="pagination" v-if="totalPages > 1 && !tableLoadingState[currentTab]"> <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
+        </template> 
+      </div>
+      <div class="pagination" v-if="totalPages > 1 && !tableLoadingState[currentTab]"> 
+        <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
         <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
         <button :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">下一页</button>
       </div>
@@ -155,32 +158,32 @@
 </template>
 
 <script>
-import * as adminService from '@/services/adminApiService.js'; // ✅ 导入API服务
+import * as adminService from '@/services/adminApiService.js';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
+import { formatToChineseYearMonth } from '@/utils/formatters.js';
 
 export default {
   name: 'AdminPage',
-  components: { // ✅ 注册 ChartSpinner
+  components: { 
     ChartSpinner 
   },
   data() {
     return {
-      currentTab: 'listed', // 默认标签页
-      tableData: [],      // 从后端获取的原始数据，每行应包含 id 和 status
-      tableDataTotalRows: 0, // 用于后端分页的总行数
-      tableHeaders: [],   // 从数据中动态生成的原始表头 (包含id和status)
-      lastUpdate: '',
+      currentTab: 'listed',
+      tableData: [],
+      tableDataTotalRows: 0,
+      tableHeaders: [],
+      lastUpdate: new Date(),
       currentPage: 1,
       pageSize: 15,
       isSidebarCollapsed: false,
-      filters: {},        // 当前应用的筛选条件 { columnName: [value1, value2] }
-      pendingFilters: {}, // 筛选下拉框中待确定的筛选条件
-      filterSearch: {},   // 筛选下拉框中的搜索词
-      uniqueColumnValues: {}, // 每列的唯一值，用于筛选下拉框
-      searchKeyword: '',      // 全局搜索关键词
+      filters: {},
+      pendingFilters: {},
+      filterSearch: {},
+      uniqueColumnValues: {},
+      searchKeyword: '',
       searchDebounceTimer: null,
-      showFilterDropdown: {},   // 控制各列筛选下拉框的显示 { columnName: boolean }
-      // ✅ 修改 isLoading 为对象，为每个tab管理加载状态，初始为 true
+      showFilterDropdown: {}, 
       tableLoadingState: {
         listed: true,
         nonlisted: true,
@@ -191,7 +194,7 @@ export default {
     };
   },
   computed: {
-    isFinanceTabActive() { // ✅ 新增或确保此计算属性存在
+    isFinanceTabActive() {
       return ['finance-bank', 'finance-stock', 'finance-other'].includes(this.currentTab);
     },
     currentContentTitle() {
@@ -205,46 +208,34 @@ export default {
       }
     },
     displayableTableHeaders() {
-      // 这些是实际在数据列中显示的表头，不包括 id 和 status
       return this.tableHeaders.filter(h => h !== 'id' && h !== 'status');
     },
-    // 经过列筛选和全局搜索后的数据 (主要用于前端分页的标签页)
-    processedDataForFrontendPaging() {
-      let dataToProcess = this.tableData;
-      const activeFilters = Object.entries(this.filters).filter(([, values]) => values && values.length > 0);
-      if (activeFilters.length > 0) {
-        dataToProcess = dataToProcess.filter(row => 
-          activeFilters.every(([col, selectedValues]) => selectedValues.includes(String(row[col])))
-        );
-      }
-      if (this.searchKeyword.trim()) {
-        const keyword = this.searchKeyword.toLowerCase().trim();
-        dataToProcess = dataToProcess.filter(row =>
-          this.displayableTableHeaders.some(header => String(row[header]).toLowerCase().includes(keyword))
-        );
-      }
-      return dataToProcess;
+    formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
+      if (!this.lastUpdate) return '';
+
+      const d = new Date(this.lastUpdate);
+      return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     },
     pagedData() {
-      if (this.currentTabUsesBackendProcessing()) {
-        return this.tableData; // 后端已分页，tableData即为当前页数据
-      }
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = start + this.pageSize;
-      return this.processedDataForFrontendPaging.slice(start, end);
+      return this.tableData;
     },
     totalPages() {
-      if (this.currentTabUsesBackendProcessing()) {
-        return Math.max(1, Math.ceil(this.tableDataTotalRows / this.pageSize));
-      }
-      return Math.max(1, Math.ceil(this.processedDataForFrontendPaging.length / this.pageSize));
+      return Math.max(1, Math.ceil(this.tableDataTotalRows / this.pageSize));
     },
   },
   methods: {
+    formatToChineseYearMonth, // 将导入的函数暴露给模板
+    shouldFormatThisDateColumn(tabKey, columnName) {
+      // 确保这里的键名与从后端获取的数据对象的键名一致
+      if (tabKey === 'nonlisted' && columnName === 'month_time') return true;
+      if (tabKey === 'finance-bank' && columnName === 'month_time') return true;
+      if (tabKey === 'finance-stock' && columnName === '入股时间') return true;
+      if (tabKey === 'finance-other' && columnName === '日期') return true;
+      return false;
+    },
+    // ✅ currentTabUsesBackendProcessing 现在可以始终返回 true
     currentTabUsesBackendProcessing() {
-      // 假设 'finance-*' 系列使用新的后端分页/筛选API
-      // 如果您的 'listed' 和 'nonlisted' 接口也改造为支持后端处理，请在此处更新逻辑
-      return this.currentTab.startsWith('finance-');
+      return true; // 假设所有 AdminPage 的 tab 都将使用新的后端处理逻辑
     },
     getRowClass(row) {
       if (!row || typeof row.status === 'undefined') return 'row-normal';
@@ -261,29 +252,27 @@ export default {
     switchTab(tab) {
       if (this.currentTab === tab) return;
       this.currentTab = tab;
-      this.clearAllFilters(false); // 清理筛选，但不立即触发 loadData
+      this.clearAllFilters(false); 
       this.currentPage = 1;
-      this.tableData = [];        // 清空旧数据，避免短暂显示
-      this.tableDataTotalRows = 0; // 重置总行数
+      this.tableData = [];
+      this.tableDataTotalRows = 0;
       this.loadData();
     },
     async loadData() {
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) { // ✅ 设置当前tab的加载状态
+      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
         this.tableLoadingState[this.currentTab] = true;
       }
       try {
-        let params = {};
-        if (this.currentTabUsesBackendProcessing()) {
-          params = { 
-            page: this.currentPage, 
-            pageSize: this.pageSize,
-            filters: this.filters, 
-            searchKeyword: this.searchKeyword.trim() 
-          };
-        }
-
+        // ✅ 所有tab都发送分页、筛选和搜索参数
+        const params = { 
+          page: this.currentPage, 
+          pageSize: this.pageSize,
+          filters: this.filters, 
+          searchKeyword: this.searchKeyword.trim() 
+        };
+        
         const response = await adminService.loadAdminTableData(this.currentTab, params);
-
+        
         this.tableData = response.data || [];
         this.tableDataTotalRows = response.total || 0;
         this.tableHeaders = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
@@ -291,39 +280,38 @@ export default {
         const colVals = {};
         this.tableData.forEach(row => {
           this.displayableTableHeaders.forEach(header => {
-            if (!colVals[header]) colVals[header] = new Set();
-            if (row[header] !== null && String(row[header]).trim() !== '') {
-              colVals[header].add(String(row[header]));
-            }
+             if (!colVals[header]) colVals[header] = new Set();
+             if (row[header] !== null && String(row[header]).trim() !== '') {
+               colVals[header].add(String(row[header]));
+             }
           });
         });
         this.uniqueColumnValues = Object.fromEntries(
           Object.entries(colVals).map(([k, set]) => [k, Array.from(set).sort((a, b) => String(a).localeCompare(String(b)))])
         );
-
-        if (!this.currentTabUsesBackendProcessing() && this.currentPage > this.totalPages && this.totalPages > 0) {
-            this.currentPage = this.totalPages;
-        }
-
-        const now = new Date();
-        // 在 loadData 方法内部获取了 now = new Date(); 之后
-        this.lastUpdate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        
+        // lastUpdate 在这里设置为 Date 对象，由 computed property formattedLastUpdate 格式化
+        this.lastUpdate = new Date(); 
       
-        } catch (error) {
-        this.$message ? this.$message.error(error.message) : alert(error.message);
-        this.tableData = []; this.tableHeaders = []; this.tableDataTotalRows = 0;
+      } catch (error) {
+        const errorMessage = error.message || '数据加载失败！';
+        if (this.$message && typeof this.$message.error === 'function') {
+            this.$message.error(errorMessage);
+        } else {
+            alert(errorMessage);
+        }
+        this.tableData = []; 
+        this.tableHeaders = []; 
+        this.tableDataTotalRows = 0;
       } finally {
-        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) { // ✅ 结束加载状态
+        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
           this.tableLoadingState[this.currentTab] = false;
         }
       }
     },
-
     async updateRowStatus(row, newStatus) {
-      console.log('传给 updateRowStatus 的 row 对象:', JSON.parse(JSON.stringify(row))); // 打印 row 的深拷贝副本
-
       if (!row || typeof row.id === 'undefined') {
-        this.$message ? this.$message.error('行数据无效，无法更新状态。') : alert('行数据无效，无法更新状态。');
+        this.$message ? this.$message.error('行数据无效（缺少ID），无法更新状态。') : alert('行数据无效（缺少ID），无法更新状态。');
         return;
       }
       const rowId = row.id;
@@ -344,24 +332,16 @@ export default {
       try {
         await adminService.updateRowStatusInDb(tableNameForApi, rowId, newStatus);
         this.$message ? this.$message.success('状态更新成功！') : alert('状态更新成功！');
-        
-        // 重新加载当前页数据以反映更改 (最可靠)
-        await this.loadData();
-        // 或者，如果想避免全页刷新，可以更精细地更新本地数据：
-        // const rowIndex = this.tableData.findIndex(r => r.id === rowId);
-        // if (rowIndex !== -1) {
-        //   this.$set(this.tableData[rowIndex], 'status', newStatus);
-        // }
+        await this.loadData(); 
       } catch (error) {
         this.$message ? this.$message.error(error.message) : alert(error.message);
       }
     },
     async handleUpload(event) {
       const file = event.target.files[0];
-      if (!this.$refs.fileInput) return; // 检查 ref 是否存在
-
+      if (!this.$refs.fileInput) return; 
       if (!file) {
-        if (this.$refs.fileInput) this.$refs.fileInput.value = ''; // 清空选择
+        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         return;
       }
       const formData = new FormData();
@@ -379,8 +359,8 @@ export default {
         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         return;
       }
-
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) { // ✅ 开始加载
+      
+      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
         this.tableLoadingState[this.currentTab] = true;
       }
       try {
@@ -391,7 +371,7 @@ export default {
       } catch (error) {
         this.$message ? this.$message.error(error.message) : alert(error.message);
       } finally {
-        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) { // ✅ 结束加载
+        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
           this.tableLoadingState[this.currentTab] = false;
         }
         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
@@ -412,20 +392,20 @@ export default {
       const currentVisibility = this.showFilterDropdown[col];
       this.closeAllDropdowns(); 
       this.$set(this.showFilterDropdown, col, !currentVisibility);
+
       if (!currentVisibility) { 
-        this.$set(this.pendingFilters, col, [...(this.filters[col] || [])]);
+        this.$set(this.pendingFilters, col, Array.isArray(this.filters[col]) ? [...this.filters[col]] : []);
         this.$set(this.filterSearch, col, '');
         this.$nextTick(() => {
-          const iconEl = this.$el.querySelector(`[data-filter-icon="${col}"]`);
-          const dropdownEl = this.$el.querySelector(`[data-dropdown="${col}"]`);
-          if (iconEl && dropdownEl) {
-              const iconRect = iconEl.getBoundingClientRect();
-              dropdownEl.style.position = 'fixed';
-              dropdownEl.style.top = `${iconRect.bottom + 4}px`;
-              // ✅ SPREAD_WIDTH 在这里被使用
-              dropdownEl.style.left = `${Math.max(0, iconRect.right - SPREAD_WIDTH)}px`; 
-              dropdownEl.style.zIndex = '100';
-          }
+            const iconEl = this.$el.querySelector(`[data-filter-icon="${col}"]`);
+            const dropdownEl = this.$el.querySelector(`[data-dropdown="${col}"]`);
+            if (iconEl && dropdownEl) {
+                const iconRect = iconEl.getBoundingClientRect();
+                dropdownEl.style.position = 'fixed';
+                dropdownEl.style.top = `${iconRect.bottom + 4}px`;
+                dropdownEl.style.left = `${Math.max(0, iconRect.right - SPREAD_WIDTH)}px`; 
+                dropdownEl.style.zIndex = '100';
+            }
         });
       }
     },
@@ -433,14 +413,14 @@ export default {
       this.$set(this.filters, col, Array.isArray(this.pendingFilters[col]) ? [...this.pendingFilters[col]] : []);
       this.closeAllDropdowns();
       this.currentPage = 1;
-      this.loadData(); // 重新加载数据
+      this.loadData();
     },
     clearFilter(col) {
       this.$set(this.pendingFilters, col, []);
-      this.$set(this.filters, col, []); // 立即应用空筛选
+      this.$set(this.filters, col, []); 
       this.closeAllDropdowns();
       this.currentPage = 1;
-      this.loadData(); // 重新加载数据
+      this.loadData();
     },
     closeAllDropdowns() {
       Object.keys(this.showFilterDropdown).forEach(col => {
@@ -455,7 +435,6 @@ export default {
       }
     },
     getFilteredOptions(col) {
-      // 确保 this.uniqueColumnValues[col] 是一个数组
       if (!this.uniqueColumnValues || !Array.isArray(this.uniqueColumnValues[col])) return [];
       const search = (this.filterSearch[col] || '').toLowerCase();
       return this.uniqueColumnValues[col].filter(val =>
@@ -466,22 +445,20 @@ export default {
       clearTimeout(this.searchDebounceTimer);
       this.searchDebounceTimer = setTimeout(() => {
         this.currentPage = 1;
-        this.loadData(); // 全局搜索后重新加载数据
+        this.loadData();
       }, 500);
     },
     highlight(value, key) {
-      if (key === 'id' || key === 'status') return value;
+      if (key === 'id' || key === 'status') {
+        return String(value !== null && value !== undefined ? value : '');
+      }
+      // 日期格式化已由模板 v-if 处理，这里不再重复检查
       const textValue = String(value !== null && value !== undefined ? value : '');
-      if (!this.searchKeyword.trim() || !textValue) return textValue;
-
-      // ✅ 尝试这个更精确的正则表达式，只转义在正则表达式中有特殊含义的字符
-      // 这个表达式本身是用来匹配那些需要被转义的字符的
+      if (!this.searchKeyword.trim() || !textValue) {
+        return textValue;
+      }
       const specialCharsRegex = /[\\.^$*+?()[\]{}|]/g; 
       const safeKeyword = this.searchKeyword.trim().replace(specialCharsRegex, '\\$&');
-      // 或者，如果您确定我之前给的 /[.*+?^${}()|[\]\\]/g 没问题，可以尝试禁用 ESLint 对这一行的检查：
-      // eslint-disable-next-line no-useless-escape
-      // const safeKeyword = this.searchKeyword.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
       const regex = new RegExp(`(${safeKeyword})`, 'gi');
       return textValue.replace(regex, '<mark>$1</mark>');
     },
@@ -505,10 +482,10 @@ export default {
         return;
       }
       try {
-        // 使用服务函数，传递真实的数据库表名
-        adminService.exportTableToExcel(dbTableName, this.filters, this.searchKeyword.trim());
+        // ✅ 导出时不再传递 filters 和 searchKeyword，因为后端 exportExcel.js 不处理它们
+        adminService.exportTableToExcel(dbTableName);
       } catch (error) {
-        this.$message ? this.$message.error(error.message) : alert(error.message);
+         this.$message ? this.$message.error(error.message) : alert(error.message);
       }
     }
   },

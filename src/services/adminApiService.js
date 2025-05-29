@@ -1,80 +1,57 @@
 import axios from 'axios';
 
-// 可以在这里配置一个基础的 axios 实例，如果您的 API 都有共同的前缀或需要统一配置
 const apiClient = axios.create({
-  baseURL: '/api', // 假设 AdminPage 的所有API都在 /api 这个路径下
-  // timeout: 10000, // 例如，设置超时
-  // withCredentials: true, // 如果需要跨域cookie
+  baseURL: '/api', // 假设所有API都在 /api 这个路径下
 });
 
-// 一个可选的统一错误处理函数
 const handleApiError = (error, contextMessage = 'API请求失败') => {
   console.error(`${contextMessage}:`, error.response || error.message || error);
-  // 尝试从后端响应中提取更具体的错误信息
   const serverError = error.response?.data?.error || error.response?.data?.detail || error.response?.data?.message;
   const fallbackMessage = '操作失败，请检查网络或联系管理员。';
-  
-  // 抛出错误，让调用方可以捕获并处理 (例如显示给用户)
   throw new Error(serverError || fallbackMessage);
 };
 
 /**
  * 加载Admin页面表格数据
  * @param {string} currentTab - 当前激活的标签页标识 (如 'listed', 'nonlisted', 'finance-bank')
- * @param {object} params - 请求参数 (如 page, pageSize, filters, searchKeyword)
+ * @param {object} params - 请求参数 (如 page, pageSize, filters 对象, searchKeyword 字符串)
  * @returns {Promise<object>} - Promise，解析为 { data: Array, total: number }
  */
 export const loadAdminTableData = async (currentTab, params = {}) => {
-  let url = '';
-  let isBackendPagingCapable = false; // 标记该接口是否支持后端分页和筛选
+  // ✅ 修改点 1: 构建指向新的 Admin 专用数据接口的 URL
+  const url = `/admintable/tabledata/${currentTab}`; 
 
-  switch (currentTab) {
-    case 'listed':
-      url = '/company/listed-companies-detail'; // 旧接口，可能不支持后端分页/筛选
-      break;
-    case 'nonlisted':
-      url = '/company/non-listed-companies-detail'; // 旧接口，可能不支持后端分页/筛选
-      break;
-    case 'finance-bank':
-      url = '/finance/data/bank';
-      isBackendPagingCapable = true;
-      break;
-    case 'finance-stock':
-      url = '/finance/data/stock';
-      isBackendPagingCapable = true;
-      break;
-    case 'finance-other':
-      url = '/finance/data/other';
-      isBackendPagingCapable = true;
-      break;
-    default:
-      console.error('adminApiService: 未知的 currentTab for loadData:', currentTab);
-      throw new Error('无效的数据类型');
+  // ✅ 修改点 2: 准备要发送的查询参数
+  let queryParams = { ...params }; // 复制一份，以避免修改原始 params 对象
+
+  // 如果 params 中包含 filters 对象，将其 JSON 字符串化
+  // 后端 adminTableData.js 会解析这个 JSON 字符串
+  if (queryParams.filters && typeof queryParams.filters === 'object') {
+    queryParams.filters = JSON.stringify(queryParams.filters);
   }
 
+  console.log(`[adminApiService] Calling loadAdminTableData for tab: ${currentTab}, URL: ${url}, Params:`, queryParams);
+
   try {
-    const response = await apiClient.get(url, { params }); // GET 请求通常用 params 传递查询参数
+    // ✅ 修改点 3: 所有 AdminPage 的数据加载都走这条路径，并期望后端处理分页/筛选/搜索
+    const response = await apiClient.get(url, { params: queryParams }); 
     
-    if (isBackendPagingCapable) {
-      return { 
-        data: response.data?.data || [], 
-        total: response.data?.total || 0 
-      };
-    } else {
-      // 对于不支持后端分页的旧接口，数据直接在 response.data 或 response.data.rows
-      const rows = response.data?.rows || response.data || [];
-      return { data: rows, total: rows.length }; // total 由前端计算
-    }
+    // 后端 adminTableData.js 应该返回 { data: Array, total: number } 结构
+    return { 
+      data: response.data?.data || [], 
+      total: response.data?.total || 0 
+    };
   } catch (error) {
-    return handleApiError(error, `加载 ${currentTab} 数据失败`);
+    return handleApiError(error, `加载 Admin Tab [${currentTab}] 数据失败`);
   }
 };
 
 /**
  * 上传Excel数据到指定表格 (追加模式)
+ * (此函数保持不变，它调用的 /api/upload/append 接口是独立的)
  * @param {string} tableName - 数据库表名
  * @param {FormData} formData - 包含文件的 FormData 对象
- * @returns {Promise<object>} - 后端返回的响应数据 (例如 { message: '...', data: [...] })
+ * @returns {Promise<object>} - 后端返回的响应数据
  */
 export const uploadExcelData = async (tableName, formData) => {
   try {
@@ -89,6 +66,7 @@ export const uploadExcelData = async (tableName, formData) => {
 
 /**
  * 更新指定表格中某一行数据的状态
+ * (此函数保持不变，它调用的 /api/adminpage/status/... 接口是独立的)
  * @param {string} tableName - 数据库表名
  * @param {string|number} rowId - 要更新的行的ID
  * @param {string|null} newStatus - 新的状态值 ('delete', 'kept', null 等)
@@ -96,7 +74,7 @@ export const uploadExcelData = async (tableName, formData) => {
  */
 export const updateRowStatusInDb = async (tableName, rowId, newStatus) => {
   try {
-    // 假设您的状态更新API是 PUT /adminpage/status/:tableName/:rowId
+    // 假设您的状态更新API是 PUT /adminpage/status/:tableName/:rowId (或者您选择的其他 admin 专用路径)
     const response = await apiClient.put(`/adminpage/status/${tableName}/${rowId}`, { status: newStatus });
     return response.data; 
   } catch (error) {
@@ -106,21 +84,15 @@ export const updateRowStatusInDb = async (tableName, rowId, newStatus) => {
 
 /**
  * 导出指定表格的数据为Excel
- * @param {string} tableName - 数据库表名
+ * (此函数保持不变，它调用的 /api/export/:tableName 接口是独立的)
+ * @param {string} dbTableName - 数据库表名
  */
 export const exportTableToExcel = (dbTableName) => {
   if (!dbTableName) {
     console.error('exportTableToExcel: dbTableName is required.');
-    // 可以选择抛出错误或直接返回，让调用方处理
     throw new Error('导出操作缺少必要的表名参数。');
   }
-
-  // 假设您的 exportExcel.js 路由是挂载在 /api/export 下
-  // 例如，如果 apiClient.defaults.baseURL 是 '/api'，那么这里就是 '/export/:tableName'
   const exportUrl = `${apiClient.defaults.baseURL || ''}/export/${encodeURIComponent(dbTableName)}`;
-  
   console.log('Exporting Excel with URL (path param):', exportUrl);
-  console.log('Note: Filters and searchKeyword are NOT sent to this backend endpoint version.');
-
   window.open(exportUrl); 
 };

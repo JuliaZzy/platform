@@ -157,13 +157,16 @@ export default {
         });
     },
     confirmFilters() {
-      this.$emit('filter-change', {
-        startDate: this.startDate,
-        endDate: this.endDate,
+      const payload = { 
+        startDate: this.startDate, // 这里的 this.startDate 是 YYYY-MM 吗？
+        endDate: this.endDate,   // 这里的 this.endDate 是 YYYY-MM 吗？
         province: this.province,
         company: this.company,
-        content: this.content
-      });
+        content: this.content 
+      };
+      // ✨ 关键日志 ✨
+      console.log("【前端 NLFilterSection】发出 filter-change 事件，数据为:", JSON.stringify(payload, null, 2));
+      this.$emit('filter-change', payload);
     },
     clearFilters() {
       this.startDate = '';

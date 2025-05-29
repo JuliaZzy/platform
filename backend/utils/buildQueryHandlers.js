@@ -1,10 +1,8 @@
-// ✅ buildQueryHandlers.js - 已修改以包含 status 过滤
-const XLSX = require('xlsx'); // 注意：XLSX 和 path 在这个文件的当前版本中似乎并未使用
-const fs = require('fs');   // 如果确实未使用，可以考虑移除这些 require 语句
+const XLSX = require('xlsx');
+const fs = require('fs');
 const path = require('path');
 
 function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-listed') {
-  // ✅ 总是将 status 过滤作为基础条件之一
   const conditions = [`"status" IS DISTINCT FROM 'delete'`]; 
 
   if (enableHideFlag) {
@@ -12,10 +10,25 @@ function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-l
   }
 
   if (mode === 'non-listed') {
-    if (filters.startDate && filters.endDate) {
-      conditions.push(`"month_time" BETWEEN $${values.length + 1} AND $${values.length + 2}`);
-      values.push(filters.startDate, filters.endDate);
+    if (filters && filters.hasOwnProperty('startDate') && filters.hasOwnProperty('endDate')) {
+      
+      const startYYYYMM = filters.startDate;
+      const endYYYYMM = filters.endDate;
+
+      // 校验格式是否真的是 YYYY-MM，并且它们都有值 (不是空字符串)
+      if (startYYYYMM && typeof startYYYYMM === 'string' && startYYYYMM.match(/^\d{4}-\d{2}$/) && 
+          endYYYYMM && typeof endYYYYMM === 'string' && endYYYYMM.match(/^\d{4}-\d{2}$/)) {
+          
+          console.log("后端 buildWhereClause: 日期格式有效。正在添加 BETWEEN 条件。");
+          conditions.push(`"month_time" BETWEEN $${values.length + 1} AND $${values.length + 2}`);
+          values.push(startYYYYMM, endYYYYMM); 
+      } else {
+          console.warn(`后端 buildWhereClause: 日期值为空或格式非YYYY-MM，将忽略日期筛选。收到的 startDate: '${startYYYYMM}', endDate: '${endYYYYMM}'`);
+      }
+    } else {
+      console.log("后端 buildWhereClause: filters 对象中缺少 startDate 或 endDate 属性，或其中之一为空，忽略日期筛选。收到的 filters 对象: " + JSON.stringify(filters));
     }
+
     if (filters.province) {
       conditions.push(`"province_area" = $${values.length + 1}`);
       values.push(filters.province);
@@ -32,6 +45,8 @@ function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-l
       conditions.push(`"company_type" = $${values.length + 1}`);
       values.push(filters.company_type);
     }
+
+
   } else if (mode === 'listed') {
     if (filters.quarter && String(filters.quarter).trim() !== '') {
       conditions.push(`"报告时间" = $${values.length + 1}`);
@@ -51,8 +66,10 @@ function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-l
     }
   }
 
-  // 因为 conditions 数组至少会包含 status 条件，所以 conditions.length 总是 >= 1
-  return 'WHERE ' + conditions.join(' AND ');
+  if (conditions.length > 0) {
+    return 'WHERE ' + conditions.join(' AND ');
+  }
+  return '';
 }
 
 function handleQuery(db, tableName, enableHideFlag) {
@@ -72,8 +89,6 @@ function handleQuery(db, tableName, enableHideFlag) {
       const total = parseInt(countResult.rows[0].total, 10);
 
       // ✅ 建议明确列出需要的列，而不是 SELECT *，或者确保 AdminPage 不使用此 handler
-      // 如果此 handler 不服务于 AdminPage，那么 SELECT * 包含 id 和 status 可能没问题
-      // 但如果列很多，明确列出更好。这里保持原样，假设调用方知道会获取哪些列。
       const dataSql = `
         SELECT * FROM "${tableName}" 
         ${whereClause}
@@ -100,7 +115,6 @@ function handleStats(db, tableName, enableHideFlag) {
     const values = [];
     // ✅ whereClause 将自动包含 status 过滤
     const whereClause = buildWhereClause(filters, values, enableHideFlag); 
-    
     // ✅ 使用双引号包裹动态字段名，以防是保留字或含特殊字符
     const safeField = field.startsWith('"') && field.endsWith('"') ? field : `"${field}"`;
     const sql = `
@@ -127,7 +141,7 @@ function handleOptions(db, tableName, fields, enableHideFlag) {
       for (const field of fields) {
         // ✅ 增加对 field 的校验
         if (!field || !/^[a-zA-Z0-9_"]+$/.test(field.replace(/\"/g, ''))) {
-            results[field] = []; // 或者跳过，或者报错
+            results[field] = [];
             console.warn(`handleOptions: 非法字段名 '${field}' 被跳过 for table ${tableName}`);
             continue;
         }
@@ -158,7 +172,7 @@ function handleSearch(db, tableName, field, enableHideFlag) {
     if (!query || query.length < 2) return res.json([]);
 
     // ✅ 增加对 field 的校验
-    if (!field || !/^[a-zA-Z0-9_"]+$/.test(field.replace(/\"/g, ''))) {
+    if (!field || !/^[a-zA-Z0-9_"\u4e00-\u9fa5]+$/.test(field.replace(/\"/g, ''))) {
         return res.status(400).json({ error: '搜索字段名不合法' });
     }
     const safeField = field.startsWith('"') && field.endsWith('"') ? field : `"${field}"`;
@@ -183,13 +197,13 @@ function handleSearch(db, tableName, field, enableHideFlag) {
       SELECT DISTINCT ${safeField}
       FROM "${tableName}" 
       WHERE ${whereParts.join(' AND ')}
-      ORDER BY ${safeField} ASC -- ✅ 建议添加排序
+      ORDER BY ${safeField} ASC
       LIMIT 10
     `;
 
     try {
       const result = await db.query(sql, values);
-      res.json(result.rows.map(r => r[field])); // 注意：如果field带引号，这里r[field]可能取不到，需要r[safeField]或处理
+      res.json(result.rows.map(r => r[field]));
     } catch (err) {
       console.error('❌ handleSearch 错误:', err);
       res.status(500).json({ error: '搜索失败', detail: err.message });
@@ -198,7 +212,6 @@ function handleSearch(db, tableName, field, enableHideFlag) {
 }
 
 // handleExport 函数似乎是用于获取数据给前端，然后前端再用这些数据生成Excel
-// (与我们之前看到的直接在后端生成并流式传输Excel的 exportExcel.js 不同)
 function handleExport(db, tableName, enableHideFlag) { 
   return async (req, res) => {
     try {
@@ -208,9 +221,6 @@ function handleExport(db, tableName, enableHideFlag) {
       const whereClause = buildWhereClause(filters, values, enableHideFlag); 
 
       // ✅ 明确列出需要的列，避免 SELECT * (如果不需要 id 和 status 列的话)
-      // 如果确实需要所有业务列，可以动态从 information_schema 获取，或者保持 SELECT *
-      // 但要确保不包含不应导出的敏感信息。
-      // 这里的列名是示例，请替换为您实际需要导出的列。
       const columnsToExport = [ // 示例列，您需要根据实际情况定义
         "month_time", "province_area", "company_name", "dataasset_content",
         "accounting_subject", "valuation_method", "book_value", "assess_value",
@@ -227,7 +237,17 @@ function handleExport(db, tableName, enableHideFlag) {
       const rows = result.rows;
 
       // ✅ 映射为中文列名（一次性处理）
-      const columnMap = { /* ... (您的columnMap保持不变) ... */ };
+      const columnMap = {
+        month_time: '入表月份',
+        province_area: '省级行政区',
+        company_name: '入表企业',
+        dataasset_content: '数据资产内容',
+        accounting_subject: '入表会计科目',
+        valuation_method: '评估方法',
+        book_value: '账面金额（万元）',
+        assess_value: '评估金额（万元）',
+        dataasset_register_addr: '数据资产登记机构'
+      };
       const orderedKeys = Object.keys(columnMap); // 这应该基于您实际 SELECT 的列
 
       const translatedRows = rows.map(row => {

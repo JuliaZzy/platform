@@ -1,23 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const xlsx = require('xlsx'); // 用于解析Excel
+const xlsx = require('xlsx');
 const db = require('../db/db');
 const fs = require('fs');
-const axios = require('axios'); // 保留，以防万一特定情况下需要
-
+const axios = require('axios');
 const upload = multer({ dest: 'uploads/' });
 
-// 清理列名函数 (保持不变)
+// 清理列名函数
 const sanitizeColumnName = (name) => {
   if (typeof name !== 'string') return '';
   return name.trim().replace(/\s+/g, '_').replace(/[\`\"\[\]\(\)]/g, '');
 };
-
-// 验证表名函数 (保持不变)
+// 验证表名函数
 const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
-
-// 定义每个表用于“部分重复”检查的关键列数量 (保持不变)
+// 定义每个表用于“部分重复”检查的关键列数量
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
     keyColumnCount: 5,
@@ -37,24 +34,19 @@ const tableKeyColumnConfigs = {
   }
 };
 
-// ✅ 修改点 1: 更新日期转换配置对象名称和内容
-// 定义哪些数据库列需要从Excel日期序列号转换为 'xxxx年xx月' 格式
-// 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】，值为格式标识。
-const columnSpecificFormatting = {
-  'dataasset_listed_companies_2024': {
-    // 例如: '报告时间': 'CHINESE_YYYY_MM', // 如果“报告时间”是从Excel以日期序列号形式导入且需要此格式
-  },
+// ✅ 修改点 1: 更新日期转换配置对象
+// 定义哪些数据库列在从Excel导入时，如果遇到日期序列号，应转换为 'YYYY-MM' 格式文本
+// 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】，值为 true 表示需要转换。
+const dateColumnsToFormatAsYYYYMM = {
   'dataasset_non_listed_companies': {
-    'month_time': 'CHINESE_YYYY_MM' // 'quarter_time' 是文本，不在此处配置
+    'month_time': true
   },
   'dataasset_finance_stock': {
-    // 假设数据库中对应的列名是 '入股时间' (如果此列名存在于 dbBusinessColumnNames 中)
-    '入股时间': 'CHINESE_YYYY_MM' 
+    '入股时间': true
   },
   'dataasset_finance_other': {
-    '日期': 'CHINESE_YYYY_MM' // 假设数据库中对应的列名是 '日期'
+    '日期': true
   }
-  // 为其他需要此格式的表和列在此处添加配置
 };
 
 router.post('/append', upload.single('file'), async (req, res) => {
@@ -148,25 +140,26 @@ router.post('/append', upload.single('file'), async (req, res) => {
     };
 
     const keyDbColumnNamesForCheck = dbBusinessColumnNames.slice(0, currentTableKeysConfig.keyColumnCount);
-    const tableDateFormatters = columnSpecificFormatting[tableName] || {}; // 当前表的日期列格式化配置
+    // ✅ 修改点 1.1: 获取当前表的日期列格式化配置
+    const currentTableDateColumnFlags = dateColumnsToFormatAsYYYYMM[tableName] || {};
+
 
     console.log(`[excelUpload] 表 ${tableName}: 开始处理 ${excelDataRows.length} 行数据...`);
     console.log(`[excelUpload] 表 ${tableName}: 数据库业务列 (DB): `, dbBusinessColumnNames);
     console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, keyDbColumnNamesForCheck);
-    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, tableDateFormatters);
+    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateColumnFlags);
 
 
     for (let rowIndex = 0; rowIndex < excelDataRows.length; rowIndex++) {
       const originalExcelRowArray = excelDataRows[rowIndex];
       results.processedRows++;
 
-      // ✅ 修改点 2: 对从Excel读取的每个单元格值进行trim和日期格式化处理
       const processedExcelRowValues = originalExcelRowArray.map((value, colIndex) => {
         let cellValue = (typeof value === 'string') ? value.trim() : value;
         const dbColName = dbBusinessColumnNames[colIndex]; // 获取此Excel列对应的数据库业务列名 (基于位置)
         
-        // 检查此列是否需要 'xxxx年xx月' 日期转换
-        if (tableDateFormatters[dbColName] === 'CHINESE_YYYY_MM') {
+        // ✅ 修改点 2: 检查此列是否需要 'YYYY-MM' 日期转换
+        if (currentTableDateColumnFlags[dbColName]) { // 值为 true 时表示需要转换
           let year, month;
           if (typeof cellValue === 'number' && cellValue > 1 && cellValue < 200000) { 
             try {
@@ -181,17 +174,14 @@ router.post('/append', upload.single('file'), async (req, res) => {
               console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}": 日期序列号转换时出错。`, e);
             }
           } else if (cellValue instanceof Date && !isNaN(cellValue)) { 
-             year = cellValue.getFullYear(); // JS Date对象的月份是0-11
+             year = cellValue.getFullYear();
              month = String(cellValue.getMonth() + 1).padStart(2, '0');
           }
           
           if (year && month) {
-            const formattedDate = `${year}年${month}月`; // 格式化为 "xxxx年xx月"
+            const formattedDate = `${year}-${month}`; // ✅ 格式化为 "YYYY-MM"
             console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期: ${formattedDate}`);
             return formattedDate;
-          } else {
-            // 如果不是可识别的数字序列号或JS Date对象，或者解析失败，保留trim后的值
-            // console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}": 未进行日期转换。`);
           }
         }
         return cellValue; 
@@ -291,6 +281,27 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
     await client.query('COMMIT');
     console.log('[excelUpload] 事务已提交。');
+
+    // ✅ 如果是 dataasset_non_listed_companies 表被更新了，则触发 dataasset_finance_bank 的同步
+    if (tableName === 'dataasset_non_listed_companies') {
+      console.log(`[excelUpload] 检测到 ${tableName} 更新，准备同步 dataasset_finance_bank...`);
+      try {
+        // 使用 axios 向自身应用的 /api/financeupload/sync-bank-table 发送请求
+        // 确保这里的 URL 是您 financeBank.js 中 /sync-bank-table 接口的正确可访问路径
+        // 端口号和域名可能需要根据您的部署环境调整，或者使用相对路径（如果axios实例配置了baseURL）
+        // 为了简单起见，假设服务运行在 localhost:3000 (您需要替换为实际配置或环境变量)
+        const syncResponse = await axios.post(`http://localhost:${process.env.PORT || 3000}/api/financeupload/sync-bank-table`);
+        if (syncResponse.data && syncResponse.data.success) {
+          console.log('[excelUpload] ✅ dataasset_finance_bank 同步成功 (由excel上传触发)。');
+        } else {
+          console.warn('[excelUpload] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功:', syncResponse.data);
+        }
+      } catch (syncError) {
+        console.error('❌ [excelUpload] 自动同步 dataasset_finance_bank 失败:', syncError.message);
+        // 这里的错误不应该中断主上传操作的成功响应，但需要记录
+      }
+    }
+    
     res.json({
       message: `导入完成。共处理 ${results.processedRows} 行Excel数据。新增唯一行: ${results.insertedUnique}, 新增并标记为重复: ${results.insertedAsRepeat}, 更新已有数据为重复: ${results.updatedToRepeat}, 忽略完全重复行: ${results.ignoredFullDuplicate}.`,
       data: results.affectedRowsForFrontend, 

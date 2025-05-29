@@ -25,7 +25,7 @@
         <tbody>
           <tr v-for="(row, index) in tableData" :key="index">
             <td style="text-align: center;">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ row.month_time }}</td>
+            <td>{{ formatToChineseYearMonth(row.month_time) }}</td>
             <td>{{ row.province_area }}</td>
             <td>{{ row.company_name }}</td>
             <td>{{ row.dataasset_content }}</td>
@@ -65,9 +65,9 @@
 </template>
 
 <script>
-// import axios from 'axios';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { downloadPdf } from '@/utils/pdfDownloader.js';
+import { formatToChineseYearMonth } from '@/utils/formatters.js';
 
 export default {
   name: 'NLDataTable',
@@ -107,6 +107,7 @@ export default {
     }
   },
   methods: {
+    formatToChineseYearMonth, 
     changePage(page) {
       if (page < 1 || page > this.totalPages) return;
       this.loading = true; // ✅ 翻页时触发加载动画

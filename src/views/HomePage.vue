@@ -167,6 +167,7 @@ import axios from 'axios';
 import LoginForm from '@/components/common/LoginForm.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
+import { formatToChineseYearMonth } from '@/utils/formatters.js';
 
 export default {
   name: 'HomePage', // 建议使用多词名称
@@ -227,12 +228,12 @@ export default {
       return list.slice(start, start + 10);
     },
     nonListedMonthDisplay() {
-      // 如果后端还没有返回数据，显示一个默认值
       if (!this.latestNonListedMonth) {
-        return '截至....年..月'; 
+        return '截至....年..月'; // 如果没有数据，显示占位符
       }
-      // 如果后端已经返回了 "xxxx年xx月"，直接加上 "截至"
-      return `截至${this.latestNonListedMonth}`; 
+      // ✅ 使用 formatToChineseYearMonth 函数进行格式化
+      const formattedMonth = formatToChineseYearMonth(this.latestNonListedMonth);
+      return `截至${formattedMonth}`; 
     }
   },
   mounted() {

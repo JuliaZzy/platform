@@ -161,7 +161,7 @@ Object.keys(tableMap).forEach(type => {
         console.log(`Exporting PDF for: ${currentTableInfo.name}`);
         try {
             // 1. Fetch all data for PDF export (no pagination)
-            const sql = `SELECT * FROM ${currentTableInfo.name}`;
+            const sql = `SELECT * FROM "${currentTableInfo.name}" WHERE "status" IS DISTINCT FROM 'delete'`;
             const result = await db.query(sql);
             const rows = result.rows;
 

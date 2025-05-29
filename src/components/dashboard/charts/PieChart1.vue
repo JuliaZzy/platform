@@ -175,8 +175,8 @@ export default defineComponent({
           tooltip: { trigger: 'item' },
           legend: { show: false },
           series: [
-            { name: '企业类型', type: 'pie', radius: '50%', center: ['35%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, startAngle: 145, labelLine: { show: true }, data: parentData },
-            { name: '行政级别', type: 'pie', radius: '40%', center: ['65%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, labelLine: { show: true }, data: childData }
+            { name: '企业类型', type: 'pie', radius: '50%', center: ['35%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, startAngle: 145, labelLine: { show: true }, data: parentData, z: 101 },
+            { name: '行政级别', type: 'pie', radius: '40%', center: ['65%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, labelLine: { show: true }, data: childData, z: 101 }
           ],
           graphic: [
             { id: 'line1', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 },

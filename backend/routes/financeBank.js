@@ -13,7 +13,8 @@ router.get('/bank-detail', async (req, res) => {
   console.time(label);
 
   const query = `
-    SELECT 
+    SELECT
+      id, 
       month_time, 
       CASE 
         WHEN parent_company_report = '' THEN company_name 
@@ -23,7 +24,7 @@ router.get('/bank-detail', async (req, res) => {
       finance_value,
       finance_type,
       finance_orgs,
-      status
+      NULL::text AS status
     FROM dataasset_non_listed_companies
     WHERE finance_value > 0 
       AND finance_type NOT ILIKE '%作价入股%'
@@ -60,7 +61,8 @@ router.post('/sync-bank-table', async (req, res) => {
 
   const createQuery = `
     CREATE TABLE dataasset_finance_bank AS
-    SELECT 
+    SELECT
+      id, 
       month_time, 
       CASE 
         WHEN parent_company_report = '' THEN company_name 
@@ -69,7 +71,8 @@ router.post('/sync-bank-table', async (req, res) => {
       dataasset_content, 
       finance_value,
       finance_type,
-      finance_orgs 
+      finance_orgs,
+      NULL::text AS status
     FROM dataasset_non_listed_companies
     WHERE finance_value > 0 
       AND finance_type NOT ILIKE '%作价入股%'
@@ -79,11 +82,17 @@ router.post('/sync-bank-table', async (req, res) => {
   `;
 
   try {
+    await db.query('BEGIN'); // ✅ 使用事务来确保原子性
     await db.query(dropQuery);
     await db.query(createQuery);
+    // ✅ 在表创建后，为 id 列添加主键约束
+    await db.query(`ALTER TABLE dataasset_finance_bank ADD PRIMARY KEY (id);`);
+    console.log('[sync-bank-table] 主键已添加到 dataasset_finance_bank.id');
+    await db.query('COMMIT'); // ✅ 提交事务
     console.timeEnd(label);
-    res.json({ success: true, message: '✅ 表 dataasset_finance_bank 同步成功' });
+    res.json({ success: true, message: '✅ 表 dataasset_finance_bank 同步成功 (包含id主键和status列)' });
   } catch (err) {
+    await db.query('ROLLBACK'); // ✅ 错误时回滚
     console.error('❌ 表同步失败：', err);
     res.status(500).json({ error: '表同步失败', detail: err.message });
   }

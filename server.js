@@ -64,8 +64,10 @@ const nonListedAssetRoutes = require('./backend/routes/nonListedDataAsset'); // 
 const listedAssetRoutes = require('./backend/routes/listedDataAsset'); // ✅ lC数据可视化
 const listedChartRoutes = require('./backend/routes/listedChartData'); // ✅ 新增上市公司图表数据接口
 const financeAssetRoutes = require('./backend/routes/financingDataAsset'); // ✅ finance数据可视化
-const financeRoutes = require('./backend/routes/financeTable');
+const financeRoutes = require('./backend/routes/financeBank');
 const statusUpdateRoutes = require('./backend/routes/statusUpdateApi');
+const adminTableDataRoutes = require('./backend/routes/adminTableData');
+
 
 app.use('/api/login', loginRoutes);
 app.use('/api/company', companyDataRoutes);
@@ -78,6 +80,7 @@ app.use('/api/lchart', listedChartRoutes); // ✅ 注册图表数据路由
 app.use('/api/finance', financeAssetRoutes); // ✅ 注册finance数据可视化路由
 app.use('/api/financeupload', financeRoutes);
 app.use('/api/adminpage', statusUpdateRoutes);
+app.use('/api/admintable', adminTableDataRoutes);
 
 
 
@@ -109,4 +112,5 @@ app.listen(port, '0.0.0.0', () => {
   console.log('- /api/finance'); 
   console.log('- /api/financeupload');
   console.log('- /api/adminpage'); 
+  console.log('- /api/admintable'); 
 });

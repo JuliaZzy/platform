@@ -51,7 +51,7 @@ router.post('/export', async (req, res) => {
 
     // --- 列宽计算逻辑 (保持不变) ---
     const NARROW_COLUMN_FIXED_WIDTH = 55;
-    const originalFourthColumnKey = allOriginalColumnKeys.includes(dbBusinessColumnNames[3]) ? dbBusinessColumnNames[3] : (allOriginalColumnKeys.length >= 4 ? allOriginalColumnKeys[3] : null); // 确保基于实际存在的列
+    const originalFourthColumnKey = allOriginalColumnKeys.length >= 4 ? allOriginalColumnKeys[3] : null;
     let tableWidths = columnKeysToExport.map(currentKey => {
         return (originalFourthColumnKey && currentKey === originalFourthColumnKey) ? '*' : NARROW_COLUMN_FIXED_WIDTH;
     });

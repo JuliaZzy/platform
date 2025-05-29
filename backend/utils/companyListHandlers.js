@@ -110,9 +110,6 @@ function handleCompanyCount(tableName, filterType = 'none') {
 // 公司详情查询 (✅ 此函数不添加 status 过滤，供 AdminPage 使用)
 function handleCompanyDetail(tableName) {
   return async (req, res) => {
-    // ✅ AdminPage 需要所有数据，包括各种状态，所以这里不加 "status" IS DISTINCT FROM 'delete'
-    // ✅ 确保 SELECT * 会返回 id 和 status 列，以便 AdminPage 处理
-    // ✅ 建议添加 ORDER BY "id" ASC 来保证 AdminPage 中数据的顺序稳定性
     const detailQuery = `SELECT * FROM "${tableName}" ORDER BY "id" ASC`;
 
     const label = `Admin公司详情查询(全部状态数据) - ${tableName} - ${Date.now()}`;

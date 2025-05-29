@@ -206,17 +206,18 @@ export default {
   }
   .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 78px; min-width: 70px; text-align: center;}
   .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 70px; min-width: 40px; text-align: center;}
-  
-  .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 50px; text-align: center;}
-  .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 260px; }
-  .data-table th:nth-child(6),.data-table th:nth-child(6)，
-  .data-table th:nth-child(7),.data-table th:nth-child(7)，
-  .data-table td:nth-child(8)，.data-table th:nth-child(8),
-  .data-table td:nth-child(9), .data-table th:nth-child(9) {
+  .data-table th:nth-child(4),.data-table td:nth-child(4) { width: 50px; text-align: center;}
+
+  .data-table th:nth-child(5),.data-table td:nth-child(5) { width: 260px; }
+  .data-table th:nth-child(6),.data-table td:nth-child(6)，
+  .data-table th:nth-child(7),.data-table td:nth-child(7)，
+  .data-table td:nth-child(8)，.data-table td:nth-child(8),
+  .data-table td:nth-child(9), .data-table td:nth-child(9),
+  .data-table td:nth-child(10), .data-table td:nth-child(10) {
     width: 80px;
     min-width: 200px;
   }
-  .data-table td:nth-child(10), .data-table th:nth-child(10) { width: 40px; text-align: center;}
+  .data-table td:nth-child(11), .data-table td:nth-child(11) { width: 60px; text-align: center;}
 
   .data-table td.number-cell {
     text-align: right;
@@ -241,25 +242,48 @@ export default {
 
   .pagination {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* ✅ 修改: 直接让父容器将其子项居中 */
     align-items: center;
     margin-top: 20px;
     flex-wrap: wrap;
-  }
-
-  .pagination-left,
-  .pagination-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
+    /* gap: 20px; */ /* 如果子元素间需要间距，可以在这里设置，或在 .pagination-center 内部解决 */
   }
 
   .pagination-center {
-    flex: 1;
     display: flex;
-    justify-content: center;
+    justify-content: center; /* 保持内部元素居中 */
     align-items: center;
-    gap: 20px;
+    gap: 20px; /* ✅ 调整按钮和页码之间的间隙 */
+  }
+
+  /* 按钮和页码的样式可以保持不变，或者按需微调 */
+  .pagination button { /* 这些是您自定义的 <button> 样式 */
+    background-color: #003049;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px; /* 调整圆角以匹配 Element UI small 按钮 */
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    font-size: 14px; /* 调整字体大小 */
+    line-height: 1.2; /* 调整行高 */
+  }
+  .pagination button:hover:not(:disabled) { /* 确保 :disabled 状态不应用hover */
+    background-color: #f0f0f0;
+    color: #003049;
+  }
+  .pagination button:disabled {
+    background-color: #eef0f6; /* Element UI 禁用按钮背景色(近似) */
+    color: #c0c4cc;      /* Element UI 禁用按钮文字颜色(近似) */
+    border-color: #dcdfe6; /* Element UI 禁用按钮边框色(近似) */
+    opacity: 0.7; /* 或保持您原来的 opacity: 0.5 */
+    cursor: not-allowed;
+  }
+  .page-info {
+    font-weight: bold; /* 您可以按需调整是否加粗 */
+    color: #003049;
+    font-size: 14px; /* 调整字体大小 */
+    margin: 0 8px; /* 调整与按钮的间距 */
   }
 
   .export-small-btn {
@@ -275,25 +299,4 @@ export default {
     color: #003049;
   }
 
-  .pagination button {
-    background-color: #003049;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  .pagination button:hover {
-    background-color: #f0f0f0;
-    color: #003049;
-  }
-  .pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .page-info {
-    font-weight: bold;
-    color: #003049;
-  }
 </style>
