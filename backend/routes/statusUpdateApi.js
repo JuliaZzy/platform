@@ -63,15 +63,10 @@ router.put('/status/:tableName/:rowId', async (req, res) => {
     if (tableName === 'dataasset_non_listed_companies') {
       console.log(`[excelUpload/statusUpdateApi] 检测到 ${tableName} 更新/状态变更，准备同步 dataasset_finance_bank...`);
       try {
-        const selfApiBase = process.env.SELF_API_BASE_URL; // ✅ 读取环境变量
+        const selfApiBase = process.env.VUE_APP_API_URL; // ✅ 读取环境变量
 
         if (!selfApiBase) {
           console.error(`[CRITICAL ERROR] SELF_API_BASE_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
-          // 根据您的错误处理策略，这里可以选择：
-          // 1. 静默失败并记录 (如下面的 console.warn)
-          // 2. 抛出错误，但这可能会影响主操作的成功响应
-          // 3. 对于开发环境，可以尝试回退到 localhost:PORT，但生产环境必须配置此变量
-          // throw new Error('服务器内部配置错误，无法完成同步操作。'); 
         }
 
         // 只有在 selfApiBase 有效时才尝试调用

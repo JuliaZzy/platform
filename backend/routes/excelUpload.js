@@ -272,34 +272,41 @@ router.post('/append', upload.single('file'), async (req, res) => {
         if (idx > -1) results.affectedRowsForFrontend[idx] = insertedExcelRows[0];
         else results.affectedRowsForFrontend.push(insertedExcelRows[0]);
       }
-    } // end of for loop
-
-    if (tableName === 'dataasset_non_listed_companies') {
-      // await axios.post('http://localhost:3000/api/financeupload/sync-bank-table');
-      // console.log('✅ 自动同步 dataasset_finance_bank 表成功');
     }
-
     await client.query('COMMIT');
     console.log('[excelUpload] 事务已提交。');
 
     // ✅ 如果是 dataasset_non_listed_companies 表被更新了，则触发 dataasset_finance_bank 的同步
-    if (tableName === 'dataasset_non_listed_companies') {
-      console.log(`[excelUpload] 检测到 ${tableName} 更新，准备同步 dataasset_finance_bank...`);
-      try {
-        // 使用 axios 向自身应用的 /api/financeupload/sync-bank-table 发送请求
-        // 确保这里的 URL 是您 financeBank.js 中 /sync-bank-table 接口的正确可访问路径
-        // 端口号和域名可能需要根据您的部署环境调整，或者使用相对路径（如果axios实例配置了baseURL）
-        // 为了简单起见，假设服务运行在 localhost:3000 (您需要替换为实际配置或环境变量)
-        const syncResponse = await axios.post(`http://localhost:${process.env.PORT || 3000}/api/financeupload/sync-bank-table`);
-        if (syncResponse.data && syncResponse.data.success) {
-          console.log('[excelUpload] ✅ dataasset_finance_bank 同步成功 (由excel上传触发)。');
-        } else {
-          console.warn('[excelUpload] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功:', syncResponse.data);
-        }
-      } catch (syncError) {
-        console.error('❌ [excelUpload] 自动同步 dataasset_finance_bank 失败:', syncError.message);
-        // 这里的错误不应该中断主上传操作的成功响应，但需要记录
+    try {
+      const internalApiBase = process.env.VUE_APP_API_URL; // ✅ 读取新的环境变量
+
+      if (!internalApiBase) {
+        console.error(`[CRITICAL ERROR] INTERNAL_API_BASE_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
+        // 对于生产环境，这应该视为配置错误。
+        // 对于开发环境，可以考虑一个备用方案，但最好是总是设置它。
+        // 例如 (仅供参考，生产环境不应依赖此回退):
+        // const devFallbackUrl = `http://localhost:${process.env.PORT || 3000}`;
+        // console.warn(`[DEV FALLBACK] INTERNAL_API_BASE_URL 未设置，尝试使用: ${devFallbackUrl}`);
+        // const syncUrl = `${devFallbackUrl}/api/financeupload/sync-bank-table`; 
       }
+
+      if (internalApiBase) { // 仅当 internalApiBase 有效时才尝试调用
+          const syncUrl = `${internalApiBase}/api/financeupload/sync-bank-table`; // ✅ 构建完整的URL
+          console.log(`[excelUpload - Sync] Calling sync URL: ${syncUrl}`);
+          const syncResponse = await axios.post(syncUrl); // 不需要请求体或特殊头
+
+          if (syncResponse.data && syncResponse.data.success) {
+            console.log(`[excelUpload - Sync] ✅ dataasset_finance_bank 同步成功。`);
+          } else {
+            console.warn(`[excelUpload - Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
+          }
+      } else {
+          console.error(`[excelUpload - Sync] ⚠️ 未能执行 dataasset_finance_bank 同步，因为 INTERNAL_API_BASE_URL 未配置。`);
+      }
+    } catch (syncError) {
+      console.error(`❌ [excelUpload - Sync] 自动同步 dataasset_finance_bank 失败:`, 
+        syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
+      );
     }
     
     res.json({
