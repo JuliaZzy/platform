@@ -50,22 +50,18 @@
                 <th>序号</th>
                 <template v-for="colKey in displayableTableHeaders">
                   <th v-if="!(colKey === 'status' && currentTab === 'finance-bank')"
-                      :key="colKey"   Zuckerd --- :key 移到这里
+                      :key="colKey"
                       style="position: relative;">
-                    <div class="th-wrapper">
-                      {{ colKey === 'status' ? '状态' : colKey }}
-                      <span
+                    <div class="th-wrapper">  {{ colKey === 'status' ? '状态' : colKey }}  <span
                         class="filter-icon"
                         @click.stop="toggleFilterDropdown(colKey)"
                         :data-filter-icon="colKey"
-                      >⏷</span>
-                      <div
+                      >⏷</span> <div
                         v-show="showFilterDropdown[colKey]"
                         class="filter-dropdown"
                         :data-dropdown="colKey"
                         @click.stop
-                      >
-                        <input
+                      > <input
                           class="filter-search-input"
                           v-model="filterSearch[colKey]"
                           placeholder="搜索该列..."
@@ -83,7 +79,7 @@
                           <button @click="clearFilter(colKey)">清空筛选</button>
                           <button @click="confirmFilter(colKey)">确定</button>
                         </div>
-                      </div>
+                      </div> 
                     </div>
                   </th>
                 </template>
