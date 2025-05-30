@@ -38,6 +38,10 @@ export default defineComponent({
     valKey: {
       type: String,
       default: 'value'
+    },
+    yAxisName: {
+      type: String,
+      default: '入表企业数量（家）'
     }
   },
   setup(props) {
