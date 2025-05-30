@@ -335,23 +335,40 @@ export default {
         case 'other':
           specificFilename = `其他数据类融资情况_${dateString}.pdf`; // 例如: 其他数据类融资情况_20230529.pdf
           break;
-        default:
-          // 如果有未知的 type，可以设置一个通用名称或者报错
-          specificFilename = `金融数据报告_${type}_${dateString}.pdf`;
-          break;
       }
 
+      try {
+        this.loading[loadingKey] = true;
+
+        // 请求数据而不是直接下载文件
+        const { data } = await axios.get(apiUrl);
+
+        // 移除 id 和 status 字段
+        const cleanedData = data.map(row => {
+          const newRow = { ...row };
+          delete newRow.id;
+          delete newRow.status;
+          return newRow;
+        });
+
+      // 使用处理后的数据生成 PDF
       await downloadPdf({
-          apiUrl: apiUrl,
-          filters: {}, 
-          defaultFilename: specificFilename,
-          onStart: () => { this.loading[loadingKey] = true; },
-          onFinish: () => { this.loading[loadingKey] = false; },
-          onError: (msg) => { 
-              this.$message ? this.$message.error(msg) : alert(msg); 
-          }
+        data: cleanedData,
+        defaultFilename: specificFilename,
+        onStart: () => {},
+        onFinish: () => {},
+        onError: (msg) => {
+          this.$message ? this.$message.error(msg) : alert(msg);
+        }
       });
-    },
+    } catch (err) {
+      console.error(`导出 ${type} 报告失败:`, err);
+      this.$message ? this.$message.error('导出失败，请稍后重试') : alert('导出失败，请稍后重试');
+    } finally {
+      this.loading[loadingKey] = false;
+    }
+  },
+
     // ✅ 2. 新增翻页方法
     changePage(type, newPage) {
       const currentPagination = this.pagination[type];

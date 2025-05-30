@@ -120,6 +120,15 @@ function createPdfDocument({
                 absolutePosition: { y: pageSize.height / 2 }
             };
         },
+        footer: function(currentPage, pageCount) {
+            return {
+                text: `${currentPage} / ${pageCount}`,
+                alignment: 'right',
+                margin: [0, 0, 40, 0],
+                fontSize: 8,
+                color: 'gray'
+            };
+        },
         styles: {
             header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10], alignment: 'center' },
             tableHeader: {

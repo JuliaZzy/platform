@@ -53,7 +53,7 @@ function formatOtherFinanceValue(value) {
 const tableMap = {
     bank: {
         name: 'dataasset_finance_bank',
-        title: '银行数据报告',
+        title: '数据资产增信银行贷款',
         // Column mapping and order for bank PDF
         pdfColumnConfig: {
             map: {
@@ -69,11 +69,11 @@ const tableMap = {
     },
     stock: {
         name: 'dataasset_finance_stock',
-        title: '证券数据报告'
+        title: '数据资产作价入股'
     },
     other: {
         name: 'dataasset_finance_other',
-        title: '其他金融数据报告'
+        title: '其他数据类融资'
     }
 };
 
