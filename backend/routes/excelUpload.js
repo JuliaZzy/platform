@@ -266,7 +266,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
               const affectedIdx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
               if (affectedIdx > -1) {
                   results.affectedRowsForFrontend[affectedIdx].status = 'repeat';
-              } else {
               }
             } else {
               console.log(`[excelUpload] 行 ${rowIndex + 1}: 与现有ID ${existingDbRow.id} 部分重复，但其状态已为 '${existingDbRow.status}'，无需再次更新为 'repeat'。`);
