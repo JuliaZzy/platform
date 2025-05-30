@@ -270,8 +270,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
               }
             } else {
               console.log(`[excelUpload] 行 ${rowIndex + 1}: 与现有ID ${existingDbRow.id} 部分重复，但其状态已为 '${existingDbRow.status}'，无需再次更新为 'repeat'。`);
-            }
-        } else { 
+            } else {
           results.insertedUnique++;
           statusToInsertForNewRow = null; 
           // console.log(`[excelUpload] 行 ${rowIndex + 1}: 未发现部分重复，为唯一新行，状态将为 null。`);
