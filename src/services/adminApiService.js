@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+/**
+ * @description 获取指定表格所有可筛选列的唯一值，用于填充筛选下拉框
+ * @param {string} tabKey - 当前表格的标识符 (例如 'listed', 'nonlisted')
+ * @returns {Promise<Object>} - 一个对象，键是列名，值是该列所有唯一值的数组
+ * 例如: { "status": ["delete", "kept", "repeat"], "省份": ["北京", "上海"] }
+ */
+
 const apiClient = axios.create({
   baseURL: '/api', // 假设所有API都在 /api 这个路径下
 });
@@ -96,3 +103,15 @@ export const exportTableToExcel = (dbTableName) => {
   console.log('Exporting Excel with URL (path param):', exportUrl);
   window.open(exportUrl); 
 };
+
+export async function loadDistinctColumnValues(tabKey) {
+  // 确保这里的 API 路径与你后端定义的路由一致
+  const endpoint = `/admindata/distinct-values/${tabKey}`;
+  try {
+    const response = await axios.get(endpoint);
+    return response.data;
+  } catch (error) {
+    console.error(`[AdminApiService] Failed to load distinct column values for tab ${tabKey}:`, error);
+    throw new Error(error.response?.data?.message || `获取 '${tabKey}' 表格的筛选选项失败`);
+  }
+}

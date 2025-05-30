@@ -5,6 +5,7 @@ const xlsx = require('xlsx');
 const db = require('../db/db');
 const fs = require('fs');
 const axios = require('axios');
+
 const upload = multer({ dest: 'uploads/' });
 
 // 清理列名函数
@@ -12,41 +13,45 @@ const sanitizeColumnName = (name) => {
   if (typeof name !== 'string') return '';
   return name.trim().replace(/\s+/g, '_').replace(/[\`\"\[\]\(\)]/g, '');
 };
+
 // 验证表名函数
 const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
-// 定义每个表用于“部分重复”检查的关键列数量
+
+// 定义每个表用于“部分重复”检查的关键数据库列名
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
-    keyColumnCount: 5,
-    description: "公司, 入表科目, 省份, 所属证券行业分布, 实控人"
+    keyDbColumns: ['公司', '入表科目', '省份', '所属证券行业分布', '实控人', '报告时间'], 
+    description: "公司, 入表科目, 省份, 所属证券行业分布, 实控人, 报告时间"
   },
   'dataasset_non_listed_companies': {
-    keyColumnCount: 5,
+    keyDbColumns: ['province_area', 'quarter_time', 'month_time', 'district_area', 'company_name'], 
     description: "province_area, quarter_time, month_time, district_area, company_name"
   },
   'dataasset_finance_stock': {
-    keyColumnCount: 4,
+    keyDbColumns: ['入股时间', '作价入股企业', '数据资产', '入股公司'], 
     description: "入股时间, 作价入股企业, 数据资产, 入股公司"
   },
   'dataasset_finance_other': {
-    keyColumnCount: 6,
-    description: "融资类型, 日期, 企业, 数据内容, 产品, 融资支持机构"
+    keyDbColumns: ['融资类型', '日期', '企业'], // 根据您的更新
+    description: "融资类型, 日期, 企业"
   }
 };
 
-// ✅ 修改点 1: 更新日期转换配置对象
-// 定义哪些数据库列在从Excel导入时，如果遇到日期序列号，应转换为 'YYYY-MM' 格式文本
-// 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】，值为 true 表示需要转换。
-const dateColumnsToFormatAsYYYYMM = {
+// 定义哪些数据库列在从Excel导入时需要特定的日期格式转换
+// 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】
+// 值是目标日期格式的标识符，例如: 'YYYY-MM' 或 'YYYY-MM-DD'
+const columnSpecificDateFormatting = {
   'dataasset_non_listed_companies': {
-    'month_time': true
+    'month_time': 'YYYY-MM',        
+    'register_date': 'YYYY-MM-DD' // 您添加的，用于处理 DATE 类型列
   },
   'dataasset_finance_stock': {
-    '入股时间': true
+    '入股时间': 'YYYY-MM'
   },
   'dataasset_finance_other': {
-    '日期': true
+    '日期': 'YYYY-MM'
   }
+  // 为其他需要转换的表和列在此处添加配置
 };
 
 router.post('/append', upload.single('file'), async (req, res) => {
@@ -88,9 +93,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) { await client.query('ROLLBACK'); fs.unlink(req.file.path, () => {}); return res.status(400).json({error: 'Excel工作表不存在'});}
     
-    // 使用 { raw: true, defval: null } 来获取原始值，避免xlsx库自动格式化日期为JS Date对象（除非我们希望如此）
-    // 但为了处理序列号，我们需要原始数字。如果cellDates:true能配合header:1工作则更好。
-    // 为了稳定处理序列号，我们依赖原始数字。
     const rawSheetData = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: null });
     if (rawSheetData.length < 1) { await client.query('ROLLBACK'); fs.unlink(req.file.path, () => {}); return res.status(400).json({error: 'Excel表头为空'});}
 
@@ -139,16 +141,18 @@ router.post('/append', upload.single('file'), async (req, res) => {
       affectedRowsForFrontend: []
     };
 
-    const keyDbColumnNamesForCheck = dbBusinessColumnNames.slice(0, currentTableKeysConfig.keyColumnCount);
-    // ✅ 修改点 1.1: 获取当前表的日期列格式化配置
-    const currentTableDateColumnFlags = dateColumnsToFormatAsYYYYMM[tableName] || {};
-
+    const configuredKeyDbNames = currentTableKeysConfig.keyDbColumns; 
+    if (!configuredKeyDbNames || configuredKeyDbNames.length === 0) {
+        await client.query('ROLLBACK'); fs.unlink(req.file.path, () => {});
+        return res.status(400).json({ error: `表 ${tableName} 未正确配置用于重复检查的关键列 (keyDbColumns)。` });
+    }
+    
+    const currentTableDateFormats = columnSpecificDateFormatting[tableName] || {};
 
     console.log(`[excelUpload] 表 ${tableName}: 开始处理 ${excelDataRows.length} 行数据...`);
     console.log(`[excelUpload] 表 ${tableName}: 数据库业务列 (DB): `, dbBusinessColumnNames);
-    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, keyDbColumnNamesForCheck);
-    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateColumnFlags);
-
+    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, configuredKeyDbNames); // 使用正确的变量名
+    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateFormats);
 
     for (let rowIndex = 0; rowIndex < excelDataRows.length; rowIndex++) {
       const originalExcelRowArray = excelDataRows[rowIndex];
@@ -156,17 +160,21 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
       const processedExcelRowValues = originalExcelRowArray.map((value, colIndex) => {
         let cellValue = (typeof value === 'string') ? value.trim() : value;
-        const dbColName = dbBusinessColumnNames[colIndex]; // 获取此Excel列对应的数据库业务列名 (基于位置)
-        
-        // ✅ 修改点 2: 检查此列是否需要 'YYYY-MM' 日期转换
-        if (currentTableDateColumnFlags[dbColName]) { // 值为 true 时表示需要转换
-          let year, month;
+        const dbColName = dbBusinessColumnNames[colIndex];
+        const targetDateFormat = currentTableDateFormats[dbColName];
+
+        if (targetDateFormat) {
+          let year, month, day;
+          let dateParsedSuccessfully = false;
+
           if (typeof cellValue === 'number' && cellValue > 1 && cellValue < 200000) { 
             try {
               const dateObj = xlsx.SSF.parse_date_code(cellValue);
-              if (dateObj && typeof dateObj.y === 'number' && typeof dateObj.m === 'number') {
+              if (dateObj && typeof dateObj.y === 'number' && typeof dateObj.m === 'number' && typeof dateObj.d === 'number') {
                 year = dateObj.y;
                 month = String(dateObj.m).padStart(2, '0');
+                day = String(dateObj.d).padStart(2, '0');
+                dateParsedSuccessfully = true;
               } else {
                  console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}": XLSX.SSF.parse_date_code未能解析。`);
               }
@@ -176,20 +184,49 @@ router.post('/append', upload.single('file'), async (req, res) => {
           } else if (cellValue instanceof Date && !isNaN(cellValue)) { 
              year = cellValue.getFullYear();
              month = String(cellValue.getMonth() + 1).padStart(2, '0');
+             day = String(cellValue.getDate()).padStart(2, '0');
+             dateParsedSuccessfully = true;
           }
-          
-          if (year && month) {
-            const formattedDate = `${year}-${month}`; // ✅ 格式化为 "YYYY-MM"
-            console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期: ${formattedDate}`);
+          // 尝试解析 YYYY?MM?DD? 或 YYYY?MM? 格式的字符串 (其中?代表分隔符或无分隔符)
+          else if (typeof cellValue === 'string') {
+            const cleanedDateString = cellValue.replace(/[年月]/g, '-').replace(/[日]/g, '');
+            const strictDateMatch = cleanedDateString.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})$/); // YYYY-MM-DD or YYYY/MM/DD etc.
+            const yearMonthMatch = cleanedDateString.match(/^(\d{4})[-./]?(\d{1,2})$/); // YYYY-MM or YYYY/MM
+
+            if (strictDateMatch) {
+                year = parseInt(strictDateMatch[1], 10);
+                month = String(parseInt(strictDateMatch[2], 10)).padStart(2, '0');
+                day = String(parseInt(strictDateMatch[3], 10)).padStart(2, '0');
+                dateParsedSuccessfully = true;
+            } else if (yearMonthMatch) {
+                 year = parseInt(yearMonthMatch[1], 10);
+                 month = String(parseInt(yearMonthMatch[2], 10)).padStart(2, '0');
+                 // 对于 YYYY-MM 格式，如果目标是 YYYY-MM-DD，我们默认 day 为 01
+                 day = '01'; 
+                 dateParsedSuccessfully = true;
+            }
+          }
+
+          if (dateParsedSuccessfully) {
+            let formattedDate = '';
+            if (targetDateFormat === 'YYYY-MM-DD') {
+              formattedDate = `${year}-${month}-${day}`;
+            } else if (targetDateFormat === 'YYYY-MM') {
+              formattedDate = `${year}-${month}`;
+            } else {
+              console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}": 未知的目标日期格式 "${targetDateFormat}"，返回原始值。`);
+              return cellValue; 
+            }
+            // console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期 (${targetDateFormat}): ${formattedDate}`);
             return formattedDate;
           }
+          // console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", 值 "${cellValue}": 未能解析为日期组件，保留原样。`);
         }
         return cellValue; 
       });
       
-      // 后续所有逻辑都使用 processedExcelRowValues
       const excelRowValues = processedExcelRowValues; 
-      console.log(`[excelUpload] 处理Excel行 ${rowIndex + 1} (格式化后):`, excelRowValues);
+      // console.log(`[excelUpload] 处理Excel行 ${rowIndex + 1} (格式化后):`, excelRowValues);
 
       // --- 完全重复检查 ---
       const allMatchConditions = [];
@@ -203,60 +240,70 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
       if (fullMatchResult.rows.length > 0) {
         results.ignoredFullDuplicate++;
-        console.log(`[excelUpload] 行 ${rowIndex + 1}: 完全重复，已忽略。`);
+        // console.log(`[excelUpload] 行 ${rowIndex + 1}: 完全重复，已忽略。`);
         continue; 
       }
 
       // --- 部分重复检查 ---
-      const keyMatchValuesForQuery = excelRowValues.slice(0, currentTableKeysConfig.keyColumnCount);
       const keyMatchConditionsForQuery = [];
-      keyDbColumnNamesForCheck.forEach((keyDbCol, index) => {
-        keyMatchConditionsForQuery.push(`"${keyDbCol}" IS NOT DISTINCT FROM $${index + 1}`);
-      });
+      const keyMatchValuesFromExcel = [];
+      for (const keyDbColName of configuredKeyDbNames) {
+        const indexInBusinessColumns = dbBusinessColumnNames.indexOf(keyDbColName);
+        if (indexInBusinessColumns !== -1) {
+          keyMatchConditionsForQuery.push(`"${keyDbColName}" IS NOT DISTINCT FROM $${keyMatchValuesFromExcel.length + 1}`);
+          keyMatchValuesFromExcel.push(excelRowValues[indexInBusinessColumns]);
+        } else {
+          console.error(`[excelUpload] 配置错误: 表 ${tableName} 的关键列 "${keyDbColName}" 未在其业务列列表中找到。此关键列将被忽略。`);
+          // 不再因关键列配置错误而使整行视为唯一，而是只用找到的关键列进行匹配
+          // 但如果 configuredKeyDbNames 中的列在 dbBusinessColumnNames 中根本不存在，这是一个严重的配置问题
+        }
+      }
       
       let statusToInsertForNewRow = null; 
-      const partialMatchQuery = `SELECT id, status FROM "${tableName}" WHERE ${keyMatchConditionsForQuery.join(' AND ')}`;
-      const partialMatchResult = await client.query(partialMatchQuery, keyMatchValuesForQuery);
+      if (keyMatchConditionsForQuery.length > 0 && keyMatchConditionsForQuery.length === configuredKeyDbNames.filter(kcn => dbBusinessColumnNames.includes(kcn)).length) { 
+        // 只在所有在DB中存在的已配置key都有条件时才进行部分重复查询
+        const partialMatchQuery = `SELECT id, status FROM "${tableName}" WHERE ${keyMatchConditionsForQuery.join(' AND ')}`;
+        const partialMatchResult = await client.query(partialMatchQuery, keyMatchValuesFromExcel);
 
-      if (partialMatchResult.rows.length > 0) { 
-        statusToInsertForNewRow = 'repeat';
-        results.insertedAsRepeat++;
-        console.log(`[excelUpload] 行 ${rowIndex + 1}: 发现部分重复，新行状态将设为 'repeat'。`);
-        for (const existingDbRow of partialMatchResult.rows) {
-          if (existingDbRow.status !== 'delete') {
-            if (existingDbRow.status !== 'repeat') { 
-              const { rows: updatedRows } = await client.query(
-                `UPDATE "${tableName}" SET status = 'repeat' WHERE id = $1 RETURNING *`, 
-                [existingDbRow.id]
-              );
-              if (updatedRows.length > 0) {
-                results.updatedToRepeat++;
-                console.log(`[excelUpload] -- DB行 (ID: ${existingDbRow.id}) 状态已更新为 'repeat'。`);
-                const idx = results.affectedRowsForFrontend.findIndex(r => r.id === updatedRows[0].id);
-                if (idx > -1) results.affectedRowsForFrontend[idx] = updatedRows[0];
-                else results.affectedRowsForFrontend.push(updatedRows[0]);
-              }
-            } else {
-                console.log(`[excelUpload] -- DB行 (ID: ${existingDbRow.id}) 状态已经是 'repeat'。`);
-                const idx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
-                if (idx === -1) {
-                    const { rows: currentRepeatRows } = await client.query(`SELECT * FROM "${tableName}" WHERE id = $1`, [existingDbRow.id]);
-                    if (currentRepeatRows.length > 0) results.affectedRowsForFrontend.push(currentRepeatRows[0]);
+        if (partialMatchResult.rows.length > 0) { 
+          statusToInsertForNewRow = 'repeat';
+          results.insertedAsRepeat++;
+          for (const existingDbRow of partialMatchResult.rows) {
+            if (existingDbRow.status !== 'delete') {
+              if (existingDbRow.status !== 'repeat') { 
+                const { rows: updatedRows } = await client.query(
+                  `UPDATE "${tableName}" SET status = 'repeat' WHERE id = $1 RETURNING *`, 
+                  [existingDbRow.id]
+                );
+                if (updatedRows.length > 0) {
+                  results.updatedToRepeat++;
+                  const idx = results.affectedRowsForFrontend.findIndex(r => r.id === updatedRows[0].id);
+                  if (idx > -1) results.affectedRowsForFrontend[idx] = updatedRows[0];
+                  else results.affectedRowsForFrontend.push(updatedRows[0]);
                 }
-            }
-          } else { 
-            console.log(`[excelUpload] -- DB行 (ID: ${existingDbRow.id}) 状态是 'delete'，不更新。`);
-            const idx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
-            if (idx === -1) {
-                const { rows: currentDeletedRows } = await client.query(`SELECT * FROM "${tableName}" WHERE id = $1`, [existingDbRow.id]);
-                if (currentDeletedRows.length > 0) results.affectedRowsForFrontend.push(currentDeletedRows[0]);
+              } else {
+                  const idx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
+                  if (idx === -1) {
+                      const { rows: currentRepeatRows } = await client.query(`SELECT * FROM "${tableName}" WHERE id = $1`, [existingDbRow.id]);
+                      if (currentRepeatRows.length > 0) results.affectedRowsForFrontend.push(currentRepeatRows[0]);
+                  }
+              }
+            } else { 
+              const idx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
+              if (idx === -1) {
+                  const { rows: currentDeletedRows } = await client.query(`SELECT * FROM "${tableName}" WHERE id = $1`, [existingDbRow.id]);
+                  if (currentDeletedRows.length > 0) results.affectedRowsForFrontend.push(currentDeletedRows[0]);
+              }
             }
           }
+        } else { 
+          results.insertedUnique++;
+          statusToInsertForNewRow = null; 
         }
-      } else { 
+      } else {
+        console.warn(`[excelUpload] 表 ${tableName} 行 ${rowIndex + 1}: 部分或全部配置的关键列在数据库中未找到，或未配置关键列，视为唯一行。`);
         results.insertedUnique++;
-        statusToInsertForNewRow = null; 
-        console.log(`[excelUpload] 行 ${rowIndex + 1}: 未发现部分重复，为唯一新行，状态将为 null。`);
+        statusToInsertForNewRow = null;
       }
 
       // --- 插入新行 ---
@@ -265,50 +312,40 @@ router.post('/append', upload.single('file'), async (req, res) => {
       const placeholders = dbColumnsForInsert.map((_, i) => `$${i + 1}`).join(',');
       const insertSql = `INSERT INTO "${tableName}" (${dbColumnsForInsert.map(c => `"${c}"`).join(',')}) VALUES (${placeholders}) RETURNING *`;
       const { rows: insertedExcelRows } = await client.query(insertSql, valuesToInsertForDB);
-      console.log(`[excelUpload] 行 ${rowIndex + 1}: 已插入到数据库，获得ID: ${insertedExcelRows[0]?.id}, 状态: ${statusToInsertForNewRow}`);
+      // console.log(`[excelUpload] 行 ${rowIndex + 1}: 已插入到数据库，获得ID: ${insertedExcelRows[0]?.id}, 状态: ${statusToInsertForNewRow}`);
       
       if (insertedExcelRows.length > 0) {
         const idx = results.affectedRowsForFrontend.findIndex(r => r.id === insertedExcelRows[0].id);
         if (idx > -1) results.affectedRowsForFrontend[idx] = insertedExcelRows[0];
         else results.affectedRowsForFrontend.push(insertedExcelRows[0]);
       }
-    }
-    await client.query('COMMIT');
-    console.log('[excelUpload] 事务已提交。');
+    } // end of for loop
 
-    // ✅ 如果是 dataasset_non_listed_companies 表被更新了，则触发 dataasset_finance_bank 的同步
-    try {
-      const internalApiBase = process.env.VUE_APP_API_URL; // ✅ 读取新的环境变量
-
-      if (!internalApiBase) {
-        console.error(`[CRITICAL ERROR] INTERNAL_API_BASE_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
-        // 对于生产环境，这应该视为配置错误。
-        // 对于开发环境，可以考虑一个备用方案，但最好是总是设置它。
-        // 例如 (仅供参考，生产环境不应依赖此回退):
-        // const devFallbackUrl = `http://localhost:${process.env.PORT || 3000}`;
-        // console.warn(`[DEV FALLBACK] INTERNAL_API_BASE_URL 未设置，尝试使用: ${devFallbackUrl}`);
-        // const syncUrl = `${devFallbackUrl}/api/financeupload/sync-bank-table`; 
-      }
-
-      if (internalApiBase) { // 仅当 internalApiBase 有效时才尝试调用
-          const syncUrl = `${internalApiBase}/api/financeupload/sync-bank-table`; // ✅ 构建完整的URL
-          console.log(`[excelUpload - Sync] Calling sync URL: ${syncUrl}`);
-          const syncResponse = await axios.post(syncUrl); // 不需要请求体或特殊头
-
-          if (syncResponse.data && syncResponse.data.success) {
-            console.log(`[excelUpload - Sync] ✅ dataasset_finance_bank 同步成功。`);
-          } else {
-            console.warn(`[excelUpload - Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
-          }
-      } else {
-          console.error(`[excelUpload - Sync] ⚠️ 未能执行 dataasset_finance_bank 同步，因为 INTERNAL_API_BASE_URL 未配置。`);
-      }
-    } catch (syncError) {
-      console.error(`❌ [excelUpload - Sync] 自动同步 dataasset_finance_bank 失败:`, 
-        syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
-      );
+    if (tableName === 'dataasset_non_listed_companies') {
+        console.log(`[excelUpload] 检测到 ${tableName} 更新，准备同步 dataasset_finance_bank...`);
+        try {
+            const internalApiBase = process.env.VUE_APP_API_URL; 
+            if (!internalApiBase) {
+                console.error(`[CRITICAL ERROR] VUE_APP_API_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
+            } else {
+                const syncUrl = `${internalApiBase}/api/financeupload/sync-bank-table`;
+                console.log(`[excelUpload - Sync] Calling sync URL: ${syncUrl}`);
+                const syncResponse = await axios.post(syncUrl);
+                if (syncResponse.data && syncResponse.data.success) {
+                    console.log(`[excelUpload - Sync] ✅ dataasset_finance_bank 同步成功。`);
+                } else {
+                    console.warn(`[excelUpload - Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
+                }
+            }
+        } catch (syncError) {
+            console.error(`❌ [excelUpload - Sync] 自动同步 dataasset_finance_bank 失败:`, 
+                syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
+            );
+        }
     }
     
+    await client.query('COMMIT');
+    // console.log('[excelUpload] 事务已提交。');
     res.json({
       message: `导入完成。共处理 ${results.processedRows} 行Excel数据。新增唯一行: ${results.insertedUnique}, 新增并标记为重复: ${results.insertedAsRepeat}, 更新已有数据为重复: ${results.updatedToRepeat}, 忽略完全重复行: ${results.ignoredFullDuplicate}.`,
       data: results.affectedRowsForFrontend, 

@@ -6,6 +6,7 @@
           chartTitle="A股数据资源入表企业数量和金额"
           :categories="comboData.categories"
           :barSeries="comboData.barSeries"
+          y-axis-bar-name="入表企业数量（家）"
           :lineSeries="comboData.lineSeries"
         />
       </div>

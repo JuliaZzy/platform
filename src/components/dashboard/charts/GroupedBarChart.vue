@@ -38,6 +38,10 @@ export default defineComponent({
     valKey: {
       type: String,
       default: 'value'
+    },
+    yAxisName: {
+      type: String,
+      default: '入表企业数量（家）'
     }
   },
   setup(props) {
@@ -56,7 +60,7 @@ export default defineComponent({
         // ✅ 加默认值防御
         const data = props.chartData || [];
 
-        const numSeries = data.length; // 获取实际的系列数量，例如4个 (Q1-Q4)
+        const numSeries = data.length;
           let  colorPaletteForChart = [...chartColors]; // 默认使用原始颜色列表
 
           if (numSeries > 0) {
@@ -158,7 +162,7 @@ export default defineComponent({
           },
           legend: { top: 10 },
           grid: {
-            left: '3%',
+            left: '10%',
             right: '4%',
             bottom: '3%',
             containLabel: true
@@ -206,7 +210,7 @@ export default defineComponent({
           },
           yAxis: {
             type: 'value',
-            name: '数量（个）',
+            name: '入表企业数量（家）',
             nameLocation: 'middle',
             nameGap: 50,
             nameTextStyle: { fontSize: 14 }
@@ -244,7 +248,7 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
-  width: 100%;
+  width: 95%;
   min-width: 0;
 }
 
