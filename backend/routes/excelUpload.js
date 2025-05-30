@@ -14,7 +14,6 @@ const sanitizeColumnName = (name) => {
 };
 // 验证表名函数
 const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
-// 定义每个表用于“部分重复”检查的关键列数量
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
     keyDbColumns: ['公司', '入表科目', '省份', '所属证券行业分布', '实控人', '报告时间'], 
@@ -37,16 +36,16 @@ const tableKeyColumnConfigs = {
 // ✅ 修改点 1: 更新日期转换配置对象
 // 定义哪些数据库列在从Excel导入时，如果遇到日期序列号，应转换为 'YYYY-MM' 格式文本
 // 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】，值为 true 表示需要转换。
-const dateColumnsToFormatAsYYYYMM = {
+const columnSpecificDateFormatting = {
   'dataasset_non_listed_companies': {
-    'month_time': true,
-    'register_date': true
+    'month_time': 'YYYY-MM',        // month_time 转为 "YYYY-MM"
+    'register_date': 'YYYY-MM-DD' // registration_date 转为 "YYYY-MM-DD"
   },
   'dataasset_finance_stock': {
-    '入股时间': true
+    '入股时间': 'YYYY-MM'
   },
   'dataasset_finance_other': {
-    '日期': true
+    '日期': 'YYYY-MM'
   }
 };
 
@@ -144,15 +143,13 @@ router.post('/append', upload.single('file'), async (req, res) => {
           return res.status(400).json({ error: `表 ${tableName} 未正确配置用于重复检查的关键列 (keyDbColumns)。` });
       }
     
-    // ✅ 修改点 1.1: 获取当前表的日期列格式化配置
-    const currentTableDateColumnFlags = dateColumnsToFormatAsYYYYMM[tableName] || {};
-
+    // ✅ 获取当前表的特定日期格式化配置
+    const currentTableDateFormats = columnSpecificDateFormatting[tableName] || {};
 
     console.log(`[excelUpload] 表 ${tableName}: 开始处理 ${excelDataRows.length} 行数据...`);
     console.log(`[excelUpload] 表 ${tableName}: 数据库业务列 (DB): `, dbBusinessColumnNames);
     console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, configuredKeyDbNames);
-    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateColumnFlags);
-
+    console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateFormats);
 
     for (let rowIndex = 0; rowIndex < excelDataRows.length; rowIndex++) {
       const originalExcelRowArray = excelDataRows[rowIndex];
@@ -160,33 +157,52 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
       const processedExcelRowValues = originalExcelRowArray.map((value, colIndex) => {
         let cellValue = (typeof value === 'string') ? value.trim() : value;
-        const dbColName = dbBusinessColumnNames[colIndex]; // 获取此Excel列对应的数据库业务列名 (基于位置)
+        const dbColName = dbBusinessColumnNames[colIndex]; 
         
-        // ✅ 修改点 2: 检查此列是否需要 'YYYY-MM' 日期转换
-        if (currentTableDateColumnFlags[dbColName]) { // 值为 true 时表示需要转换
-          let year, month;
-          if (typeof cellValue === 'number' && cellValue > 1 && cellValue < 200000) { 
+        // ✅ 修改点 2: 根据配置的目标格式进行日期转换
+        const targetDateFormat = currentTableDateFormats[dbColName]; // 获取目标格式，如 'YYYY-MM' 或 'YYYY-MM-DD'
+
+        if (targetDateFormat) { // 如果此列需要日期格式化
+          let year, month, day;
+          let dateParsedSuccessfully = false;
+
+          if (typeof cellValue === 'number' && cellValue > 1 && cellValue < 200000) { // Excel日期序列号
             try {
-              const dateObj = xlsx.SSF.parse_date_code(cellValue);
-              if (dateObj && typeof dateObj.y === 'number' && typeof dateObj.m === 'number') {
+              const dateObj = xlsx.SSF.parse_date_code(cellValue); // {y,m,d,...}, m is 1-12
+              if (dateObj && typeof dateObj.y === 'number' && typeof dateObj.m === 'number' && typeof dateObj.d === 'number') {
                 year = dateObj.y;
                 month = String(dateObj.m).padStart(2, '0');
+                day = String(dateObj.d).padStart(2, '0');
+                dateParsedSuccessfully = true;
               } else {
                  console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}": XLSX.SSF.parse_date_code未能解析。`);
               }
             } catch (e) {
               console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}": 日期序列号转换时出错。`, e);
             }
-          } else if (cellValue instanceof Date && !isNaN(cellValue)) { 
+          } else if (cellValue instanceof Date && !isNaN(cellValue)) { // JS Date对象
              year = cellValue.getFullYear();
              month = String(cellValue.getMonth() + 1).padStart(2, '0');
+             day = String(cellValue.getDate()).padStart(2, '0');
+             dateParsedSuccessfully = true;
           }
-          
-          if (year && month) {
-            const formattedDate = `${year}-${month}`; // ✅ 格式化为 "YYYY-MM"
-            console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期: ${formattedDate}`);
+
+          if (dateParsedSuccessfully) {
+            let formattedDate = '';
+            if (targetDateFormat === 'YYYY-MM-DD') {
+              formattedDate = `${year}-${month}-${day}`;
+            } else if (targetDateFormat === 'YYYY-MM') {
+              formattedDate = `${year}-${month}`;
+            } else {
+              // 如果有其他格式需求，在这里添加
+              console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}": 未知的目标日期格式 "${targetDateFormat}"，返回原始值。`);
+              return cellValue; // 返回原始（已trim）的值
+            }
+            console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期 (${targetDateFormat}): ${formattedDate}`);
             return formattedDate;
           }
+          // 如果未能成功解析出日期组件，则保留原始值（或执行特定错误处理）
+          // console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", 值 "${cellValue}": 未能解析为日期组件，保留原样。`);
         }
         return cellValue; 
       });
