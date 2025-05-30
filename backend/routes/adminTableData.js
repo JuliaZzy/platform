@@ -7,8 +7,8 @@ const db = require('../db/db'); // 确保路径正确
 const adminTableConfigs = {
   'listed': {
     tableName: 'dataasset_listed_companies_2024',
-    searchableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
-    filterableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"']
+    searchableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', '"status"'],
+    filterableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', "status"]
   },
   'nonlisted': { 
     tableName: 'dataasset_non_listed_companies',
@@ -16,27 +16,27 @@ const adminTableConfigs = {
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
                         '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
-                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"', '"status"'],
     filterableColumns: ['"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
                         '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
-                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"']
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"', "status"]
   },
   'finance-bank':{
     tableName: 'dataasset_finance_bank',
-    searchableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"'],
-    filterableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"']
+    searchableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"', '"status"'],
+    filterableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"', "status"]
   },
   'finance-stock':{ 
     tableName: 'dataasset_finance_stock',
-    searchableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
-    filterableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"']
+    searchableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"', '"status"'],
+    filterableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"', "status"]
   },
   'finance-other':{ 
     tableName: 'dataasset_finance_other',
-    searchableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
-    filterableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"']
+    searchableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"', '"status"'],
+    filterableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"', "status"]
   }
 };
 
