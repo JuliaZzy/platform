@@ -147,7 +147,7 @@
       </div>
 
       <div class="export-controls">
-        <label class="upload-btn">
+        <label class="upload-btn" v-if="currentTab !== 'finance-bank'">
           上传数据
           <input type="file" accept=".xlsx" @change="handleUpload" hidden ref="fileInput"/>
         </label>
