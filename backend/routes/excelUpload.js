@@ -17,8 +17,8 @@ const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
 // 定义每个表用于“部分重复”检查的关键列数量
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
-    keyColumnCount: 5,
-    description: "公司, 入表科目, 省份, 所属证券行业分布, 实控人"
+    keyDbColumns: ['公司', '入表科目', '省份', '所属证券行业分布', '实控人', '报告时间'], 
+    description: "公司, 入表科目, 省份, 所属证券行业分布, 实控人, 报告时间"
   },
   'dataasset_non_listed_companies': {
     keyColumnCount: 5,
@@ -39,7 +39,8 @@ const tableKeyColumnConfigs = {
 // 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】，值为 true 表示需要转换。
 const dateColumnsToFormatAsYYYYMM = {
   'dataasset_non_listed_companies': {
-    'month_time': true
+    'month_time': true,
+    'registration_date': true
   },
   'dataasset_finance_stock': {
     '入股时间': true
@@ -281,7 +282,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
       const internalApiBase = process.env.VUE_APP_API_URL; // ✅ 读取新的环境变量
 
       if (!internalApiBase) {
-        console.error(`[CRITICAL ERROR] INTERNAL_API_BASE_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
+        console.error(`[CRITICAL ERROR] VUE_APP_API_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
         // 对于生产环境，这应该视为配置错误。
         // 对于开发环境，可以考虑一个备用方案，但最好是总是设置它。
         // 例如 (仅供参考，生产环境不应依赖此回退):
