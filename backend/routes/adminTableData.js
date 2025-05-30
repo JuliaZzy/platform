@@ -162,4 +162,36 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   }
 });
 
+router.get('/distinct-values/:tabKey', async (req, res) => {
+  const { tabKey } = req.params;
+  const config = adminTableConfigs[tabKey];
+
+  if (!config || !config.tableName || !Array.isArray(config.filterableColumns) || config.filterableColumns.length === 0) {
+    return res.status(404).json({ error: `无效的表格类型或未配置可筛选列 (distinct-values): ${tabKey}` });
+  }
+
+  const { tableName, filterableColumns } = config;
+  const distinctValues = {};
+  const client = await db.getClient();
+
+  try {
+    await client.query('BEGIN'); // 虽然只是查询，但保持事务一致性是个好习惯，或者直接查询
+    for (const dbColName of filterableColumns) {
+      // 确保 dbColName 是安全的，并且是实际的列名（可能已带引号）
+      // 注意：如果dbColName包含用户输入，需要严格防止SQL注入，但这里它来自服务端配置，相对安全
+      const distinctQuery = `SELECT DISTINCT ${dbColName} FROM "${tableName}" WHERE ${dbColName} IS NOT NULL ORDER BY ${dbColName} ASC`;
+      const result = await client.query(distinctQuery);
+      distinctValues[dbColName.replace(/"/g, '')] = result.rows.map(row => row[dbColName.toLowerCase().replace(/"/g, '')]); // PostgreSQL列名默认小写
+    }
+    await client.query('COMMIT');
+    res.json(distinctValues); // 返回格式：{ "列名1": ["值A", "值B"], "列名2": ["值C"] }
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(`❌ Admin - 获取唯一值失败 - 表 ${tableName} (tab: ${tabKey}):`, err);
+    res.status(500).json({ error: 'Admin 后端获取唯一值失败', detail: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;
