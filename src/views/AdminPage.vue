@@ -253,17 +253,33 @@ export default {
     toggleSidebar() {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
-    switchTab(tab) {
+    async switchTab(tab) {
       if (this.currentTab === tab) return;
+    
       this.currentTab = tab;
-      this.clearAllFilters(false); 
+      this.clearAllFilters(false); // 清除筛选条件，但不立即加载数据
       this.currentPage = 1;
       this.tableData = [];
       this.tableDataTotalRows = 0;
-      this.loadData();
+      this.uniqueColumnValues = {}; // 切换tab时，清空筛选选项
+      // this.areFilterOptionsLoadedCurrentTab = false; // 重置标志位
+    
+      // 确保 loading 状态被正确设置
+      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
+        this.tableLoadingState[this.currentTab] = true; // 开始加载前，显示 spinner
+      }
+    
+      try {
+        await this.loadFilterOptions(); // 先加载全量的筛选选项
+      } finally {
+        // 无论 filter options 是否成功，都尝试加载数据
+        // loadData 内部会处理 loading 状态的结束
+        this.loadData(); // 然后加载表格数据（它会使用已加载的筛选选项）
+      }
     },
     async loadData() {
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
+      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab) && !this.tableLoadingState[this.currentTab]) {
+        // 如果不是由 switchTab 触发的（比如翻页），也需要设置 loading
         this.tableLoadingState[this.currentTab] = true;
       }
       try {
@@ -280,19 +296,6 @@ export default {
         this.tableData = response.data || [];
         this.tableDataTotalRows = response.total || 0;
         this.tableHeaders = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
-
-        const colVals = {};
-        this.tableData.forEach(row => {
-          this.displayableTableHeaders.forEach(header => {
-             if (!colVals[header]) colVals[header] = new Set();
-             if (row[header] !== null && String(row[header]).trim() !== '') {
-               colVals[header].add(String(row[header]));
-             }
-          });
-        });
-        this.uniqueColumnValues = Object.fromEntries(
-          Object.entries(colVals).map(([k, set]) => [k, Array.from(set).sort((a, b) => String(a).localeCompare(String(b)))])
-        );
         
         // lastUpdate 在这里设置为 Date 对象，由 computed property formattedLastUpdate 格式化
         this.lastUpdate = new Date(); 
@@ -379,6 +382,33 @@ export default {
           this.tableLoadingState[this.currentTab] = false;
         }
         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+      }
+    },
+    async loadFilterOptions() {
+      if (!this.currentTab) {
+        console.warn("[AdminPage] Cannot load filter options: currentTab is not set.");
+        return;
+      }
+      // 可以加一个简单的标志位，防止重复加载筛选选项，除非tab切换
+      // if (this.areFilterOptionsLoadedForCurrentTab) return;
+  
+      console.log(`[AdminPage] Loading filter options for tab: ${this.currentTab}`);
+      try {
+        const distinctValuesData = await adminService.loadDistinctColumnValues(this.currentTab);
+        // distinctValuesData 结构是 { "列名1": ["值A", "值B"], ... }
+        // 这里的键名 "列名1" 必须与你前端 this.displayableTableHeaders 中的项匹配，
+        // 或者与你 this.filters 对象中实际使用的键 (colKey) 匹配。
+        this.uniqueColumnValues = distinctValuesData || {};
+        // this.areFilterOptionsLoadedForCurrentTab = true; // 设置标志位
+        console.log("[AdminPage] Filter options loaded:", this.uniqueColumnValues);
+      } catch (error) {
+        const errorMessage = error.message || '筛选选项加载失败！';
+        if (this.$message && typeof this.$message.error === 'function') {
+            this.$message.error(errorMessage);
+        } else {
+            alert(errorMessage);
+        }
+        this.uniqueColumnValues = {}; // 出错时清空
       }
     },
     clearAllFilters(shouldLoadData = true) {
@@ -493,8 +523,12 @@ export default {
       }
     }
   },
-  mounted() {
-    this.loadData();
+  async mounted() {
+    if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
+      this.tableLoadingState[this.currentTab] = true;
+    }
+    await this.loadFilterOptions(); // 先加载筛选选项
+    this.loadData();                // 再加载数据
     document.addEventListener('mousedown', this.handleClickOutside);
   },
   beforeDestroy() {
