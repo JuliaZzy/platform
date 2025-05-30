@@ -116,8 +116,8 @@ function createPdfDocument({
         background: function(currentPage, pageSize) {
             return {
                 text: watermarkText, color: 'gray', opacity: 0.2, bold: true,
-                fontSize: 45, angle: -45,
-                absolutePosition: { x: pageSize.width / 2, y: pageSize.height / 2 }
+                fontSize: 45, angle: -45, alignment: 'center',
+                absolutePosition: { y: pageSize.height / 2 }
             };
         },
         styles: {
