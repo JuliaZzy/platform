@@ -8,20 +8,36 @@ const adminTableConfigs = {
   'listed': {
     tableName: 'dataasset_listed_companies_2024',
     searchableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
-    filterableColumnsMap: {
-      "公司": '"公司"',
-      "入表科目": '"入表科目"',
-      "入表科目": '"入表科目"',
-      "省份": '"省份"',
-      "实控人": '"实控人"',
-      "市值规模": '"市值规模"',
-      "报告时间": '"报告时间"'
-    }
+    filterableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"']
   },
-  'nonlisted': { tableName: 'dataasset_non_listed_companies' },
-  'finance-bank':{ tableName: 'dataasset_finance_bank' },
-  'finance-stock':{ tableName: 'dataasset_finance_stock' },
-  'finance-other':{ tableName: 'dataasset_finance_other' }
+  'nonlisted': { 
+    tableName: 'dataasset_non_listed_companies',
+    searchableColumns: ['"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+                        '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
+                        '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
+                        '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
+    filterableColumns: ['"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+                        '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
+                        '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
+                        '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"']
+  },
+  'finance-bank':{
+    tableName: 'dataasset_finance_bank',
+    searchableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"'],
+    filterableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"']
+  },
+  'finance-stock':{ 
+    tableName: 'dataasset_finance_stock',
+    searchableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
+    filterableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"']
+  },
+  'finance-other':{ 
+    tableName: 'dataasset_finance_other',
+    searchableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
+    filterableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"']
+  }
 };
 
 // 通用数据获取接口: GET /api/admindata/tabledata/:tabKey?page=1&pageSize=15&filters={...}&searchKeyword=...
@@ -54,44 +70,46 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   const queryValues = [];
   let whereConditions = [];
 
-  // 1. ✅ 处理列筛选 (clientFilters) - 已恢复
+  // 1. ✅ 处理列筛选 (clientFilters)
   if (filterableColumns && typeof clientFilters === 'object' && Object.keys(clientFilters).length > 0) {
-    for (const rawColName in clientFilters) { // rawColName 来自前端，可能是 "公司" 或 "month_time"
-      if (Object.prototype.hasOwnProperty.call(clientFilters, rawColName) && 
-          Array.isArray(clientFilters[rawColName]) && 
+    for (const rawColName in clientFilters) {
+      if (Object.prototype.hasOwnProperty.call(clientFilters, rawColName) &&
+          Array.isArray(clientFilters[rawColName]) &&
           clientFilters[rawColName].length > 0) {
-        
-        // 确保列名在SQL中是安全的 (例如，使用双引号)
-        // filterableColumns 中的列名应该已经是加了引号的或者是不需要引号的安全名称
+  
         const dbColName = filterableColumns.find(fc => fc.replace(/"/g, '') === rawColName.replace(/"/g, ''));
-
-        if (dbColName) { // 只有在配置中允许筛选的列才处理
-            const filterValuesForColumn = clientFilters[rawColName];
-            
-            if (filterValuesForColumn.length === 1) {
-                // 对于单个值，使用 IS NOT DISTINCT FROM 处理 NULL
-                // (如果筛选值本身可能代表NULL，例如用户选择了一个“空”选项)
-                // 但通常筛选值是具体的数据值
-                if (filterValuesForColumn[0] === null || filterValuesForColumn[0] === 'NULL_VALUE_PLACEHOLDER') { // 假设用特殊值代表筛NULL
-                    whereConditions.push(`${dbColName} IS NULL`);
-                } else {
-                    whereConditions.push(`${dbColName} = $${queryValues.length + 1}`);
-                    queryValues.push(filterValuesForColumn[0]);
-                }
+  
+        if (dbColName) { // 如果找到了有效的数据库列名
+          const filterValuesForColumn = clientFilters[rawColName]; // 获取这一列选中的所有筛选值，例如 ['北京', '上海']
+  
+          if (filterValuesForColumn.length === 1) {
+            // --- 处理单个筛选值 ---
+            const singleValue = filterValuesForColumn[0];
+            if (singleValue === null || singleValue === 'NULL_VALUE_PLACEHOLDER') { // 假设用特殊值代表筛NULL
+              whereConditions.push(`${dbColName} IS NULL`);
             } else {
-                // 对于多个值，使用 IN。注意：IN 不会直接匹配 NULL。
-                // 如果需要 IN 也匹配 NULL，需要额外处理或确保筛选值列表不含代表NULL的项。
-                const placeholders = filterValuesForColumn.map(() => {
-                    queryValues.push(0); // 先用0占位
-                    return `$${queryValues.length}`;
-                });
-                filterValuesForColumn.forEach((val, i) => {
-                    queryValues[queryValues.length - filterValuesForColumn.length + i] = val; // 回填真实值
-                });
-                whereConditions.push(`${dbColName} IN (${placeholders.join(', ')})`);
+              whereConditions.push(`${dbColName} = $${queryValues.length + 1}`);
+              queryValues.push(singleValue); // ✅ **补充：将单个值添加到 queryValues**
             }
+          } else {
+            // --- 处理多个筛选值 (IN 子句) ---
+            // 1. 为IN子句生成占位符 (例如 $N, $N+1, ...)
+            //    同时，在 queryValues 中用临时值（比如0）占据这些位置
+            const placeholders = filterValuesForColumn.map(() => {
+              queryValues.push(0); // 先用任意值占位，这个值会被下面的循环替换
+              return `$${queryValues.length}`;
+            });
+  
+            // 2. 用真实的筛选值替换 queryValues 中的占位值
+            filterValuesForColumn.forEach((val, i) => {
+              queryValues[queryValues.length - filterValuesForColumn.length + i] = val;
+            });
+  
+            // 3. 构建 IN 条件
+            whereConditions.push(`${dbColName} IN (${placeholders.join(', ')})`);
+          }
         } else {
-            console.warn(`[AdminDataService] 尝试筛选未配置的列: ${rawColName}`);
+          console.warn(`[AdminDataService] 尝试筛选未配置的列: ${rawColName}`);
         }
       }
     }
