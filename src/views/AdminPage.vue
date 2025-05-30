@@ -48,8 +48,9 @@
             <thead>
               <tr>
                 <th>序号</th>
-                <template v-for="colKey in displayableTableHeaders" :key="colKey">
+                <template v-for="colKey in displayableTableHeaders">
                   <th v-if="!(colKey === 'status' && currentTab === 'finance-bank')"
+                      :key="colKey"   Zuckerd --- :key 移到这里
                       style="position: relative;">
                     <div class="th-wrapper">
                       {{ colKey === 'status' ? '状态' : colKey }}
