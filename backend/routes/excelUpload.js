@@ -274,13 +274,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
           statusToInsertForNewRow = null; 
           // console.log(`[excelUpload] 行 ${rowIndex + 1}: 未发现部分重复，为唯一新行，状态将为 null。`);
         }
-      } else {
-        // 如果没有有效的key条件（可能是配置问题，或所有配置的key列都不存在于表中）
-        // 将行视为唯一，或根据您的策略抛出错误
-        console.warn(`[excelUpload] 表 ${tableName} 行 ${rowIndex + 1}: 未能构建有效的部分重复检查条件，视为唯一行。`);
-        results.insertedUnique++;
-        statusToInsertForNewRow = null;
-      }
 
       // --- 插入新行 ---
       const valuesToInsertForDB = [...excelRowValues, statusToInsertForNewRow]; 
