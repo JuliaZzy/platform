@@ -251,8 +251,26 @@ router.post('/append', upload.single('file'), async (req, res) => {
           results.insertedAsRepeat++;
           // console.log(`[excelUpload] 行 ${rowIndex + 1}: 发现部分重复，新行状态将设为 'repeat'。`);
           for (const existingDbRow of partialMatchResult.rows) {
-            // ... (更新现有行状态为 'repeat' 的逻辑保持不变) ...
-          }
+            // existingDbRow.id 是数据库中已存在的那条重复数据的ID
+            // existingDbRow.status 是它当前的状态
+      
+            // 只有当已存在行的状态还不是 'delete' 也不是 'repeat' 时，才将其更新为 'repeat'
+            // （避免重复更新，或者把已删除的又标为重复）
+            if (existingDbRow.status !== 'delete' && existingDbRow.status !== 'repeat') {
+              const updateExistingToRepeatQuery = `UPDATE "${tableName}" SET status = 'repeat' WHERE id = $1`;
+              await client.query(updateExistingToRepeatQuery, [existingDbRow.id]);
+              results.updatedToRepeat++; // 你可能需要一个新的计数器来追踪这类更新
+              console.log(`[excelUpload] 行 ${rowIndex + 1}: 与现有ID ${existingDbRow.id} (原状态: ${existingDbRow.status}) 部分重复。已将现有ID ${existingDbRow.id} 的状态更新为 'repeat'。`);
+              
+              // 更新 affectedRowsForFrontend 中对应行的状态 (如果它已经被其他逻辑加入了)
+              const affectedIdx = results.affectedRowsForFrontend.findIndex(r => r.id === existingDbRow.id);
+              if (affectedIdx > -1) {
+                  results.affectedRowsForFrontend[affectedIdx].status = 'repeat';
+              } else {
+              }
+            } else {
+              console.log(`[excelUpload] 行 ${rowIndex + 1}: 与现有ID ${existingDbRow.id} 部分重复，但其状态已为 '${existingDbRow.status}'，无需再次更新为 'repeat'。`);
+            }
         } else { 
           results.insertedUnique++;
           statusToInsertForNewRow = null; 
