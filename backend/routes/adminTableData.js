@@ -131,7 +131,7 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   const dataQuery = `
     SELECT * FROM "${tableName}" 
     ${whereClause} 
-    ORDER BY id ASC 
+    ORDER BY status DESC, id ASC 
     LIMIT $${queryValues.length + 1} OFFSET $${queryValues.length + 2}
   `;
   const countQuery = `SELECT COUNT(*) AS total FROM "${tableName}" ${whereClause}`;
