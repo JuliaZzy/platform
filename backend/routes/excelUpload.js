@@ -150,7 +150,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
     console.log(`[excelUpload] 表 ${tableName}: 开始处理 ${excelDataRows.length} 行数据...`);
     console.log(`[excelUpload] 表 ${tableName}: 数据库业务列 (DB): `, dbBusinessColumnNames);
-    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, keyDbColumnNamesForCheck);
+    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, configuredKeyDbNames);
     console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateColumnFlags);
 
 
