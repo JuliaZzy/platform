@@ -20,12 +20,12 @@ const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
 // 定义每个表用于“部分重复”检查的关键数据库列名
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
-    keyDbColumns: ['公司', '入表科目', '省份', '所属证券行业分布', '实控人', '报告时间'], 
-    description: "公司, 入表科目, 省份, 所属证券行业分布, 实控人, 报告时间"
+    keyDbColumns: ['证券代码', '报告时间'], 
+    description: "证券代码, 报告时间"
   },
   'dataasset_non_listed_companies': {
-    keyDbColumns: ['province_area', 'quarter_time', 'month_time', 'district_area', 'company_name'], 
-    description: "province_area, quarter_time, month_time, district_area, company_name"
+    keyDbColumns: ['province_area', 'month_time', 'company_name','dataasset_content'], 
+    description: "province_area, month_time, company_name, dataasset_content"
   },
   'dataasset_finance_stock': {
     keyDbColumns: ['入股时间', '作价入股企业', '数据资产', '入股公司'], 

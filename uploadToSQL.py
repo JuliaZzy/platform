@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 import psycopg2
 
 # ============ 配置 ============
-excel_path = 'C:/Users/Julia_zzy/Desktop/front/24年数据总表_仅A股_合并稿_v250516.xlsx'
-sheet_name = '24年汇总'
+excel_path = 'C:/Users/Julia_zzy/Desktop/front/listed_companies_new.xlsx'
+sheet_name = 'Sheet1'
 table_name = 'dataasset_listed_companies_2024'  # ✅ 上传到 PostgreSQL 的目标表名
 
 db_params = {

@@ -18,8 +18,8 @@ function handlePaginatedList(tableName, filterType = 'none') {
 
     // 根据 filterType 构建基础的筛选条件
     switch (filterType) {
-      case 'Q4':
-        baseFilterCondition = `"报告时间" = 'Q4'`;
+      case '2024Q4':
+        baseFilterCondition = `"报告时间" = '2024Q4'`;
         break;
       case 'hide_flag':
         baseFilterCondition = `"hide_flag" NOT LIKE '%是%'`; // 假设 hide_flag 是列名
@@ -73,8 +73,8 @@ function handleCompanyCount(tableName, filterType = 'none') {
     let baseFilterCondition = ''; 
 
     switch (filterType) {
-      case 'Q4':
-        baseFilterCondition = `"报告时间" = 'Q4'`;
+      case '2024Q4':
+        baseFilterCondition = `"报告时间" = '2024Q4'`;
         break;
       case 'hide_flag':
         baseFilterCondition = `"hide_flag" NOT LIKE '%是%'`;

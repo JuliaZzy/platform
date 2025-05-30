@@ -21,9 +21,39 @@ router.post('/export', async (req, res) => {
     const filters = req.body.filters || {};
     const excludedColumns = req.body.excludedColumns || ["实控人", "市值（亿元）", "市值规模"];
 
-    if (!filters.quarter || !['Q1', 'Q2', 'Q3', 'Q4'].includes(filters.quarter)) {
-      return res.status(400).json({ error: '必须选择且只能导出 Q1, Q2, Q3, 或 Q4 的季度数据' });
+    // --- 新增：从数据库获取所有有效的 "报告时间" ---
+    // 这个条件与 /summary 接口中获取 options 和导出数据时对 status 的过滤保持一致
+    const distinctQuartersQuery = `
+      SELECT DISTINCT "报告时间" 
+      FROM "${tableName}" 
+      WHERE "status" IS DISTINCT FROM 'delete' 
+      ORDER BY "报告时间" DESC
+    `;
+
+    let availableQuarters = [];
+    try {
+      const distinctQuartersResult = await db.query(distinctQuartersQuery);
+      availableQuarters = distinctQuartersResult.rows.map(r => r['报告时间']);
+    } catch (dbError) {
+      console.error('❌ PDF 导出 - 无法从数据库获取可用季度列表:', dbError);
+      // 给前端一个通用的服务器错误提示
+      return res.status(500).json({ error: '获取可用季度选项失败，请稍后再试。' });
     }
+
+    // 如果数据库中没有任何（未被标记为delete的）数据对应的 "报告时间"
+    if (availableQuarters.length === 0) {
+      return res.status(400).json({ error: '系统中当前没有可供导出的报告时间数据。' });
+    }
+    // --- 修改后的季度校验逻辑 ---
+    // 检查是否传入了 quarter，并且传入的 quarter 是否在从数据库获取的列表中
+    if (!filters.quarter || !availableQuarters.includes(filters.quarter)) {
+      const availableQuartersMessage = availableQuarters.join(', ');
+      // 返回一个更友好的错误信息，告知用户哪些是有效选项
+      return res.status(400).json({ 
+        error: `必须选择一个有效的报告时间进行导出。当前有效的报告时间为: ${availableQuartersMessage}。` 
+      });
+    }
+    // --- 季度校验逻辑结束 ---
 
     const exportValues = [filters.quarter]; // SQL 参数值
     const exportConditions = [
@@ -157,7 +187,7 @@ router.post('/summary', async (req, res) => {
     `;
     const tableRes = await db.query(dataSql, [...queryValues, pageSize, offset]);
 
-    // ✅ 静态筛选项的 DISTINCT 查询也应该考虑 status (如果这些选项只应来自非删除数据)
+    // ✅ 静态筛选项的 DISTINCT 查询也应该考虑 status
     const distinctBaseWhere = `WHERE "status" IS DISTINCT FROM 'delete'`;
     const [optQuarterRes, optProvinceRes, optIndustryRes] = await Promise.all([
       db.query(`SELECT DISTINCT "报告时间" FROM "${tableName}" ${distinctBaseWhere} ORDER BY "报告时间"`),

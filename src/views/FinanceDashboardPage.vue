@@ -1,8 +1,7 @@
 <template>
   <div class="finance-page">
     <div class="dashboard-title-block">
-      <h1 class="dashboard-title">数据相关融资项情况</h1>
-      <p class="dashboard-subtitle">Overview of Financial Data Assets</p>
+      <h1 class="dashboard-title">数据相关融资情况</h1>
     </div>
 
     <div class="table-section">
@@ -326,13 +325,13 @@ export default {
       // 根据 type 设置不同的文件名
       switch (type) {
         case 'bank':
-          specificFilename = `数据资产增信银行贷款报告_${dateString}.pdf`; // 例如: 数据资产增信银行贷款报告_20230529.pdf
+          specificFilename = `数据资产增信银行贷款清单_${dateString}.pdf`; // 例如: 数据资产增信银行贷款报告_20230529.pdf
           break;
         case 'stock':
-          specificFilename = `数据资产作价入股明细_${dateString}.pdf`; // 例如: 数据资产作价入股明细_20230529.pdf
+          specificFilename = `数据资产作价入股清单_${dateString}.pdf`; // 例如: 数据资产作价入股明细_20230529.pdf
           break;
         case 'other':
-          specificFilename = `其他数据类融资情况_${dateString}.pdf`; // 例如: 其他数据类融资情况_20230529.pdf
+          specificFilename = `其他数据类融资清单_${dateString}.pdf`; // 例如: 其他数据类融资情况_20230529.pdf
           break;
         default:
           specificFilename = `导出数据_${dateString}.pdf`;
@@ -432,13 +431,6 @@ export default {
   font-weight: bold;
   color: #003049;
   margin: 0;
-}
-
-.dashboard-subtitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: #005f73;
-  margin-top: 6px;
 }
 
 .section-title {

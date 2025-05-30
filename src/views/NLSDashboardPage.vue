@@ -4,8 +4,7 @@
     <LoadingSpinner :visible="isLoading" />
 
     <div class="dashboard-title-block" v-show="!isLoading">
-      <h1 class="dashboard-title">非上市公司数据资产情况</h1>
-      <p class="dashboard-subtitle">Overview of Non-listed Company Data Assets</p>
+      <h1 class="dashboard-title">非上市公司数据资产入表情况</h1>
     </div>
 
     <!-- ✅ 筛选区 -->
@@ -108,13 +107,6 @@ export default {
   font-weight: bold;
   color: #003049;
   margin: 0;
-}
-
-.dashboard-subtitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: #005f73;
-  margin-top: 6px;
 }
 
 .dashboard-container {

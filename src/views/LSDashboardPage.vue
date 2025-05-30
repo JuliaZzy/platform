@@ -4,7 +4,6 @@
 
     <div class="dashboard-title-block" v-show="!isLoading">
       <h1 class="dashboard-title">上市公司数据资产情况</h1>
-      <p class="dashboard-subtitle">Overview of Listed Company Data Assets</p>
     </div>
     
     <div class="dashboard-container" v-show="!isLoading">
@@ -53,35 +52,40 @@ export default {
       isLoading: true,
       initialOptionsLoaded: false,
       currentFilters: { 
-        quarter: 'Q4',
+        quarter: '', // 将在 fetchInitialData 中根据动态逻辑设置
         province_area: '',
         company: '',
         dataasset_content: '',
       },
-      chartRowActiveFilters: {},
-      lsTableActiveFilters: {quarter: 'Q4', }, 
+      chartRowActiveFilters: {}, // 将在 fetchInitialData 中设置
+      lsTableActiveFilters: { quarter: '' }, // 将在 fetchInitialData 中根据动态逻辑设置
 
       filterDropdownOptions: { 
-        quarter: ['Q1', 'Q2', 'Q3', 'Q4'], 
+        quarter: [], // ✅ 初始化为空数组，将从API动态填充
         province_area: [] 
       },
 
-      // 新表格 LSDataTable 的数据和分页状态
+      // LSDataTable 的数据和分页状态
       lsTableData: [],
       lsTableTotalRows: 0,
       lsTableCurrentPage: 1,
-      lsTablePageSize: 10, // 您可以根据需要调整
-      isLsTableLoading: false // 新表格的加载状态
+      lsTablePageSize: 10,
+      isLsTableLoading: false
     };
   },
   methods: {
     handleFilterApplyForTable(confirmedFilters) {
       this.currentFilters = { ...confirmedFilters };
 
-      // 如果清除筛选后 quarter 为空，则恢复默认 Q4
+      // 当用户清空 quarter 筛选时，可以考虑恢复到“最新”季度或不筛选
       if (confirmedFilters.quarter === '') {
-        this.lsTableActiveFilters = { ...confirmedFilters, quarter: 'Q4' };
-        this.currentFilters.quarter = 'Q4'; // 同时更新筛选框显示为 Q4
+        let defaultQuarterAfterClear = '';
+        if (this.filterDropdownOptions.quarter && this.filterDropdownOptions.quarter.length > 0) {
+          // 假设 filterDropdownOptions.quarter 已排序，第一个是最新
+          defaultQuarterAfterClear = this.filterDropdownOptions.quarter[0]; 
+        }
+        this.lsTableActiveFilters = { ...confirmedFilters, quarter: defaultQuarterAfterClear };
+        this.currentFilters.quarter = defaultQuarterAfterClear; 
       } else {
         this.lsTableActiveFilters = { ...confirmedFilters };
       }
@@ -115,7 +119,6 @@ export default {
         const response = await axios.post('/api/lasset/summary', params); 
         console.log('[LSDashboardPage] Received response from /api/lasset/summary:', response.data); // 添加日志
         
-        // ▼▼▼ 修正数据提取的路径 ▼▼▼
         if (response.data && response.data.table) {
           this.lsTableData = response.data.table.rows || [];
           this.lsTableTotalRows = response.data.table.total || 0;
@@ -126,7 +129,6 @@ export default {
           this.lsTableData = [];
           this.lsTableTotalRows = 0;
         }
-        // ▲▲▲ 修正数据提取的路径 ▲▲▲
 
       } catch (error) {
         console.error("获取 LSDataTable 数据失败:", error.response || error.message || error); // 打印更详细的错误
@@ -144,31 +146,76 @@ export default {
     async fetchInitialData() {
       this.isLoading = true;
       try {
+        // 1. 从API获取初始数据，包括下拉选项
         const response = await axios.post('/api/lasset/summary', { 
           filters: {}, 
           page: 1,    
-          pageSize: 1 
+          pageSize: 1 // 用于获取选项，实际表格数据后续加载
         }); 
         
+        // 2. 填充并排序 filterDropdownOptions.quarter
         if (response.data && response.data.options) {
-          this.filterDropdownOptions.quarter = response.data.options.quarter || ['Q1', 'Q2', 'Q3', 'Q4'];
+          this.filterDropdownOptions.quarter = response.data.options.quarter || [];
+          // ✅ 对季度进行降序排序 (确保"最新"的在最前面，例如 "2025Q1" > "2024Q4")
+          if (this.filterDropdownOptions.quarter.length > 0) {
+            this.filterDropdownOptions.quarter.sort((a, b) => b.localeCompare(a));
+          }
           this.filterDropdownOptions.province_area = response.data.options.province_area || [];
-          this.initialOptionsLoaded = true;
         } else {
-          this.filterDropdownOptions.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+          this.filterDropdownOptions.quarter = []; // 确保出错时为空数组
+          this.filterDropdownOptions.province_area = [];
+          console.warn('[LSDashboardPage] Initial options not found in API response. Setting dropdown options to empty.');
         }
+        this.initialOptionsLoaded = true; // 标记选项已加载完毕
 
-        // 1. 初始化图表的筛选条件 (例如，空对象表示不筛选，图表将加载全量数据)
-        this.chartRowActiveFilters = {}; 
-        // LChartRow 会在其 mounted 或 watch:filters 中根据这个初始 filters 加载数据
+        // 3. 根据逻辑确定默认显示的季度 (defaultQuarter)
+        let defaultQuarter = '';
+        const availableQuarters = this.filterDropdownOptions.quarter;
 
-        // 2. 初始化并加载新表格的初始数据 (使用当前的 currentFilters，初始为空)
+        // --- 逻辑 A: 默认 "2024Q4", 若无则最新 (当前激活) ---
+        const preferredHardcodedQuarter = '2024Q4';
+        if (availableQuarters.length > 0) {
+          if (availableQuarters.includes(preferredHardcodedQuarter)) {
+            defaultQuarter = preferredHardcodedQuarter;
+          } else {
+            // "2024Q4" 不可用, 则使用列表中的第一个 (即最新，因为已排序)
+            defaultQuarter = availableQuarters[0]; 
+            console.log(`[LSDashboardPage] Preferred default quarter '${preferredHardcodedQuarter}' not found. Defaulting to latest available: '${defaultQuarter}'.`);
+          }
+        } else {
+          console.log('[LSDashboardPage] No quarters available to set a default.');
+          // defaultQuarter 保持 ''
+        }
+        // --- 逻辑 A 结束 ---
+
+        // --- 逻辑 B: 默认最新季度 (预置并注释) ---
+        /*
+        if (availableQuarters.length > 0) {
+          // 列表已排序，第一个即为最新
+          defaultQuarter = availableQuarters[0]; 
+        } else {
+          console.log('[LSDashboardPage] No quarters available to set a default.');
+          // defaultQuarter 保持 ''
+        }
+        */
+        // --- 逻辑 B 结束 ---
+        
+        // 4. 应用确定的 defaultQuarter 到相关筛选器
+        this.currentFilters.quarter = defaultQuarter;
+        // lsTableActiveFilters 通常应该反映 currentFilters 的初始状态
         this.lsTableActiveFilters = { ...this.currentFilters }; 
-        await this.fetchLSDataTableData(1); // 加载新表格的第一页数据
+        // chartRowActiveFilters 也可能需要基于此设置
+        this.chartRowActiveFilters = { ...this.currentFilters };
+
+        // 5. 使用这些初始筛选条件加载表格数据
+        await this.fetchLSDataTableData(this.lsTableCurrentPage); // lsTableCurrentPage 默认为 1
 
       } catch (error) {
         console.error('Error fetching initial data for LSDashboardPage:', error);
         this.filterDropdownOptions = { quarter: [], province_area: [] };
+        this.currentFilters = { quarter: '', province_area: '', company: '', dataasset_content: '' };
+        this.lsTableActiveFilters = { quarter: '' };
+        this.chartRowActiveFilters = {};
         this.initialOptionsLoaded = true; 
       } finally {
         this.isLoading = false;
@@ -191,13 +238,6 @@ export default {
     font-weight: bold;
     color: #003049;
     margin: 0;
-  }
-
-  .dashboard-subtitle {
-    font-size: 18px;
-    font-weight: bold;
-    color: #005f73;
-    margin-top: 6px;
   }
 
   .dashboard-container {

@@ -7,8 +7,8 @@ const db = require('../db/db'); // 确保路径正确
 const adminTableConfigs = {
   'listed': {
     tableName: 'dataasset_listed_companies_2024',
-    searchableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', '"status"'],
-    filterableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', "status"]
+    searchableColumns: ['"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', '"status"'],
+    filterableColumns: ['"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', "status"]
   },
   'nonlisted': { 
     tableName: 'dataasset_non_listed_companies',
@@ -184,7 +184,7 @@ router.get('/distinct-values/:tabKey', async (req, res) => {
       distinctValues[dbColName.replace(/"/g, '')] = result.rows.map(row => row[dbColName.toLowerCase().replace(/"/g, '')]); // PostgreSQL列名默认小写
     }
     await client.query('COMMIT');
-    res.json(distinctValues); // 返回格式：{ "列名1": ["值A", "值B"], "列名2": ["值C"] }
+    res.json(distinctValues);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(`❌ Admin - 获取唯一值失败 - 表 ${tableName} (tab: ${tabKey}):`, err);

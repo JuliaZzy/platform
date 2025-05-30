@@ -141,7 +141,7 @@ export default {
     },
     // exportToPdf
     async downloadPdfAll() {
-      const filename = `非上市公司数据报告_全部_${Date.now()}.pdf`;
+      const filename = `非上市公司数据资产入表清单_全部_${Date.now()}.pdf`;
       await downloadPdf({
           apiUrl: `${this.apiPrefix}/export`,
           filters: {}, // 发送空对象，表示下载全部
@@ -152,7 +152,7 @@ export default {
       });
     },
     async downloadPdfCurrent() {
-      const filename = `非上市公司数据报告_筛选后_${Date.now()}.pdf`;
+      const filename = `非上市公司数据资产入表清单_筛选后_${Date.now()}.pdf`;
       await downloadPdf({
           apiUrl: `${this.apiPrefix}/export`,
           filters: this.filters, // 发送当前筛选条件

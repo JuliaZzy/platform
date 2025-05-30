@@ -7,7 +7,6 @@
       <div class="header-content">
         <div class="left">
           <h1>中国企业数据资产<br />入表跟踪</h1>
-          <p>Discover the Power of <br />Partnership for Sustainable Water Solutions</p>
         </div>
       </div>
     </div>
@@ -354,8 +353,8 @@ export default {
     background-color: rgba(0, 41, 82, 0.85);
     position: relative;
     width: 100%; /* 确保背景铺满整个屏幕 */
-    min-height: 500px; /* 设置最小高度，确保内容不被压缩 */
-    padding: 50px 30px;
+    min-height: 460px; /* 设置最小高度，确保内容不被压缩 */
+    padding: 80px 30px;
     text-align: left;
     color: white;
     font-size: 36px;
@@ -389,6 +388,7 @@ export default {
     padding-left: 30px;
     margin-right: 30px;
     line-height: 55px;
+    top: 30px;
   }
 
   .header-content .left h1 {
@@ -396,12 +396,7 @@ export default {
     letter-spacing: 16px;
     margin: 0;
     line-height: 1.3;
-  }
-
-  .header-content .left p {
-    font-size: 32px; /* 英文稍小 */
-    letter-spacing: 3px;
-    margin: 10px 0 0;
+    top: 30px;
   }
 
   /* 主界面 "管理员登录" 按钮的样式 */

@@ -8,6 +8,7 @@
           :barSeries="comboData.barSeries"
           y-axis-bar-name="入表企业数量（家）"
           :lineSeries="comboData.lineSeries"
+          y-axis-line-name="入表企业金额（亿）"
         />
       </div>
     </div>
@@ -27,6 +28,7 @@
           chartTitle="A股数据资源入表公司分科目金额分布情况（亿元）"
           row-key="入表科目"
           col-key="报告时间"
+          yAxisName="入表企业金额（亿）"
         />
       </div>
     </div>

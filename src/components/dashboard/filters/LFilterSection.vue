@@ -81,10 +81,15 @@
             下载数据<i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item command="Q1">2024Q1 数据</el-dropdown-item>
-            <el-dropdown-item command="Q2">2024Q2 数据</el-dropdown-item>
-            <el-dropdown-item command="Q3">2024Q3 数据</el-dropdown-item>
-            <el-dropdown-item command="Q4">2024Q4 数据</el-dropdown-item>
+            <el-dropdown-item 
+              v-for="quarterValue in options.quarter" 
+              :key="quarterValue" 
+              :command="quarterValue">
+            {{ quarterValue }} 数据
+            </el-dropdown-item>
+            <el-dropdown-item v-if="!options.quarter || options.quarter.length === 0" disabled>
+              无可用报告时间
+            </el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>

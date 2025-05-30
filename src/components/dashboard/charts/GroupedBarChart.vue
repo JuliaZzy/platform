@@ -64,10 +64,6 @@ export default defineComponent({
           let  colorPaletteForChart = [...chartColors]; // 默认使用原始颜色列表
 
           if (numSeries > 0) {
-              // 确保我们只使用实际系列数量对应的颜色，并反转它们
-              // 例如，如果有4个系列，chartColors是[c1,c2,c3,c4,c5]，那么activeColors是[c1,c2,c3,c4]
-              // reversedActiveColors 就是 [c4,c3,c2,c1]
-              // 这样，第一个系列(Q1)将使用c4，最后一个系列(Q4)将使用c1
               const activeColors = chartColors.slice(0, numSeries);
               colorPaletteForChart = [...activeColors].reverse(); 
           }
@@ -132,10 +128,6 @@ export default defineComponent({
                 tooltipString = params[0].axisValueLabel || params[0].name; 
                 tooltipString += '<br/>';
               }
-              
-              // 判断当前图表是否是“金额”相关图表
-              // 我们继续使用 props.chartTitle.includes('金额') 作为判断依据
-              // 如果你的“金额”图表标题中更统一地使用“亿”作为标识，也可以用 props.chartTitle.includes('亿')
               const isAmountChart = props.chartTitle && props.chartTitle.includes('金额'); 
 
               params.forEach(param => {
@@ -210,7 +202,7 @@ export default defineComponent({
           },
           yAxis: {
             type: 'value',
-            name: '入表企业数量（家）',
+            name: props.yAxisName,
             nameLocation: 'middle',
             nameGap: 50,
             nameTextStyle: { fontSize: 14 }

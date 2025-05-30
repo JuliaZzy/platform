@@ -101,11 +101,11 @@ export default defineComponent({
           data: props.lineSeries?.data || [],
           yAxisIndex: 1,
           symbol: 'circle',
-          lineStyle: { // ▼▼▼ 修改这里：为线条设置颜色 ▼▼▼
+          lineStyle: {
             width: 3,
             color: customLineColor 
           },
-          itemStyle: { // ▼▼▼ 修改这里：为数据点标记物设置颜色，通常与线条颜色一致 ▼▼▼
+          itemStyle: {
             color: customLineColor
           },
           label: lineLabelOption

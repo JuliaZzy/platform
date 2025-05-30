@@ -8,17 +8,17 @@ const {
 } = require('../utils/companyListHandlers');
 
 // 表名常量
-const NON_LISTED_TABLE = 'dataasset_non_listed_companies';
 const LISTED_TABLE = 'dataasset_listed_companies_2024';
+const NON_LISTED_TABLE = 'dataasset_non_listed_companies';
 const FINANCING_TABLE = 'dataasset_finance_bank';
+
+// 上市公司接口
+router.get('/listed-companies', handlePaginatedList(LISTED_TABLE, '2024Q4'));
+router.get('/listed-companies-count', handleCompanyCount(LISTED_TABLE, '2024Q4'));
 
 // 非上市公司接口
 router.get('/non-listed-companies', handlePaginatedList(NON_LISTED_TABLE, 'hide_flag'));
 router.get('/non-listed-companies-count', handleCompanyCount(NON_LISTED_TABLE, 'hide_flag'));
-
-// 上市公司接口
-router.get('/listed-companies', handlePaginatedList(LISTED_TABLE, 'Q4'));
-router.get('/listed-companies-count', handleCompanyCount(LISTED_TABLE, 'Q4'));
 
 //数据资产融资接口
 router.get('/data-asset-financing', handlePaginatedList(FINANCING_TABLE));
@@ -37,8 +37,8 @@ router.get('/homepage-summary', async (req, res) => {
       FinanceCountRes,
       FinanceDataRes
     ] = await Promise.all([
-      db.query(`SELECT COUNT(*) AS count FROM ${LISTED_TABLE} WHERE "报告时间"='Q4' AND "status" IS DISTINCT FROM 'delete'`),
-      db.query(`SELECT "公司" AS company_name, "报告时间" FROM ${LISTED_TABLE} WHERE "报告时间"='Q4' AND "status" IS DISTINCT FROM 'delete' ORDER BY "数据资源入表总额（万元）" DESC`),
+      db.query(`SELECT COUNT(*) AS count FROM ${LISTED_TABLE} WHERE "报告时间"='2024Q4' AND "status" IS DISTINCT FROM 'delete'`),
+      db.query(`SELECT "公司" AS company_name, "报告时间" FROM ${LISTED_TABLE} WHERE "报告时间"='2024Q4' AND "status" IS DISTINCT FROM 'delete' ORDER BY "数据资源入表总额（万元）" DESC`),
       db.query(`SELECT MAX(month_time) AS latest_month FROM ${NON_LISTED_TABLE} WHERE hide_flag NOT LIKE '%是%' AND "status" IS DISTINCT FROM 'delete'`),
       db.query(`SELECT COUNT(*) AS count FROM ${NON_LISTED_TABLE} WHERE hide_flag NOT LIKE '%是%' AND "status" IS DISTINCT FROM 'delete'`),
       db.query(`

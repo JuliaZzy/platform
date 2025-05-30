@@ -4,24 +4,25 @@ const db = require('../db/db');
 
 // ✅ Combo 图接口：柱状图（数量）+ 折线图（金额），按“报告时间”
 router.post('/combo1', async (req, res) => {
-  const filters = req.body.filters || {};
   const values = [];
   const conditions = []; // 这个数组用于构建最终的 WHERE 条件
 
   // 始终将 status 过滤作为第一个条件（不依赖外部参数）
   conditions.push(`"status" IS DISTINCT FROM 'delete'`);
 
+  /*
   if (filters.province_area) {
     conditions.push(`"省份" = $${values.length + 1}`); // $1, $2... 会根据 values 数组的长度动态生成
     values.push(filters.province_area);
   }
+
   if (filters.quarter) {
     conditions.push(`"报告时间" = $${values.length + 1}`);
     values.push(filters.quarter);
   }
+*/
 
-  // 因为 conditions 数组至少会包含 status 条件，所以 conditions.length 总是 >= 1
-  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+  const whereClause = `WHERE ${conditions.join(' AND ')}`; 
 
   try {
     const countSql = `
@@ -64,24 +65,10 @@ router.post('/combo1', async (req, res) => {
 
 // ✅ Grouped Bar 图：入表科目 × 报告时间 × 数量 + 金额
 router.post('/subject-bars', async (req, res) => {
-  const filters = req.body.filters || {};
-  const values = []; // 用于参数化查询的值 (仅限 filters 中的)
-  const filterSpecificConditions = []; // 仅存放来自 req.body.filters 的条件
-
-  if (filters.province_area) {
-    filterSpecificConditions.push(`"省份" = $${values.length + 1}`);
-    values.push(filters.province_area);
-  }
-  if (filters.quarter) {
-    filterSpecificConditions.push(`"报告时间" = $${values.length + 1}`);
-    values.push(filters.quarter);
-  }
+  const values = [];
 
   // 构建基础的 WHERE 子句，总是包含 status 过滤
   const queryBaseConditions = [`"status" IS DISTINCT FROM 'delete'`];
-  if (filterSpecificConditions.length > 0) { // ✅ 使用 filterSpecificConditions
-    queryBaseConditions.push(`(${filterSpecificConditions.join(' AND ')})`); // ✅ 使用 filterSpecificConditions
-  }
   const whereClause = `WHERE ${queryBaseConditions.join(' AND ')}`;
   
   // 构建用于 UNION ALL 子查询内部的 WHERE 前缀
@@ -148,7 +135,6 @@ router.post('/subject-bars', async (req, res) => {
 
 // ✅ 通用 GroupBy 图接口（证券行业/市值规模/省份/实控人）
 router.post('/group-field', async (req, res) => {
-  const filters = req.body.filters || {};
   const field = req.body.field;
 
   if (!['所属证券行业分布', '市值规模', '省份', '实控人'].includes(field)) {
@@ -156,31 +142,17 @@ router.post('/group-field', async (req, res) => {
   }
 
   const values = []; 
-  const filterSpecificConditions = []; // 仅存放来自 req.body.filters 的条件
-
-  if (filters.province_area) {
-    filterSpecificConditions.push(`"省份" = $${values.length + 1}`);
-    values.push(filters.province_area);
-  }
-  if (filters.quarter) {
-    filterSpecificConditions.push(`"报告时间" = $${values.length + 1}`);
-    values.push(filters.quarter);
-  }
 
   // 构建基础的 WHERE 子句，总是包含 status 过滤
-  const queryBaseConditions = [`"status" IS DISTINCT FROM 'delete'`];
-  if (filterSpecificConditions.length > 0) { // ✅ 使用 filterSpecificConditions
-    queryBaseConditions.push(`(${filterSpecificConditions.join(' AND ')})`); // ✅ 使用 filterSpecificConditions
-  }
-  const baseWhereClause = `WHERE ${queryBaseConditions.join(' AND ')}`;
+  const baseWhereClause = `WHERE "dataasset_listed_companies_2024"."status" IS DISTINCT FROM 'delete'`;
   
   let rawRes;
   let rows;
 
   try {
     if (field === '实控人') {
-      const buildCategoryWhere = (baseWhereWithStatusAndFilters, categorySpecificCondition) => {
-        return `${baseWhereWithStatusAndFilters} AND (${categorySpecificCondition})`;
+      const buildCategoryWhere = (baseWhere, categorySpecificCondition) => {
+        return `${baseWhere} AND (${categorySpecificCondition})`;
       };
 
       const sqlActualController = `
@@ -215,6 +187,7 @@ router.post('/group-field', async (req, res) => {
         FROM dataasset_listed_companies_2024
         ${baseWhereClause} 
         GROUP BY "${field}", "报告时间"
+        ORDER BY "报告时间", value DESC
       `;
       rawRes = await db.query(baseSql, values);
       rows = rawRes.rows;
@@ -223,7 +196,7 @@ router.post('/group-field', async (req, res) => {
     const copyRows = [...rows]; 
     let sortedRows;
 
-    // --- 排序逻辑 (保持不变) ---
+    // --- 排序逻辑 ---
     if (field === '市值规模') {
       const order = [
         '50亿以下', '50 - 100亿', '100 - 500亿', '500 - 1000亿',
@@ -249,7 +222,7 @@ router.post('/group-field', async (req, res) => {
     } else if (['所属证券行业分布', '省份'].includes(field)) {
       const q4Map = {};
       copyRows.forEach(row => {
-        if (row['报告时间'] === 'Q4') {
+        if (row['报告时间'] === '2024Q4') {
           q4Map[row.name] = (q4Map[row.name] || 0) + parseInt(row.value, 10);
         }
       });

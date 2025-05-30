@@ -73,7 +73,7 @@ router.post('/export', async (req, res) => {
     const tableWidths = [80, 50, 'auto', 'auto', 'auto']; // 请根据实际列数和内容调整
 
     const pdfDoc = createPdfDocument({
-        title: `非上市公司数据资产报告`,
+        title: `非上市公司数据资产报告清单`,
         tableBody: pdfTableBody,
         tableWidths: tableWidths,
     });

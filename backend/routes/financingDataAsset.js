@@ -53,12 +53,12 @@ function formatOtherFinanceValue(value) {
 const tableMap = {
     bank: {
         name: 'dataasset_finance_bank',
-        title: '数据资产增信银行贷款',
+        title: '数据资产增信银行贷款清单',
         // Column mapping and order for bank PDF
         pdfColumnConfig: {
             map: {
                 month_time: '入表月份',
-                show_name: '入表企业', // As per your requirement
+                show_name: '入表企业',
                 dataasset_content: '数据资产内容',
                 finance_value: '融资金额（万元）',
                 finance_type: '融资类型',
@@ -69,11 +69,11 @@ const tableMap = {
     },
     stock: {
         name: 'dataasset_finance_stock',
-        title: '数据资产作价入股'
+        title: '数据资产作价入股清单'
     },
     other: {
         name: 'dataasset_finance_other',
-        title: '其他数据类融资'
+        title: '其他数据类融资清单'
     }
 };
 
