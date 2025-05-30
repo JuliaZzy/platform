@@ -40,7 +40,7 @@ const tableKeyColumnConfigs = {
 const dateColumnsToFormatAsYYYYMM = {
   'dataasset_non_listed_companies': {
     'month_time': true,
-    'registration_date': true
+    'register_date': true
   },
   'dataasset_finance_stock': {
     '入股时间': true
