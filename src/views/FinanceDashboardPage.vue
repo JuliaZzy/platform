@@ -313,19 +313,38 @@ export default {
      * @param {string} type - 数据类型 ('bank', 'stock', 'other')。
      */
     async download(type) {
-      // ⚠️ PDF 下载目前是下载全部数据。如果需要按当前筛选或分页下载，需修改后端。
-      const apiUrl = `${this.apiBase}/export/${type}`; 
-      // ✅ 3. 为银行表下载构造特定文件名，使用映射后的中文标题
-      const defaultFilename = type === 'bank' 
-        ? `银行数据报告_${Date.now()}.pdf` 
-        : `金融数据_${type}_${Date.now()}.pdf`;
-      
+      const apiUrl = `${this.apiBase}/export/${type}`;
       const loadingKey = `${type}_dl`;
+      let specificFilename = ''; // 用于存储为各种类型定制的文件名
+    
+      // 获取当前日期用于文件名 (可选)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // 月份从0开始，所以+1
+      const day = String(today.getDate()).padStart(2, '0');
+      const dateString = `${year}${month}${day}`; // 例如 "20230529"
+    
+      // 根据 type 设置不同的文件名
+      switch (type) {
+        case 'bank':
+          specificFilename = `数据资产增信银行贷款报告_${dateString}.pdf`; // 例如: 数据资产增信银行贷款报告_20230529.pdf
+          break;
+        case 'stock':
+          specificFilename = `数据资产作价入股明细_${dateString}.pdf`; // 例如: 数据资产作价入股明细_20230529.pdf
+          break;
+        case 'other':
+          specificFilename = `其他数据类融资情况_${dateString}.pdf`; // 例如: 其他数据类融资情况_20230529.pdf
+          break;
+        default:
+          // 如果有未知的 type，可以设置一个通用名称或者报错
+          specificFilename = `金融数据报告_${type}_${dateString}.pdf`;
+          break;
+      }
 
       await downloadPdf({
           apiUrl: apiUrl,
           filters: {}, 
-          defaultFilename: defaultFilename,
+          defaultFilename: specificFilename,
           onStart: () => { this.loading[loadingKey] = true; },
           onFinish: () => { this.loading[loadingKey] = false; },
           onError: (msg) => { 
