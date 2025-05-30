@@ -201,7 +201,6 @@
 
 <script>
 import axios from 'axios';
-import { downloadPdf } from '@/utils/pdfDownloader.js';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
 
