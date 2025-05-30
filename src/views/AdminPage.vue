@@ -48,46 +48,44 @@
             <thead>
               <tr>
                 <th>序号</th>
-                <th v-if="currentTab !== 'finance-bank'">状态</th> 
-                <th
-                  v-for="col in displayableTableHeaders" 
-                  :key="col"
-                  style="position: relative;"
-                >
-                  <div class="th-wrapper">
-                    {{ col }}
-                    <span
-                      class="filter-icon"
-                      @click.stop="toggleFilterDropdown(col)"
-                      :data-filter-icon="col"
-                    >⏷</span>
-                    <div
-                      v-show="showFilterDropdown[col]"
-                      class="filter-dropdown"
-                      :data-dropdown="col"
-                      @click.stop
-                    >
-                      <input
-                        class="filter-search-input"
-                        v-model="filterSearch[col]"
-                        placeholder="搜索该列..."
-                      />
-                      <div class="filter-options">
-                        <label
-                          v-for="val in getFilteredOptions(col)"
-                          :key="val"
-                        >
-                          <input type="checkbox" :value="val" v-model="pendingFilters[col]" />
-                          {{ val }}
-                        </label>
-                      </div>
-                      <div class="filter-footer">
-                        <button @click="clearFilter(col)">清空筛选</button>
-                        <button @click="confirmFilter(col)">确定</button>
+                <template v-for="colKey in displayableTableHeaders" :key="colKey">
+                  <th v-if="!(colKey === 'status' && currentTab === 'finance-bank')"
+                      style="position: relative;">
+                    <div class="th-wrapper">
+                      {{ colKey === 'status' ? '状态' : colKey }}
+                      <span
+                        class="filter-icon"
+                        @click.stop="toggleFilterDropdown(colKey)"
+                        :data-filter-icon="colKey"
+                      >⏷</span>
+                      <div
+                        v-show="showFilterDropdown[colKey]"
+                        class="filter-dropdown"
+                        :data-dropdown="colKey"
+                        @click.stop
+                      >
+                        <input
+                          class="filter-search-input"
+                          v-model="filterSearch[colKey]"
+                          placeholder="搜索该列..."
+                        />
+                        <div class="filter-options">
+                          <label
+                            v-for="val in getFilteredOptions(colKey)"
+                            :key="val"
+                          >
+                            <input type="checkbox" :value="val" v-model="pendingFilters[colKey]" />
+                            {{ colKey === 'status' ? (statusDisplayMap[val] || val) : val }}
+                          </label>
+                        </div>
+                        <div class="filter-footer">
+                          <button @click="clearFilter(colKey)">清空筛选</button>
+                          <button @click="confirmFilter(colKey)">确定</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </th>
+                  </th>
+                </template>
               </tr>
             </thead>
             <tbody>
@@ -190,6 +188,12 @@ export default {
         'finance-bank': true,
         'finance-stock': true,
         'finance-other': true,
+      },
+      statusDisplayMap: {
+        'repeat': '重复',
+        'delete': '已删除',
+        'kept': '已保留',
+        null: '正常'
       }
     };
   },
@@ -208,7 +212,7 @@ export default {
       }
     },
     displayableTableHeaders() {
-      return this.tableHeaders.filter(h => h !== 'id' && h !== 'status');
+      return this.tableHeaders.filter(h => h !== 'id');
     },
     formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
       if (!this.lastUpdate) return '';
