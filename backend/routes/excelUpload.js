@@ -43,7 +43,7 @@ const tableKeyColumnConfigs = {
 const columnSpecificDateFormatting = {
   'dataasset_non_listed_companies': {
     'month_time': 'YYYY-MM',        
-    'registration_date': 'YYYY-MM-DD' // 您添加的，用于处理 DATE 类型列
+    'register_date': 'YYYY-MM-DD' // 您添加的，用于处理 DATE 类型列
   },
   'dataasset_finance_stock': {
     '入股时间': 'YYYY-MM'
