@@ -5,7 +5,19 @@ const db = require('../db/db'); // 确保路径正确
 // AdminPage 各标签页对应的数据库表名、可搜索列、可筛选列
 // 您需要根据实际情况完善 searchableColumns 和 filterableColumns
 const adminTableConfigs = {
-  'listed':    { tableName: 'dataasset_listed_companies_2024' },
+  'listed': {
+    tableName: 'dataasset_listed_companies_2024',
+    searchableColumns: ['"公司"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
+    filterableColumnsMap: {
+      "公司": '"公司"',
+      "入表科目": '"入表科目"',
+      "入表科目": '"入表科目"',
+      "省份": '"省份"',
+      "实控人": '"实控人"'
+      "市值规模": '"市值规模"',
+      "报告时间": '"报告时间"'
+    }
+  },
   'nonlisted': { tableName: 'dataasset_non_listed_companies' },
   'finance-bank':{ tableName: 'dataasset_finance_bank' },
   'finance-stock':{ tableName: 'dataasset_finance_stock' },
