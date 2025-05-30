@@ -72,11 +72,11 @@
                         />
                         <div class="filter-options">
                           <label
-                            v-for="val in getFilteredOptions(col)"
+                            v-for="val in getFilteredOptions(colKey)"
                             :key="val"
                           >
-                            <input type="checkbox" :value="val" v-model="pendingFilters[col]" />
-                            {{ col === 'status' ? (statusDisplayMap[val] || val) : val }}
+                            <input type="checkbox" :value="val" v-model="pendingFilters[colKey]" />
+                            {{ colKey === 'status' ? (statusDisplayMap[val] || val) : val }}
                           </label>
                         </div>
                         <div class="filter-footer">
