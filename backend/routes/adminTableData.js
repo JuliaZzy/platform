@@ -7,21 +7,21 @@ const db = require('../db/db'); // 确保路径正确
 const adminTableConfigs = {
   'listed': {
     tableName: 'dataasset_listed_companies_2024',
-    searchableColumns: ['"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', '"status"'],
-    filterableColumns: ['"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"', "status"]
+    searchableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
+    filterableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"']
   },
   'nonlisted': { 
     tableName: 'dataasset_non_listed_companies',
-    searchableColumns: ['"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+    searchableColumns: ['"status"', '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
                         '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
-                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"', '"status"'],
-    filterableColumns: ['"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
+    filterableColumns: ["status", '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
                         '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
-                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"', "status"]
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"']
   },
   'finance-bank':{
     tableName: 'dataasset_finance_bank',
@@ -30,17 +30,17 @@ const adminTableConfigs = {
   },
   'finance-stock':{ 
     tableName: 'dataasset_finance_stock',
-    searchableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"', '"status"'],
-    filterableColumns: ['"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"', "status"]
+    searchableColumns: ["status", '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
+    filterableColumns: ["status", '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"']
   },
   'finance-other':{ 
     tableName: 'dataasset_finance_other',
-    searchableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"', '"status"'],
-    filterableColumns: ['"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"', "status"]
+    searchableColumns: ["status", '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
+    filterableColumns: ["status", '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"']
   }
 };
 
-// 通用数据获取接口: GET /api/admindata/tabledata/:tabKey?page=1&pageSize=15&filters={...}&searchKeyword=...
+// 通用数据获取接口: GET /api/admintable/tabledata/:tabKey?page=1&pageSize=15&filters={...}&searchKeyword=...
 router.get('/tabledata/:tabKey', async (req, res) => {
   const { tabKey } = req.params;
   const config = adminTableConfigs[tabKey];
@@ -79,24 +79,23 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   
         const dbColName = filterableColumns.find(fc => fc.replace(/"/g, '') === rawColName.replace(/"/g, ''));
   
-        if (dbColName) { // 如果找到了有效的数据库列名
+        if (dbColName) {
           const filterValuesForColumn = clientFilters[rawColName]; // 获取这一列选中的所有筛选值，例如 ['北京', '上海']
   
           if (filterValuesForColumn.length === 1) {
             // --- 处理单个筛选值 ---
             const singleValue = filterValuesForColumn[0];
-            if (singleValue === null || singleValue === 'NULL_VALUE_PLACEHOLDER') { // 假设用特殊值代表筛NULL
+            if (singleValue === null || singleValue === 'NULL_VALUE_PLACEHOLDER') {
               whereConditions.push(`${dbColName} IS NULL`);
             } else {
               whereConditions.push(`${dbColName} = $${queryValues.length + 1}`);
-              queryValues.push(singleValue); // ✅ **补充：将单个值添加到 queryValues**
+              queryValues.push(singleValue);
             }
           } else {
             // --- 处理多个筛选值 (IN 子句) ---
-            // 1. 为IN子句生成占位符 (例如 $N, $N+1, ...)
-            //    同时，在 queryValues 中用临时值（比如0）占据这些位置
+            // 1. 为IN子句生成占位符
             const placeholders = filterValuesForColumn.map(() => {
-              queryValues.push(0); // 先用任意值占位，这个值会被下面的循环替换
+              queryValues.push(0);
               return `$${queryValues.length}`;
             });
   
@@ -175,10 +174,8 @@ router.get('/distinct-values/:tabKey', async (req, res) => {
   const client = await db.getClient();
 
   try {
-    await client.query('BEGIN'); // 虽然只是查询，但保持事务一致性是个好习惯，或者直接查询
+    await client.query('BEGIN');
     for (const dbColName of filterableColumns) {
-      // 确保 dbColName 是安全的，并且是实际的列名（可能已带引号）
-      // 注意：如果dbColName包含用户输入，需要严格防止SQL注入，但这里它来自服务端配置，相对安全
       const distinctQuery = `SELECT DISTINCT ${dbColName} FROM "${tableName}" WHERE ${dbColName} IS NOT NULL ORDER BY ${dbColName} ASC`;
       const result = await client.query(distinctQuery);
       distinctValues[dbColName.replace(/"/g, '')] = result.rows.map(row => row[dbColName.toLowerCase().replace(/"/g, '')]); // PostgreSQL列名默认小写

@@ -1,14 +1,13 @@
 import axios from 'axios';
 
 /**
- * @description 获取指定表格所有可筛选列的唯一值，用于填充筛选下拉框
- * @param {string} tabKey - 当前表格的标识符 (例如 'listed', 'nonlisted')
- * @returns {Promise<Object>} - 一个对象，键是列名，值是该列所有唯一值的数组
- * 例如: { "status": ["delete", "kept", "repeat"], "省份": ["北京", "上海"] }
+ * @description
+ * @param {string} tabKey
+ * @returns {Promise<Object>} 
  */
 
 const apiClient = axios.create({
-  baseURL: '/api', // 假设所有API都在 /api 这个路径下
+  baseURL: '/api',
 });
 
 const handleApiError = (error, contextMessage = 'API请求失败') => {
@@ -20,16 +19,16 @@ const handleApiError = (error, contextMessage = 'API请求失败') => {
 
 /**
  * 加载Admin页面表格数据
- * @param {string} currentTab - 当前激活的标签页标识 (如 'listed', 'nonlisted', 'finance-bank')
- * @param {object} params - 请求参数 (如 page, pageSize, filters 对象, searchKeyword 字符串)
- * @returns {Promise<object>} - Promise，解析为 { data: Array, total: number }
+ * @param {string} currentTab
+ * @param {object} params
+ * @returns {Promise<object>}
  */
 export const loadAdminTableData = async (currentTab, params = {}) => {
-  // ✅ 修改点 1: 构建指向新的 Admin 专用数据接口的 URL
+  // ✅ 1: 构建指向新的 Admin 专用数据接口的 URL
   const url = `/admintable/tabledata/${currentTab}`; 
 
-  // ✅ 修改点 2: 准备要发送的查询参数
-  let queryParams = { ...params }; // 复制一份，以避免修改原始 params 对象
+  // ✅ 2: 准备要发送的查询参数
+  let queryParams = { ...params };
 
   // 如果 params 中包含 filters 对象，将其 JSON 字符串化
   // 后端 adminTableData.js 会解析这个 JSON 字符串
@@ -40,10 +39,9 @@ export const loadAdminTableData = async (currentTab, params = {}) => {
   console.log(`[adminApiService] Calling loadAdminTableData for tab: ${currentTab}, URL: ${url}, Params:`, queryParams);
 
   try {
-    // ✅ 修改点 3: 所有 AdminPage 的数据加载都走这条路径，并期望后端处理分页/筛选/搜索
+    // ✅ 3: 所有 AdminPage 的数据加载都走这条路径，并期望后端处理分页/筛选/搜索
     const response = await apiClient.get(url, { params: queryParams }); 
-    
-    // 后端 adminTableData.js 应该返回 { data: Array, total: number } 结构
+
     return { 
       data: response.data?.data || [], 
       total: response.data?.total || 0 
@@ -54,11 +52,10 @@ export const loadAdminTableData = async (currentTab, params = {}) => {
 };
 
 /**
- * 上传Excel数据到指定表格 (追加模式)
- * (此函数保持不变，它调用的 /api/upload/append 接口是独立的)
- * @param {string} tableName - 数据库表名
- * @param {FormData} formData - 包含文件的 FormData 对象
- * @returns {Promise<object>} - 后端返回的响应数据
+ * 上传Excel数据到指定表格
+ * @param {string} tableName
+ * @param {FormData} formData
+ * @returns {Promise<object>}
  */
 export const uploadExcelData = async (tableName, formData) => {
   try {
@@ -73,15 +70,13 @@ export const uploadExcelData = async (tableName, formData) => {
 
 /**
  * 更新指定表格中某一行数据的状态
- * (此函数保持不变，它调用的 /api/adminpage/status/... 接口是独立的)
- * @param {string} tableName - 数据库表名
- * @param {string|number} rowId - 要更新的行的ID
- * @param {string|null} newStatus - 新的状态值 ('delete', 'kept', null 等)
- * @returns {Promise<object>} - 后端返回的响应数据
+ * @param {string} tableName
+ * @param {string|number} rowId
+ * @param {string|null} newStatus
+ * @returns {Promise<object>}
  */
 export const updateRowStatusInDb = async (tableName, rowId, newStatus) => {
   try {
-    // 假设您的状态更新API是 PUT /adminpage/status/:tableName/:rowId (或者您选择的其他 admin 专用路径)
     const response = await apiClient.put(`/adminpage/status/${tableName}/${rowId}`, { status: newStatus });
     return response.data; 
   } catch (error) {
@@ -91,8 +86,7 @@ export const updateRowStatusInDb = async (tableName, rowId, newStatus) => {
 
 /**
  * 导出指定表格的数据为Excel
- * (此函数保持不变，它调用的 /api/export/:tableName 接口是独立的)
- * @param {string} dbTableName - 数据库表名
+ * @param {string} dbTableName
  */
 export const exportTableToExcel = (dbTableName) => {
   if (!dbTableName) {
@@ -106,9 +100,9 @@ export const exportTableToExcel = (dbTableName) => {
 
 export async function loadDistinctColumnValues(tabKey) {
   // 确保这里的 API 路径与你后端定义的路由一致
-  const endpoint = `/admindata/distinct-values/${tabKey}`;
+  const endpoint = `/admintable/distinct-values/${tabKey}`;
   try {
-    const response = await axios.get(endpoint);
+    const response = await apiClient.get(endpoint);
     return response.data;
   } catch (error) {
     console.error(`[AdminApiService] Failed to load distinct column values for tab ${tabKey}:`, error);

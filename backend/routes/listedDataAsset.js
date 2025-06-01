@@ -120,7 +120,7 @@ router.post('/export', async (req, res) => {
     // --- 格式化逻辑结束 ---
 
     const pdfDoc = createPdfDocument({
-        title: `上市公司数据资产报告 - ${filters.quarter}`,
+        title: `上市公司数据资产入表清单 - ${filters.quarter}`,
         tableBody: pdfTableBody,
         tableWidths: tableWidths,
     });
@@ -130,7 +130,7 @@ router.post('/export', async (req, res) => {
       return res.status(500).json({ error: '导出PDF失败: 服务器字体或PDF生成配置错误。' });
     }
 
-    const filename = `上市公司数据报告_${filters.quarter}_${Date.now()}.pdf`;
+    const filename = `上市公司数据资产入表清单_${filters.quarter}_${Date.now()}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
     pdfDoc.pipe(res);

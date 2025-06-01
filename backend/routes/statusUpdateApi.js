@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/db'); // 确保路径正确
+const db = require('../db/db');
 const axios = require('axios');
 
 // 白名单，允许更新状态的表名
@@ -20,7 +20,7 @@ const isValidStatus = (status) => {
 // PUT /status/:tableName/:rowId
 router.put('/status/:tableName/:rowId', async (req, res) => {
   const { tableName, rowId } = req.params;
-  let { status } = req.body; // newStatus 可以是 null, 'repeat', 'delete', 'kept'
+  let { status } = req.body;
 
   console.log(`[API] Received status update request for table: ${tableName}, rowId: ${rowId}, newStatus: ${status}`);
 
@@ -36,7 +36,6 @@ router.put('/status/:tableName/:rowId', async (req, res) => {
   }
 
   // 3. 验证 status 值
-  // 如果前端传来空字符串，我们可能希望在数据库中存为 NULL
   if (status === '') {
     status = null;
   }
@@ -61,37 +60,39 @@ router.put('/status/:tableName/:rowId', async (req, res) => {
 
     // ✅ 如果是 dataasset_non_listed_companies 表的状态被更新了，则触发 dataasset_finance_bank 的同步
     if (tableName === 'dataasset_non_listed_companies') {
-      console.log(`[excelUpload/statusUpdateApi] 检测到 ${tableName} 更新/状态变更，准备同步 dataasset_finance_bank...`);
+      console.log(`[excelUpload/statusUpdateApi] 检测到 ${tableName} 更新/状态变更，准备同步 dataasset_finance_bank...`); // You can update this log message prefix
       try {
-        const selfApiBase = process.env.VUE_APP_API_URL; // ✅ 读取环境变量
+        // 👇 Consider a more backend-specific environment variable name
+        const selfApiBase = process.env.VUE_APP_API_URL;
 
         if (!selfApiBase) {
-          console.error(`[CRITICAL ERROR] SELF_API_BASE_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
-        }
-
-        // 只有在 selfApiBase 有效时才尝试调用
-        if (selfApiBase) {
-            const syncUrl = `${selfApiBase}/api/financeupload/sync-bank-table`; // ✅ 构建完整的URL
-            console.log(`[Sync] Calling sync URL: ${syncUrl}`);
-            const syncResponse = await axios.post(syncUrl); // ✅ 使用 axios
-
-            if (syncResponse.data && syncResponse.data.success) {
-              console.log(`[Sync] ✅ dataasset_finance_bank 同步成功 (由 ${tableName} 更新触发)。`);
-            } else {
-              console.warn(`[Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
-            }
+          console.error(`[CRITICAL ERROR][statusUpdateApi - Sync] 后端API基础URL环境变量 (VUE_APP_API_URL) 未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
         } else {
-            // 如果 selfApiBase 未配置，记录一个更严重的警告或错误
-            console.error(`[Sync] ⚠️ 未能执行 dataasset_finance_bank 同步，因为 SELF_API_BASE_URL 未配置。`);
-        }
+          // 👇 Ensure this URL construction is correct based on your selfApiBase and how financeupload routes are mounted
+          const syncUrl = `${selfApiBase}/api/financeupload/sync-bank-table`;
+          console.log(`[Sync][statusUpdateApi] Calling sync URL: ${syncUrl}`);
 
-      } catch (syncError) {
-        console.error(`❌ [Sync] 自动同步 dataasset_finance_bank 失败:`, 
-          syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
-        );
-        // 这个错误不应该中断主操作（如文件上传或状态更新）的成功响应，但需要被充分记录
+          // 👇 新的非阻塞调用
+          axios.post(syncUrl)
+            .then(syncResponse => {
+              if (syncResponse.data && syncResponse.data.success) {
+                console.log(`[Sync][statusUpdateApi] ✅ dataasset_finance_bank 同步成功 (由 ${tableName} 状态更新触发)。`);
+              } else {
+                console.warn(`[Sync][statusUpdateApi] ⚠️ dataasset_finance_bank 同步请求已发送（由状态更新触发），但响应未明确成功或包含错误:`, syncResponse.data);
+              }
+            })
+            .catch(syncError => {
+              console.error(`❌ [Sync][statusUpdateApi] 自动同步 dataasset_finance_bank 失败 (由 ${tableName} 状态更新触发):`,
+                syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
+              );
+            });
+        }
+      } catch (syncTriggerError) { // This catch is for errors in setting up the call (e.g., env var missing)
+        console.error(`❌ [Sync][statusUpdateApi] 触发同步操作时发生意外错误:`, syncTriggerError.message);
       }
     }
+    // ✅ 同步触发逻辑结束
+    
     res.json({ 
       success: true, 
       message: `表 ${tableName} 中 ID 为 ${id} 的行状态已更新为 ${status === null ? 'NULL' : status}。`,

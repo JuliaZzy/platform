@@ -73,7 +73,7 @@ router.post('/export', async (req, res) => {
     const tableWidths = [80, 50, 'auto', 'auto', 'auto']; // 请根据实际列数和内容调整
 
     const pdfDoc = createPdfDocument({
-        title: `非上市公司数据资产报告清单`,
+        title: `非上市公司数据资产入表清单`,
         tableBody: pdfTableBody,
         tableWidths: tableWidths,
     });
@@ -82,7 +82,7 @@ router.post('/export', async (req, res) => {
       return res.status(500).json({ error: '导出PDF失败: 服务器字体或PDF生成配置错误。' });
     }
 
-    const filename = `非上市公司数据报告_${Date.now()}.pdf`; 
+    const filename = `非上市公司数据资产入表清单_${Date.now()}.pdf`; 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`); 
     pdfDoc.pipe(res);

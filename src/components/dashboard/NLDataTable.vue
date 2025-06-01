@@ -40,8 +40,7 @@
     </div>
 
     <!-- ✅ 分页与导出 -->
-    <div class="pagination">
-      <div class="pagination-left">
+    <div class="pagination" v-if="totalPages > 0 && tableData.length > 0"> <div class="pagination-left">
         <el-dropdown @command="handleExportCommand">
           <el-button class="export-small-btn" type="primary">
             下载数据<i class="el-icon-arrow-down el-icon--right"></i>
@@ -53,13 +52,14 @@
         </el-dropdown>
       </div>
 
-      <div class="pagination-center">
-        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button @click="changePage(currentPage + 1)" :disabled="currentPage >= totalPages">下一页</button>
-      </div>
-
-      <div class="pagination-right"></div>
+      <PaginationControls
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :page-size="pageSize"
+        @page-changed="changePage" 
+      />
+      <div class="pagination-right">
+        </div>
     </div>
   </div>
 </template>
@@ -68,10 +68,11 @@
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { downloadPdf } from '@/utils/pdfDownloader.js';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
+import PaginationControls from '@/components/common/PaginationControls.vue';
 
 export default {
   name: 'NLDataTable',
-  components: { ChartSpinner },
+  components: { ChartSpinner, PaginationControls },
   props: {
     filters: { type: Object, required: true },
     tableData: { type: Array, required: true },

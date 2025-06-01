@@ -1,11 +1,7 @@
 <template>
   <div class="table-section" style="position: relative;">
     <h3 class="section-title">搜索结果数据详情</h3>
-
-    <!-- ✅ 加载动画 -->
     <ChartSpinner :visible="loading" />
-
-    <!-- ✅ 表格区域 -->
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
@@ -26,39 +22,39 @@
         <tbody>
           <tr v-for="(row, index) in tableData" :key="index">
             <td style="text-align: center;">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ row['公司'] }}</td>   
-            <td>{{ row['入表科目'] }}</td> 
-            <td>{{ row['省份'] }}</td>    
-            <td>{{ row['所属证券行业分布'] }}</td> 
+            <td>{{ row['公司'] }}</td>
+            <td>{{ row['入表科目'] }}</td>
+            <td>{{ row['省份'] }}</td>
+            <td>{{ row['所属证券行业分布'] }}</td>
             <td class="number-cell">{{ formatNumber(row['数据资源入表总额（万元）']) }}</td>
             <td class="number-cell">{{ formatPercentage(row['数据资产占总资产比例']) }}</td>
             <td class="number-cell">{{ formatNumber(row['无形资产-数据资源入表金额（万元）']) }}</td>
             <td class="number-cell">{{ formatNumber(row['开发支出-数据资源入表金额（万元）']) }}</td>
             <td class="number-cell">{{ formatNumber(row['存货-数据资源入表金额（万元）']) }}</td>
-            <td>{{ row['报告时间'] }}</td>  
+            <td>{{ row['报告时间'] }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- ✅ 分页 -->
-    <div class="pagination">
-      <div class="pagination-center">
-        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button @click="changePage(currentPage + 1)" :disabled="currentPage >= totalPages">下一页</button>
-      </div>
-      <div class="pagination-right"></div>
+    <PaginationControls
+      v-if="totalPages > 0 && tableData.length > 0" :current-page="currentPage"
+      :total-pages="totalPages"
+      @page-changed="handlePageChangeFromPagination"
+    />
     </div>
-  </div>
 </template>
 
 <script>
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
+import PaginationControls from '@/components/common/PaginationControls.vue';
 
 export default {
   name: 'LDataTable',
-  components: { ChartSpinner },
+  components: {
+    ChartSpinner,
+    PaginationControls
+  },
   props: {
     filters: { type: Object, required: true },
     tableData: { type: Array, required: true },
@@ -74,6 +70,7 @@ export default {
   },
   computed: {
     totalPages() {
+      if (this.totalRows === 0 || this.pageSize === 0) return 0;
       return Math.max(1, Math.ceil(this.totalRows / this.pageSize));
     }
   },
@@ -81,7 +78,7 @@ export default {
     filters: {
       handler() {
         if (this.initialized) {
-          this.loading = true; // ✅ 清空筛选后触发加载动画
+          this.loading = true;
           this.currentPage = 1;
           this.emitPageChange();
         } else {
@@ -89,22 +86,38 @@ export default {
         }
       },
       deep: true
-    }
+    },
+    totalRows() {
+      this.adjustCurrentPage();
+    },
+    pageSize() {
+      this.adjustCurrentPage();
+    },
+
   },
   methods: {
-    changePage(page) {
-      if (page < 1 || page > this.totalPages) return;
-      this.loading = true; // ✅ 翻页时触发加载动画
-      this.currentPage = page;
-      this.emitPageChange();
+    handlePageChangeFromPagination(newPage) {
+      if (newPage >= 1 && newPage <= this.totalPages && newPage !== this.currentPage) {
+        this.loading = true;
+        this.currentPage = newPage;
+        this.emitPageChange();
+      }
     },
     emitPageChange() {
       this.$emit('page-change', this.currentPage);
     },
-    // ✅ 外部页面加载数据成功后调用
     stopLoading() {
       this.loading = false;
-      this.$emit('data-loaded');
+      // this.$emit('data-loaded'); // 如果父组件需要知道数据已在本组件内处理完毕，可以保留
+    },
+    adjustCurrentPage() {
+        if(this.totalPages > 0 && this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+        } else if (this.totalPages === 0 && this.totalRows > 0) {
+            this.currentPage = 1;
+        } else if (this.totalPages > 0 && this.currentPage < 1) {
+            this.currentPage = 1;
+        }
     },
     formatNumber(value) {
       if (value === null || value === undefined || value === '') return '-';
@@ -119,14 +132,14 @@ export default {
       if (value === null || value === undefined || value === '') return '-';
       const num = parseFloat(value);
       if (isNaN(num)) {
-        return value; // 如果原始值不是数字 (例如文本)，直接返回原始值
+        return value;
       }
-      // 假设原始值是小数形式，例如 0.15 代表 15%
       return (num * 100).toFixed(2) + '%';
     }
-  }
+  },
 }
 </script>
+
 
 
 <style scoped>
@@ -192,10 +205,7 @@ export default {
   }
 
   .data-table tbody tr:hover {
-    background-color: #f1f1f1; /* 这是一个常用的浅灰色，与您 FinanceDashboardPage 中的一致 */
-    /* 您也可以选择其他浅灰色，例如: */
-    /* background-color: #f5f5f5; */
-    /* background-color: #e9e9e9; */
+    background-color: #f1f1f1;
   }
 
   .data-table th:nth-child(1),
@@ -239,52 +249,6 @@ export default {
 .data-table td:last-child {
   border-right: none;
 }
-
-  .pagination {
-    display: flex;
-    justify-content: center; /* ✅ 修改: 直接让父容器将其子项居中 */
-    align-items: center;
-    margin-top: 20px;
-    flex-wrap: wrap;
-    /* gap: 20px; */ /* 如果子元素间需要间距，可以在这里设置，或在 .pagination-center 内部解决 */
-  }
-
-  .pagination-center {
-    display: flex;
-    justify-content: center; /* 保持内部元素居中 */
-    align-items: center;
-    gap: 20px; /* ✅ 调整按钮和页码之间的间隙 */
-  }
-
-  /* 按钮和页码的样式可以保持不变，或者按需微调 */
-  .pagination button { /* 这些是您自定义的 <button> 样式 */
-    background-color: #003049;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px; /* 调整圆角以匹配 Element UI small 按钮 */
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-    font-size: 14px; /* 调整字体大小 */
-    line-height: 1.2; /* 调整行高 */
-  }
-  .pagination button:hover:not(:disabled) { /* 确保 :disabled 状态不应用hover */
-    background-color: #f0f0f0;
-    color: #003049;
-  }
-  .pagination button:disabled {
-    background-color: #eef0f6; /* Element UI 禁用按钮背景色(近似) */
-    color: #c0c4cc;      /* Element UI 禁用按钮文字颜色(近似) */
-    border-color: #dcdfe6; /* Element UI 禁用按钮边框色(近似) */
-    opacity: 0.7; /* 或保持您原来的 opacity: 0.5 */
-    cursor: not-allowed;
-  }
-  .page-info {
-    font-weight: bold; /* 您可以按需调整是否加粗 */
-    color: #003049;
-    font-size: 14px; /* 调整字体大小 */
-    margin: 0 8px; /* 调整与按钮的间距 */
-  }
 
   .export-small-btn {
     background-color: #003049;

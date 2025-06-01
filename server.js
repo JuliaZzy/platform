@@ -9,7 +9,7 @@ const { sendFeedbackEmail } = require('./backend/utils/mailer');
 
 // 中间件
 //app.use(bodyParser.json({ limit: '50mb' }));
-app.use(express.json()); // 确保这个也在，它是 bodyParser 的替代品，用于解析 JSON
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cors({
@@ -17,8 +17,8 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:8080', 
       'http://10.180.238.0:8080',
-      process.env.CORS_ORIGIN // 添加生产环境地址 (如果设置了)
-    ].filter(Boolean); // 过滤掉 undefined/null
+      process.env.CORS_ORIGIN
+    ].filter(Boolean);
 
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -30,9 +30,7 @@ app.use(cors({
   methods: ['GET', 'POST'],
 }));
 
-
-// ▼▼▼ 新增的反馈接口 - 使用 app.post ▼▼▼
-app.post('/api/feedback', async (req, res) => { // <--- 使用 app.post 并修改路径
+app.post('/api/feedback', async (req, res) => {
   const feedbackData = req.body;
 
   if (!feedbackData.name || !feedbackData.contact || !feedbackData.details) {
@@ -51,8 +49,6 @@ app.post('/api/feedback', async (req, res) => { // <--- 使用 app.post 并修�
     res.status(500).json({ error: '服务器内部错误。' });
   }
 });
-// ▲▲▲ 新增的反馈接口 - 使用 app.post ▲▲▲
-
 
 // 后端 API 路由
 const loginRoutes = require('./backend/routes/login');
@@ -60,10 +56,10 @@ const companyDataRoutes = require('./backend/routes/companiesData');
 const dataTableRoutes = require('./backend/routes/dataTable');
 const uploadRoutes = require('./backend/routes/excelUpload');
 const exportRoutes = require('./backend/routes/exportExcel');
-const nonListedAssetRoutes = require('./backend/routes/nonListedDataAsset'); // ✅ nlC数据可视化
-const listedAssetRoutes = require('./backend/routes/listedDataAsset'); // ✅ lC数据可视化
-const listedChartRoutes = require('./backend/routes/listedChartData'); // ✅ 新增上市公司图表数据接口
-const financeAssetRoutes = require('./backend/routes/financingDataAsset'); // ✅ finance数据可视化
+const nonListedAssetRoutes = require('./backend/routes/nonListedDataAsset');
+const listedAssetRoutes = require('./backend/routes/listedDataAsset');
+const listedChartRoutes = require('./backend/routes/listedChartData');
+const financeAssetRoutes = require('./backend/routes/financingDataAsset');
 const financeRoutes = require('./backend/routes/financeBank');
 const statusUpdateRoutes = require('./backend/routes/statusUpdateApi');
 const adminTableDataRoutes = require('./backend/routes/adminTableData');
@@ -74,15 +70,13 @@ app.use('/api/company', companyDataRoutes);
 app.use('/api/dataTable', dataTableRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/export', exportRoutes);
-app.use('/api/nlasset', nonListedAssetRoutes); // ✅ 注册nlC数据可视化路由
-app.use('/api/lasset', listedAssetRoutes); // ✅ 注册lC数据可视化路由
-app.use('/api/lchart', listedChartRoutes); // ✅ 注册图表数据路由
-app.use('/api/finance', financeAssetRoutes); // ✅ 注册finance数据可视化路由
+app.use('/api/nlasset', nonListedAssetRoutes);
+app.use('/api/lasset', listedAssetRoutes);
+app.use('/api/lchart', listedChartRoutes);
+app.use('/api/finance', financeAssetRoutes);
 app.use('/api/financeupload', financeRoutes);
 app.use('/api/adminpage', statusUpdateRoutes);
 app.use('/api/admintable', adminTableDataRoutes);
-
-
 
 
 // 托管 dist 静态资源
@@ -108,7 +102,7 @@ app.listen(port, '0.0.0.0', () => {
   console.log('- /api/export');
   console.log('- /api/nlasset');
   console.log('- /api/lasset');
-  console.log('- /api/lchart'); // ✅ 打印新接口
+  console.log('- /api/lchart');
   console.log('- /api/finance'); 
   console.log('- /api/financeupload');
   console.log('- /api/adminpage'); 

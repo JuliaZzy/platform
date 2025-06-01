@@ -219,7 +219,7 @@ export default {
         filters: { quarter: quarter },
         // 如果上市公司下载需要排除列，可以在这里添加：
         // excludedColumns: ["实控人", "市值（亿元）", "市值规模"], 
-        defaultFilename: `上市公司数据报告_${quarter}.pdf`,
+        defaultFilename: `上市公司数据资产入表清单_${quarter}.pdf`,
         onStart: () => { this.loading.download = true; },
         onFinish: () => { this.loading.download = false; },
         onError: (msg) => { alert(msg); } // 或者使用 Element UI 的 Message 组件

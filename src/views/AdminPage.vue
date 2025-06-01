@@ -49,9 +49,7 @@
               <tr>
                 <th>序号</th>
                 <template v-for="colKey in displayableTableHeaders">
-                  <th v-if="!(colKey === 'status' && currentTab === 'finance-bank')"
-                      :key="colKey"
-                      style="position: relative;">
+                  <th :key="colKey" style="position: relative;">
                     <div class="th-wrapper">  {{ colKey === 'status' ? '状态' : colKey }}  <span
                         class="filter-icon"
                         @click.stop="toggleFilterDropdown(colKey)"
@@ -90,44 +88,47 @@
                 v-for="(row, index) in pagedData"
                 :key="row.id || index" :class="getRowClass(row)"
               >
-                <td style="text-align: center;">
-                  {{ (currentPage - 1) * pageSize + index + 1 }}
+                <td style="text-align: center;"> {{ (currentPage - 1) * pageSize + index + 1 }}
                 </td>
-                <td class="status-cell" v-if="currentTab !== 'finance-bank'">
-                  <div v-if="row.status === 'repeat'" class="status-display status-repeat">
-                    <span class="status-text">重复</span>
-                    <div class="action-buttons-group">
-                      <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
-                      <button @click="updateRowStatus(row, 'kept')" class="action-btn keep-btn-small">保留</button>
-                    </div>
-                  </div>
-                  <div v-else-if="row.status === 'delete'" class="status-display status-deleted">
-                    <span class="status-text">已删除</span>
-                    <div class="action-buttons-group">
-                      <button @click="updateRowStatus(row, 'kept')" class="action-btn keep-btn-small">保留</button> 
-                    </div>
-                  </div>
-                  <div v-else-if="row.status === 'kept'" class="status-display status-kept">
-                    <span class="status-text">已保留</span>
-                    <div class="action-buttons-group">
-                      <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
-                      <button @click="updateRowStatus(row, null)" class="action-btn restore-btn-small">恢复</button>
-                    </div>
-                  </div>
-                  <div v-else class="status-display status-normal"> 
-                    <div class="action-buttons-group">
-                      <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
-                    </div>
-                  </div>
-                </td>
+
                 <td
-                  v-for="colName in displayableTableHeaders"
-                  :key="colName"
+                  v-for="colName in displayableTableHeaders" :key="colName"
+                  :class="{ 'status-cell': colName === 'status' }"
                 >
-                  <span v-if="shouldFormatThisDateColumn(currentTab, colName)">
-                    {{ formatToChineseYearMonth(row[colName]) }}
-                  </span>
-                  <span v-else v-html="highlight(row[colName], colName)"></span>
+                  <template v-if="colName === 'status'">
+                    <div v-if="row.status === 'repeat'" class="status-display status-repeat">
+                        <span class="status-text">重复</span>
+                        <div class="action-buttons-group">
+                            <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
+                            <button @click="updateRowStatus(row, 'kept')" class="action-btn keep-btn-small">保留</button>
+                        </div>
+                    </div>
+                    <div v-else-if="row.status === 'delete'" class="status-display status-deleted">
+                        <span class="status-text">已删除</span>
+                        <div class="action-buttons-group">
+                            <button @click="updateRowStatus(row, 'kept')" class="action-btn keep-btn-small">保留</button>
+                        </div>
+                    </div>
+                    <div v-else-if="row.status === 'kept'" class="status-display status-kept">
+                        <span class="status-text">已保留</span>
+                        <div class="action-buttons-group">
+                            <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
+                            <button @click="updateRowStatus(row, null)" class="action-btn restore-btn-small">恢复</button>
+                        </div>
+                    </div>
+                    <div v-else class="status-display status-normal">
+                        <div class="action-buttons-group">
+                            <button @click="updateRowStatus(row, 'delete')" class="action-btn delete-btn-small">删除</button>
+                        </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <span v-if="colName === 'register_date'"> {{ formatToYYYYMMDD(row[colName]) }}   </span>
+                    <span v-else-if="shouldFormatThisDateColumn(currentTab, colName)">
+                      {{ formatToChineseYearMonth(row[colName]) }}
+                    </span>
+                    <span v-else v-html="highlight(row[colName], colName)"></span>
+                  </template>
                 </td>
               </tr>
             </tbody>
@@ -135,12 +136,13 @@
           <p v-else class="no-data">暂无数据或结果为空</p>
         </template> 
       </div>
-      <div class="pagination" v-if="totalPages > 1 && !tableLoadingState[currentTab]"> 
-        <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">下一页</button>
-      </div>
-
+        <PaginationControls
+        v-if="totalPages > 0 && !tableLoadingState[currentTab] && pagedData.length > 0"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :page-size="pageSize"
+        @page-changed="changePage"
+      />
       <div class="export-controls">
         <label class="upload-btn" v-if="currentTab !== 'finance-bank'">
           上传数据
@@ -148,19 +150,21 @@
         </label>
         <button class="export-btn" @click="exportExcel">导出 Excel</button>
       </div>
-    </main>
-  </div>
+    </main> 
+  </div> 
 </template>
 
 <script>
 import * as adminService from '@/services/adminApiService.js';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
+import PaginationControls from '@/components/common/PaginationControls.vue';
 
 export default {
   name: 'AdminPage',
   components: { 
-    ChartSpinner 
+    ChartSpinner,
+    PaginationControls
   },
   data() {
     return {
@@ -168,6 +172,7 @@ export default {
       tableData: [],
       tableDataTotalRows: 0,
       tableHeaders: [],
+      processedTableHeaders: [],
       lastUpdate: new Date(),
       currentPage: 1,
       pageSize: 15,
@@ -209,7 +214,7 @@ export default {
       }
     },
     displayableTableHeaders() {
-      return this.tableHeaders.filter(h => h !== 'id');
+      return this.processedTableHeaders;
     },
     formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
       if (!this.lastUpdate) return '';
@@ -226,6 +231,19 @@ export default {
   },
   methods: {
     formatToChineseYearMonth, // 将导入的函数暴露给模板
+    formatToYYYYMMDD(isoString) {
+      if (!isoString) return ''; // 如果值为空，返回空字符串
+      try {
+        const date = new Date(isoString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份是从0开始的
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (e) {
+        console.error('Error formatting date:', isoString, e);
+        return isoString; // 如果转换出错，返回原始字符串
+      }
+    },
     shouldFormatThisDateColumn(tabKey, columnName) {
       // 确保这里的键名与从后端获取的数据对象的键名一致
       if (tabKey === 'nonlisted' && columnName === 'month_time') return true;
@@ -276,7 +294,6 @@ export default {
     },
     async loadData() {
       if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab) && !this.tableLoadingState[this.currentTab]) {
-        // 如果不是由 switchTab 触发的（比如翻页），也需要设置 loading
         this.tableLoadingState[this.currentTab] = true;
       }
       try {
@@ -292,8 +309,35 @@ export default {
         
         this.tableData = response.data || [];
         this.tableDataTotalRows = response.total || 0;
+        // 1. 获取原始表头 (这部分不变)
         this.tableHeaders = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
+
+        // 2. 【新增】处理和排序表头以生成 processedTableHeaders
+        let newProcessedHeaders = [...this.tableHeaders]; // 创建副本
+
+        // 2a. 移除 'id' 列 (因为它不直接显示在主要数据区)
+        const idIndex = newProcessedHeaders.indexOf('id');
+        if (idIndex > -1) {
+          newProcessedHeaders.splice(idIndex, 1);
+        }
+
+        // 2b. 特殊处理 'finance-bank' tab：它不应该有 'status' 列
+        if (this.currentTab === 'finance-bank') {
+          const statusIdxFinanceBank = newProcessedHeaders.indexOf('status');
+          if (statusIdxFinanceBank > -1) {
+            newProcessedHeaders.splice(statusIdxFinanceBank, 1);
+          }
+        } else {
+          // 2c. 对于其他 tab，将 'status' 列（如果存在）移动到最前面
+          const statusIndexGeneral = newProcessedHeaders.indexOf('status');
+          if (statusIndexGeneral > -1) {
+            const statusHeader = newProcessedHeaders.splice(statusIndexGeneral, 1)[0]; // 从原位置取出 'status'
+            newProcessedHeaders.unshift(statusHeader); // 将 'status' 插入到数组的开头
+          }
+        }
         
+        this.processedTableHeaders = newProcessedHeaders; // 更新排序后的表头
+
         // lastUpdate 在这里设置为 Date 对象，由 computed property formattedLastUpdate 格式化
         this.lastUpdate = new Date(); 
       
@@ -493,10 +537,10 @@ export default {
       const regex = new RegExp(`(${safeKeyword})`, 'gi');
       return textValue.replace(regex, '<mark>$1</mark>');
     },
-    changePage(page) {
-      if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
-        this.currentPage = page;
-        this.loadData(); 
+    changePage(newPage) {
+      if (newPage >= 1 && newPage <= this.totalPages && newPage !== this.currentPage) {
+        this.currentPage = newPage;
+        this.loadData();
       }
     },
     exportExcel() {
@@ -860,31 +904,6 @@ export default {
   .keep-btn-small:hover, .restore-btn-small:hover {
     background-color: #85ce61 !important;
     border-color: #85ce61 !important;
-  }
-
-  /* === 分页 === */
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-    gap: 20px;
-  }
-  .pagination .page-info {
-    font-size: 16px;
-    color: #003049;
-  }
-  .pagination button {
-    background-color: #f5f3f4;
-    color: #003049;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .pagination button:hover {
-    background-color: #003049;
-    color: white;
   }
 
   /* === 导出上传 === */

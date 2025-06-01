@@ -8,8 +8,8 @@
       <div class="table-header">
         <h3 class="section-title">数据资产增信银行贷款</h3>
       </div>
-      <ChartSpinner :visible="loading.bank" /> 
-      <div class="table-wrapper" v-if="!loading.bank"> 
+      <ChartSpinner :visible="loading.bank" />
+      <div class="table-wrapper" v-if="!loading.bank">
         <table class="data-table" id="bank-table" v-if="bankData.length > 0">
           <thead>
             <tr>
@@ -33,8 +33,14 @@
         </table>
         <p v-else class="no-data">没有数据可显示。</p>
       </div>
-      <div class="pagination" v-if="!loading.bank && bankData.length > 0 && pagination.bank.totalPages > 1">
-        <div class="pagination-left">
+      <PaginationControls
+        v-if="!loading.bank && bankData.length > 0 && pagination.bank.totalPages > 0"
+        :current-page="pagination.bank.currentPage"
+        :total-pages="pagination.bank.totalPages"
+        :page-size="pagination.bank.pageSize"
+        @page-changed="newPage => changePage('bank', newPage)"
+      />
+      <div class="pagination-left-download" v-if="!loading.bank && bankData.length > 0 && pagination.bank.totalPages > 1">
           <el-button 
             class="download-btn-pagination" 
             @click="download('bank')" 
@@ -44,27 +50,6 @@
           >
             下载数据<i class="el-icon-arrow-down el-icon--right" v-if="!loading.bank_dl"></i>
           </el-button>
-        </div>
-        <div class="pagination-center">
-          <button 
-            class="page-button"
-            @click="changePage('bank', pagination.bank.currentPage - 1)" 
-            :disabled="pagination.bank.currentPage === 1"
-          >
-            上一页
-          </button>
-          <span class="page-info">
-            {{ pagination.bank.currentPage }} / {{ pagination.bank.totalPages }}
-          </span>
-          <button 
-            class="page-button"
-            @click="changePage('bank', pagination.bank.currentPage + 1)" 
-            :disabled="pagination.bank.currentPage === pagination.bank.totalPages"
-          >
-            下一页
-          </button>
-        </div>
-        <div class="pagination-right"></div>
       </div>
     </div>
 
@@ -80,7 +65,7 @@
           <thead>
             <tr>
               <th style="text-align: center;">序号</th>
-              <th v-for="headerKey in getHeaders(stockData)" :key="headerKey">{{ headerKey }}</th>
+              <th v-for="headerKey in getHeaders(stockData, 'stock')" :key="headerKey">{{ headerKey }}</th>
             </tr>
           </thead>
           <tbody>
@@ -88,7 +73,7 @@
               <td style="text-align: center;">
                 {{ (pagination.stock.currentPage - 1) * pagination.stock.pageSize + index + 1 }}
               </td>
-              <td v-for="headerKey in getHeaders(stockData)" :key="headerKey">
+              <td v-for="headerKey in getHeaders(stockData, 'stock')" :key="headerKey">
                 <span v-if="headerKey === '入股时间'">{{ formatToChineseYearMonth(row[headerKey]) }}</span>
                 <span v-else>{{ formatValue(row[headerKey]) }}</span>
               </td>
@@ -97,8 +82,14 @@
         </table>
         <p v-else class="no-data">没有数据可显示。</p>
       </div>
-      <div class="pagination" v-if="!loading.stock && stockData.length > 0">
-        <div class="pagination-left">
+      <PaginationControls
+        v-if="!loading.stock && stockData.length > 0 && pagination.stock.totalPages > 0"
+        :current-page="pagination.stock.currentPage"
+        :total-pages="pagination.stock.totalPages"
+        :page-size="pagination.stock.pageSize"
+        @page-changed="newPage => changePage('stock', newPage)"
+      />
+       <div class="pagination-left-download" v-if="!loading.stock && stockData.length > 0 && pagination.stock.totalPages > 0">
           <el-button 
             class="download-btn-pagination" 
             @click="download('stock')" 
@@ -108,27 +99,6 @@
           >
             下载数据<i class="el-icon-arrow-down el-icon--right" v-if="!loading.stock_dl"></i>
           </el-button>
-        </div>
-        <div class="pagination-center">
-          <button 
-            class="page-button"
-            @click="changePage('stock', pagination.stock.currentPage - 1)" 
-            :disabled="pagination.stock.currentPage === 1"
-          >
-            上一页
-          </button>
-          <span class="page-info">
-            {{ pagination.stock.currentPage }} / {{ pagination.stock.totalPages }}
-          </span>
-          <button 
-            class="page-button"
-            @click="changePage('stock', pagination.stock.currentPage + 1)" 
-            :disabled="pagination.stock.currentPage === pagination.stock.totalPages"
-          >
-            下一页
-          </button>
-        </div>
-        <div class="pagination-right"></div>
       </div>
     </div>
 
@@ -144,7 +114,7 @@
           <thead>
             <tr>
               <th style="text-align: center;">序号</th>
-              <th v-for="headerKey in getHeaders(otherData)" :key="headerKey">{{ headerKey }}</th>
+              <th v-for="headerKey in getHeaders(otherData, 'other')" :key="headerKey">{{ headerKey }}</th>
             </tr>
           </thead>
           <tbody>
@@ -152,7 +122,7 @@
               <td style="text-align: center;">
                 {{ (pagination.other.currentPage - 1) * pagination.other.pageSize + index + 1 }}
               </td>
-              <td v-for="headerKey in getHeaders(otherData)" :key="headerKey">
+              <td v-for="headerKey in getHeaders(otherData, 'other')" :key="headerKey">
                 <span v-if="headerKey === '日期'">{{ formatToChineseYearMonth(row[headerKey]) }}</span>
                 <span v-else>{{ formatValue(row[headerKey]) }}</span>
               </td>
@@ -161,8 +131,14 @@
         </table>
         <p v-else class="no-data">没有数据可显示。</p>
       </div>
-      <div class="pagination" v-if="!loading.other && otherData.length > 0">
-        <div class="pagination-left">
+      <PaginationControls
+        v-if="!loading.other && otherData.length > 0 && pagination.other.totalPages > 0"
+        :current-page="pagination.other.currentPage"
+        :total-pages="pagination.other.totalPages"
+        :page-size="pagination.other.pageSize"
+        @page-changed="newPage => changePage('other', newPage)"
+      />
+       <div class="pagination-left-download" v-if="!loading.other && otherData.length > 0 && pagination.other.totalPages > 0">
           <el-button 
             class="download-btn-pagination" 
             @click="download('other')" 
@@ -172,27 +148,6 @@
           >
             下载数据<i class="el-icon-arrow-down el-icon--right" v-if="!loading.other_dl"></i>
           </el-button>
-        </div>
-        <div class="pagination-center" >
-          <button 
-             class="page-button"
-            @click="changePage('other', pagination.other.currentPage - 1)" 
-            :disabled="pagination.other.currentPage === 1"
-          >
-            上一页
-          </button>
-          <span class="page-info">
-            {{ pagination.other.currentPage }} / {{ pagination.other.totalPages }}
-          </span>
-          <button 
-            class="page-button"
-            @click="changePage('other', pagination.other.currentPage + 1)" 
-            :disabled="pagination.other.currentPage === pagination.other.totalPages"
-          >
-            下一页
-          </button>
-        </div>
-        <div class="pagination-right"></div>
       </div>
     </div>
   </div>
@@ -202,10 +157,11 @@
 import axios from 'axios';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
+import PaginationControls from '@/components/common/PaginationControls.vue';
 
 export default {
   name: 'FinanceDashboardPage',
-  components: { ChartSpinner }, 
+  components: { ChartSpinner, PaginationControls }, 
   data() {
     return {
       bankData: [],
@@ -263,24 +219,26 @@ export default {
      * @param {string} type - 数据类型 ('bank', 'stock', 'other')。
      * @param {number} page - 请求的页码。
      */
-    async fetchData(type, page) {
+    async fetchData(type, page, pageSize) { // (3) fetchData 接收 pageSize
       this.loading[type] = true;
       const currentPagination = this.pagination[type];
+      // 如果 pageSize 未传入，则使用当前分页对象中的 pageSize
+      const effectivePageSize = pageSize !== undefined ? pageSize : currentPagination.pageSize;
+
       try {
-        // ✅ 2. 请求中加入分页参数
         const response = await axios.get(`${this.apiBase}/data/${type}`, {
           params: {
             page: page,
-            pageSize: currentPagination.pageSize
+            pageSize: effectivePageSize // (3) 使用 effectivePageSize
           }
         });
 
         if (response && response.data && Array.isArray(response.data.data)) {
             this[`${type}Data`] = response.data.data;
-            // ✅ 2. 更新总行数和总页数
             currentPagination.totalRows = response.data.total || 0;
+            currentPagination.pageSize = effectivePageSize; // (3) 确保更新 pageSize
             currentPagination.totalPages = Math.ceil(currentPagination.totalRows / currentPagination.pageSize) || 1;
-            currentPagination.currentPage = page; // 更新当前页
+            currentPagination.currentPage = page;
         } else {
             console.error(`Error fetching ${type} data: Invalid response structure.`, response.data);
             this[`${type}Data`] = []; 
@@ -325,13 +283,13 @@ export default {
       // 根据 type 设置不同的文件名
       switch (type) {
         case 'bank':
-          specificFilename = `数据资产增信银行贷款清单_${dateString}.pdf`; // 例如: 数据资产增信银行贷款报告_20230529.pdf
+          specificFilename = `数据资产增信银行贷款清单_${dateString}.pdf`;
           break;
         case 'stock':
-          specificFilename = `数据资产作价入股清单_${dateString}.pdf`; // 例如: 数据资产作价入股明细_20230529.pdf
+          specificFilename = `数据资产作价入股清单_${dateString}.pdf`;
           break;
         case 'other':
-          specificFilename = `其他数据类融资清单_${dateString}.pdf`; // 例如: 其他数据类融资情况_20230529.pdf
+          specificFilename = `其他数据类融资清单_${dateString}.pdf`;
           break;
         default:
           specificFilename = `导出数据_${dateString}.pdf`;
@@ -396,7 +354,8 @@ export default {
     changePage(type, newPage) {
       const currentPagination = this.pagination[type];
       if (newPage >= 1 && newPage <= currentPagination.totalPages && newPage !== currentPagination.currentPage) {
-        this.fetchData(type, newPage);
+        // fetchData 现在会使用 currentPagination.pageSize
+        this.fetchData(type, newPage, currentPagination.pageSize);
       }
     }
   }
@@ -449,7 +408,7 @@ export default {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 30px;
-  position: relative; /* For potential absolute positioned children like spinners */
+  position: relative;
 }
 
 .table-header {
@@ -498,24 +457,6 @@ export default {
 /* Row Hover Effect */
 .data-table tbody tr:hover {
   background-color: #f1f1f1;
-}
-
-/* Alternating Row Color (Uncomment if needed) */
-/*
-.data-table tbody tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-*/
-
-/* Table Edge Borders & Last Row */
-.data-table th:first-child,
-.data-table td:first-child {
-  /* border-left: none; */ /* May not be needed with border-collapse if table has no outer border */
-}
-
-.data-table th:last-child,
-.data-table td:last-child {
-  /* border-right: none; */ /* May not be needed with border-collapse if table has no outer border */
 }
 
 .data-table tr:last-child td { /* Ensures the last data row has a strong bottom border */
@@ -579,45 +520,12 @@ export default {
   font-size: 16px;
 }
 
-/* ============================================= */
-/* Pagination Styles                             */
-/* ============================================= */
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
-  flex-wrap: wrap; /* Allows controls to wrap on smaller screens */
-}
-
-.pagination-left,
-.pagination-right {
-  flex: 1; /* Allows these sections to take available space */
-  display: flex;
-  align-items: center;
-}
-
-.pagination-left {
-  justify-content: flex-start;
-}
-
-.pagination-right {
-  justify-content: flex-end; /* Currently empty, but structured for future use */
-}
-
-.pagination-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px; /* Space between pagination controls */
-}
-
-/* Download Button in Pagination */
-.download-btn-pagination.el-button { /* Targets the Element UI button */
+.download-btn-pagination.el-button {
   background-color: #003049;
   color: white;
-  border: none; /* Element UI buttons might have default borders */
-  padding: 12px 20px; /* Slightly larger padding */
+  border: none;
+  margin-top: 20px;
+  padding: 12px 20px;
   border-radius: 5px;
   font-size: 13px;
   /* transition is often handled by Element UI itself, but can be added if needed */

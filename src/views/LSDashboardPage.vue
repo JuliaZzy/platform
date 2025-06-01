@@ -22,10 +22,13 @@
 
     <div class="data-table-container" v-show="!isLoading && initialOptionsLoaded" style="margin: 20px 30px;">
       <LSDataTable
-        ref="lsDataTableRef" :filters="lsTableActiveFilters" :tableData="lsTableData"
+        ref="lsDataTableRef" 
+        :filters="lsTableActiveFilters" 
+        :tableData="lsTableData"
         :totalRows="lsTableTotalRows"
         :pageSize="lsTablePageSize"
-        :apiPrefix="'/api/lasset'" @page-change="handleLSPageChange"
+        :apiPrefix="'/api/lasset'" 
+        @page-change="handleLSPageChange"
       />
     </div>
 
@@ -100,6 +103,11 @@ export default {
       this.fetchLSDataTableData(newPage);
     },
 
+    handlePageSizeChange() {
+      this.lsTableCurrentPage = 1; // 每页条数变化，重置到第一页
+      this.fetchLSDataTableData(this.lsTableCurrentPage);
+    },
+
     // 新增：获取 LSDataTable 数据的函数
     async fetchLSDataTableData(page = 1) {
       if (this.$refs.lsDataTableRef && typeof this.$refs.lsDataTableRef.showLoading === 'function') {
@@ -115,17 +123,12 @@ export default {
           pageSize: this.lsTablePageSize
         };
 
-        console.log('[LSDashboardPage] Requesting /api/lasset/summary with params:', JSON.stringify(params)); // 添加日志
         const response = await axios.post('/api/lasset/summary', params); 
-        console.log('[LSDashboardPage] Received response from /api/lasset/summary:', response.data); // 添加日志
         
         if (response.data && response.data.table) {
           this.lsTableData = response.data.table.rows || [];
           this.lsTableTotalRows = response.data.table.total || 0;
-          console.log('[LSDashboardPage] Updated lsTableData count:', this.lsTableData.length);
-          console.log('[LSDashboardPage] Updated lsTableTotalRows:', this.lsTableTotalRows);
         } else {
-          console.error('[LSDashboardPage] Error: Response data or response.data.table is missing!', response.data);
           this.lsTableData = [];
           this.lsTableTotalRows = 0;
         }
@@ -227,6 +230,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
   .dashboard-title-block {

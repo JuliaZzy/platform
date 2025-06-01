@@ -32,18 +32,16 @@ const tableKeyColumnConfigs = {
     description: "入股时间, 作价入股企业, 数据资产, 入股公司"
   },
   'dataasset_finance_other': {
-    keyDbColumns: ['融资类型', '日期', '企业'], // 根据您的更新
+    keyDbColumns: ['融资类型', '日期', '企业'],
     description: "融资类型, 日期, 企业"
   }
 };
 
 // 定义哪些数据库列在从Excel导入时需要特定的日期格式转换
-// 键名是数据库表名，值是一个对象，该对象的键是【数据库中的实际业务列名】
-// 值是目标日期格式的标识符，例如: 'YYYY-MM' 或 'YYYY-MM-DD'
 const columnSpecificDateFormatting = {
   'dataasset_non_listed_companies': {
     'month_time': 'YYYY-MM',        
-    'register_date': 'YYYY-MM-DD' // 您添加的，用于处理 DATE 类型列
+    'register_date': 'YYYY-MM-DD'
   },
   'dataasset_finance_stock': {
     '入股时间': 'YYYY-MM'
@@ -51,7 +49,6 @@ const columnSpecificDateFormatting = {
   'dataasset_finance_other': {
     '日期': 'YYYY-MM'
   }
-  // 为其他需要转换的表和列在此处添加配置
 };
 
 router.post('/append', upload.single('file'), async (req, res) => {
@@ -151,7 +148,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
     console.log(`[excelUpload] 表 ${tableName}: 开始处理 ${excelDataRows.length} 行数据...`);
     console.log(`[excelUpload] 表 ${tableName}: 数据库业务列 (DB): `, dbBusinessColumnNames);
-    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, configuredKeyDbNames); // 使用正确的变量名
+    console.log(`[excelUpload] 表 ${tableName}: 用于部分重复检查的DB键列: `, configuredKeyDbNames);
     console.log(`[excelUpload] 表 ${tableName}: 日期转换配置: `, currentTableDateFormats);
 
     for (let rowIndex = 0; rowIndex < excelDataRows.length; rowIndex++) {
@@ -217,16 +214,13 @@ router.post('/append', upload.single('file'), async (req, res) => {
               console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}": 未知的目标日期格式 "${targetDateFormat}"，返回原始值。`);
               return cellValue; 
             }
-            // console.log(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", Excel原始值 "${value}", Trim后值 "${cellValue}" -> 转换为日期 (${targetDateFormat}): ${formattedDate}`);
             return formattedDate;
           }
-          // console.warn(`[excelUpload] 表: ${tableName}, 行 ${rowIndex + 1}, DB列 "${dbColName}", 值 "${cellValue}": 未能解析为日期组件，保留原样。`);
         }
         return cellValue; 
       });
       
       const excelRowValues = processedExcelRowValues; 
-      // console.log(`[excelUpload] 处理Excel行 ${rowIndex + 1} (格式化后):`, excelRowValues);
 
       // --- 完全重复检查 ---
       const allMatchConditions = [];
@@ -319,35 +313,47 @@ router.post('/append', upload.single('file'), async (req, res) => {
         if (idx > -1) results.affectedRowsForFrontend[idx] = insertedExcelRows[0];
         else results.affectedRowsForFrontend.push(insertedExcelRows[0]);
       }
-    } // end of for loop
-
-    if (tableName === 'dataasset_non_listed_companies') {
-        console.log(`[excelUpload] 检测到 ${tableName} 更新，准备同步 dataasset_finance_bank...`);
-        try {
-            const internalApiBase = process.env.VUE_APP_API_URL; 
-            if (!internalApiBase) {
-                console.error(`[CRITICAL ERROR] VUE_APP_API_URL 环境变量未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
-            } else {
-                const syncUrl = `${internalApiBase}/api/financeupload/sync-bank-table`;
-                console.log(`[excelUpload - Sync] Calling sync URL: ${syncUrl}`);
-                const syncResponse = await axios.post(syncUrl);
-                if (syncResponse.data && syncResponse.data.success) {
-                    console.log(`[excelUpload - Sync] ✅ dataasset_finance_bank 同步成功。`);
-                } else {
-                    console.warn(`[excelUpload - Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
-                }
-            }
-        } catch (syncError) {
-            console.error(`❌ [excelUpload - Sync] 自动同步 dataasset_finance_bank 失败:`, 
-                syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
-            );
-        }
-    }
+    } 
     
     await client.query('COMMIT');
-    // console.log('[excelUpload] 事务已提交。');
+    // ✅ 新增：在主事务成功提交后，并且在发送响应前，检查是否需要触发同步
+    if (tableName === 'dataasset_non_listed_companies') {
+      console.log(`[excelUpload] 表 ${tableName} 数据导入成功并已提交，准备同步 dataasset_finance_bank...`);
+      try {
+        const internalApiBase = process.env.VUE_APP_API_URL; 
+
+        if (!internalApiBase) {
+          console.error(`[CRITICAL ERROR][excelUpload - Sync] 后端API基础URL环境变量 (VUE_APP_API_URL) 未设置! 无法进行内部API调用来同步 dataasset_finance_bank。`);
+        } else {
+          const syncUrl = `${internalApiBase}/api/financeupload/sync-bank-table`; 
+          
+          console.log(`[excelUpload - Sync] Calling sync URL: ${syncUrl}`);
+          
+          // 发起同步请求，但不需要阻塞主流程的响应
+          axios.post(syncUrl)
+            .then(syncResponse => {
+              if (syncResponse.data && syncResponse.data.success) {
+                console.log(`[excelUpload - Sync] ✅ dataasset_finance_bank 同步成功 (由 ${tableName} Excel导入触发)。`);
+              } else {
+                console.warn(`[excelUpload - Sync] ⚠️ dataasset_finance_bank 同步请求已发送，但响应未明确成功或包含错误:`, syncResponse.data);
+              }
+            })
+            .catch(syncError => {
+              console.error(`❌ [excelUpload - Sync] 自动同步 dataasset_finance_bank 失败 (由 ${tableName} Excel导入触发):`, 
+                syncError.response ? JSON.stringify(syncError.response.data) : syncError.message
+              );
+            });
+        }
+      } catch (syncTriggerError) {
+        console.error(`❌ [excelUpload - Sync] 触发同步操作时发生意外错误:`, syncTriggerError.message);
+      }
+    }
+    // ✅ 同步触发逻辑结束
+
     res.json({
-      message: `导入完成。共处理 ${results.processedRows} 行Excel数据。新增唯一行: ${results.insertedUnique}, 新增并标记为重复: ${results.insertedAsRepeat}, 更新已有数据为重复: ${results.updatedToRepeat}, 忽略完全重复行: ${results.ignoredFullDuplicate}.`,
+      message: `导入完成。共处理 ${results.processedRows} 行Excel数据。
+                新增唯一行: ${results.insertedUnique}, 新增并标记为重复: ${results.insertedAsRepeat}, 
+                更新已有数据为重复: ${results.updatedToRepeat}, 忽略完全重复行: ${results.ignoredFullDuplicate}.`,
       data: results.affectedRowsForFrontend, 
     });
 
