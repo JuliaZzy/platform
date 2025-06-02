@@ -50,35 +50,42 @@
                 <th>序号</th>
                 <template v-for="colKey in displayableTableHeaders">
                   <th :key="colKey" style="position: relative;">
-                    <div class="th-wrapper">  {{ colKey === 'status' ? '状态' : colKey }}  <span
-                        class="filter-icon"
-                        @click.stop="toggleFilterDropdown(colKey)"
-                        :data-filter-icon="colKey"
-                      >⏷</span> <div
-                        v-show="showFilterDropdown[colKey]"
-                        class="filter-dropdown"
-                        :data-dropdown="colKey"
-                        @click.stop
-                      > <input
-                          class="filter-search-input"
-                          v-model="filterSearch[colKey]"
-                          placeholder="搜索该列..."
-                        />
-                        <div class="filter-options">
-                          <label
-                            v-for="val in getFilteredOptions(colKey)"
-                            :key="val"
-                          >
-                            <input type="checkbox" :value="val" v-model="pendingFilters[colKey]" />
-                            {{ colKey === 'status' ? (statusDisplayMap[val] || val) : val }}
-                          </label>
+                    <div class="th-wrapper">
+                      {{ colKey === 'status' ? '状态' : colKey }}
+                      
+                      <template v-if="isColumnFilterable(colKey)">
+                        <span
+                          class="filter-icon"
+                          @click.stop="toggleFilterDropdown(colKey)"
+                          :data-filter-icon="colKey"
+                        >⏷</span>
+                        <div
+                          v-show="showFilterDropdown[colKey]"
+                          class="filter-dropdown"
+                          :data-dropdown="colKey"
+                          @click.stop
+                        >
+                          <input
+                            class="filter-search-input"
+                            v-model="filterSearch[colKey]"
+                            placeholder="搜索该列..."
+                          />
+                          <div class="filter-options">
+                            <label
+                              v-for="val in getFilteredOptions(colKey)"
+                              :key="val"
+                            >
+                              <input type="checkbox" :value="val" v-model="pendingFilters[colKey]" />
+                              {{ colKey === 'status' ? (statusDisplayMap[val] || val) : val }}
+                            </label>
+                          </div>
+                          <div class="filter-footer">
+                            <button @click="clearFilter(colKey)">清空筛选</button>
+                            <button @click="confirmFilter(colKey)">确定</button>
+                          </div>
                         </div>
-                        <div class="filter-footer">
-                          <button @click="clearFilter(colKey)">清空筛选</button>
-                          <button @click="confirmFilter(colKey)">确定</button>
-                        </div>
-                      </div> 
-                    </div>
+                      </template>
+                      </div>
                   </th>
                 </template>
               </tr>
@@ -93,7 +100,15 @@
 
                 <td
                   v-for="colName in displayableTableHeaders" :key="colName"
-                  :class="{ 'status-cell': colName === 'status' }"
+                  :class="{ 'status-cell': colName === 'status',
+                            'text-right': 
+                              (colName === '数据资源入表总额（万元）' || colName === '市值（亿元）' || 
+                               colName === '无形资产-数据资源入表金额（万元）' || colName === '开发支出-数据资源入表金额（万元）' || 
+                               colName === '存货-数据资源入表金额（万元）' || colName === 'book_value' || 
+                               colName === 'assess_value' || colName === 'finance_value' || 
+                               colName === '融资金额（万元）' || colName === '注册资本（万元）') ||
+                              (colName === '数据资产占总资产比例' || colName === '股权占比') 
+                          }"
                 >
                   <template v-if="colName === 'status'">
                     <div v-if="row.status === 'repeat'" class="status-display status-repeat">
@@ -123,10 +138,23 @@
                     </div>
                   </template>
                   <template v-else>
-                    <span v-if="colName === 'register_date'"> {{ formatToYYYYMMDD(row[colName]) }}   </span>
+                    <span v-if="colName === 'register_date' ">
+                      {{ formatToYYYYMMDD(row[colName]) }}
+                    </span>
+
                     <span v-else-if="shouldFormatThisDateColumn(currentTab, colName)">
                       {{ formatToChineseYearMonth(row[colName]) }}
                     </span>
+                    
+                    <span v-else-if="colName === '数据资源入表总额（万元）' || colName === '市值（亿元）' || 
+                                     colName === '无形资产-数据资源入表金额（万元）' || colName === '开发支出-数据资源入表金额（万元）' || 
+                                     colName === '存货-数据资源入表金额（万元）' || colName === 'book_value' || 
+                                     colName === 'assess_value' || colName === 'finance_value' || 
+                                     colName === '融资金额（万元）' || colName === '注册资本（万元）' || colName === '融资金额（万元）' ">
+                      {{ formatNumber(row[colName]) }} </span>
+                    
+                    <span v-else-if="colName === '数据资产占总资产比例' || colName === '股权占比'">
+                      {{ formatPercentage(row[colName]) }} </span>
                     <span v-else v-html="highlight(row[colName], colName)"></span>
                   </template>
                 </td>
@@ -157,8 +185,13 @@
 <script>
 import * as adminService from '@/services/adminApiService.js';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
-import { formatToChineseYearMonth } from '@/utils/formatters.js';
 import PaginationControls from '@/components/common/PaginationControls.vue';
+import { 
+  formatToChineseYearMonth,
+  formatToYYYYMMDD,
+  formatNumber,
+  formatPercentage
+} from '@/utils/formatters.js';
 
 export default {
   name: 'AdminPage',
@@ -181,6 +214,7 @@ export default {
       pendingFilters: {},
       filterSearch: {},
       uniqueColumnValues: {},
+      filterOptionsCache: {},
       searchKeyword: '',
       searchDebounceTimer: null,
       showFilterDropdown: {}, 
@@ -230,19 +264,27 @@ export default {
     },
   },
   methods: {
-    formatToChineseYearMonth, // 将导入的函数暴露给模板
-    formatToYYYYMMDD(isoString) {
-      if (!isoString) return ''; // 如果值为空，返回空字符串
-      try {
-        const date = new Date(isoString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份是从0开始的
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      } catch (e) {
-        console.error('Error formatting date:', isoString, e);
-        return isoString; // 如果转换出错，返回原始字符串
-      }
+    formatToChineseYearMonth,
+    formatToYYYYMMDD,
+    formatNumber,
+    formatPercentage,
+
+    isColumnFilterable(columnKey) {
+      // `this.uniqueColumnValues` 的键是后端返回的、移除了引号的列名。
+      // `columnKey` 来自 `displayableTableHeaders`，它是从 `Object.keys(this.tableData[0])` 得到的，
+      // 通常是数据库原始列名（可能带引号，也可能不带，例如 "公司" 或 status）。
+      // 为了正确匹配，我们需要对 columnKey 进行与 uniqueColumnValues 中键名一致的规范化。
+      
+      let normalizedKey = String(columnKey); // 先确保是字符串
+      // 根据您后端 /distinct-values 接口返回的 distinctValues 对象的键是如何生成的，
+      // (之前是 dbColName.replace(/"/g, ''))，这里也做类似处理。
+      // 如果 columnKey 已经是不带引号的，这步操作不影响。
+      normalizedKey = normalizedKey.replace(/"/g, '');
+
+      // 检查 uniqueColumnValues 中是否存在这个键，并且对应的选项数组不为空
+      return Object.prototype.hasOwnProperty.call(this.uniqueColumnValues, normalizedKey) &&
+            this.uniqueColumnValues[normalizedKey] &&
+            this.uniqueColumnValues[normalizedKey].length > 0;
     },
     shouldFormatThisDateColumn(tabKey, columnName) {
       // 确保这里的键名与从后端获取的数据对象的键名一致
@@ -276,8 +318,7 @@ export default {
       this.currentPage = 1;
       this.tableData = [];
       this.tableDataTotalRows = 0;
-      this.uniqueColumnValues = {}; // 切换tab时，清空筛选选项
-      // this.areFilterOptionsLoadedCurrentTab = false; // 重置标志位
+      this.uniqueColumnValues = {};
     
       // 确保 loading 状态被正确设置
       if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
@@ -285,11 +326,9 @@ export default {
       }
     
       try {
-        await this.loadFilterOptions(); // 先加载全量的筛选选项
+        await this.loadFilterOptions();
       } finally {
-        // 无论 filter options 是否成功，都尝试加载数据
-        // loadData 内部会处理 loading 状态的结束
-        this.loadData(); // 然后加载表格数据（它会使用已加载的筛选选项）
+        this.loadData();
       }
     },
     async loadData() {
@@ -414,6 +453,12 @@ export default {
       try {
         const response = await adminService.uploadExcelData(tableName, formData);
         this.$message ? this.$message.success(response.message || '上传处理完成！') : alert(response.message || '上传处理完成！');
+
+        if (this.filterOptionsCache[this.currentTab]) {
+          delete this.filterOptionsCache[this.currentTab];
+          console.log(`[AdminPage] Cleared filter options cache for tab: ${this.currentTab} after upload.`);
+        }
+
         this.currentPage = 1; 
         await this.loadData(); 
       } catch (error) {
@@ -432,14 +477,20 @@ export default {
       }
       // 可以加一个简单的标志位，防止重复加载筛选选项，除非tab切换
       // if (this.areFilterOptionsLoadedForCurrentTab) return;
+      if (this.filterOptionsCache[this.currentTab]) {
+        this.uniqueColumnValues = this.filterOptionsCache[this.currentTab];
+        console.log(`[AdminPage] Using cached filter options for tab: ${this.currentTab}`);
+        return; 
+      }
   
-      console.log(`[AdminPage] Loading filter options for tab: ${this.currentTab}`);
+      console.log(`[AdminPage] Loading filter options for tab: ${this.currentTab} from API.`);
       try {
         const distinctValuesData = await adminService.loadDistinctColumnValues(this.currentTab);
         // distinctValuesData 结构是 { "列名1": ["值A", "值B"], ... }
         // 这里的键名 "列名1" 必须与你前端 this.displayableTableHeaders 中的项匹配，
         // 或者与你 this.filters 对象中实际使用的键 (colKey) 匹配。
         this.uniqueColumnValues = distinctValuesData || {};
+        this.filterOptionsCache[this.currentTab] = this.uniqueColumnValues;
         // this.areFilterOptionsLoadedForCurrentTab = true; // 设置标志位
         console.log("[AdminPage] Filter options loaded:", this.uniqueColumnValues);
       } catch (error) {
@@ -737,13 +788,15 @@ export default {
     text-align: center;
   }
 
-  .data-table th:nth-child(2), /* 状态列表头 */
-  .data-table td.status-cell {  /* 状态列单元格 */
-    min-width: 180px; /* 给状态列足够的宽度以容纳文字和按钮 */
-    width: 180px;
-    text-align: center; /* 可以让状态列内容居中 */
+  .data-table th:nth-child(2),
+  .data-table td.status-cell {
+    min-width: 80px;
+    width: 140px;
+    text-align: center;
   }
-
+  .data-table td.text-right {
+    text-align: right;
+  }
 
   /* 表头筛选图标 + 弹框 */
   .th-wrapper {

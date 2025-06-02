@@ -24,9 +24,18 @@
               <td style="text-align: center;">
                 {{ (pagination.bank.currentPage - 1) * pagination.bank.pageSize + index + 1 }}
               </td>
-              <td v-for="key in bankTableDisplayConfig.columnOrder" :key="key">
-                <span v-if="key === 'month_time'">{{ formatToChineseYearMonth(row[key]) }}</span>
-                <span v-else>{{ formatValue(row[key]) }}</span>
+              <td v-for="key in bankTableDisplayConfig.columnOrder" :key="key"
+                  :class="{ 'text-right': key === 'finance_value' }">
+                
+                <span v-if="key === 'month_time'">
+                  {{ formatToChineseYearMonth(row[key]) }}
+                </span>
+                <span v-else-if="key === 'finance_value'">
+                  {{ formatNumber(row[key]) }}
+                </span>
+                <span v-else>
+                  {{ row[key] }}
+                </span>
               </td>
             </tr>
           </tbody>
@@ -156,8 +165,12 @@
 <script>
 import axios from 'axios';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
-import { formatToChineseYearMonth } from '@/utils/formatters.js';
 import PaginationControls from '@/components/common/PaginationControls.vue';
+import { 
+  formatToChineseYearMonth,
+  formatNumber,
+  formatPercentage
+} from '@/utils/formatters.js';
 
 export default {
   name: 'FinanceDashboardPage',
@@ -205,6 +218,8 @@ export default {
   },
   methods: {
     formatToChineseYearMonth,
+    formatNumber,
+    formatPercentage,
     getHeaders(dataArray, type) { // ✅ 3. 调整 getHeaders 以处理银行表
       if (type === 'bank' && dataArray && dataArray.length > 0) {
         return this.bankTableDisplayConfig.columnOrder; 
@@ -509,6 +524,8 @@ export default {
 #other-table td:nth-child(8) {
   text-align: right;
 }
+
+.text-right { text-align: right; }
 
 /* ============================================= */
 /* No Data Placeholder                           */

@@ -48,6 +48,11 @@
 <script>
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import PaginationControls from '@/components/common/PaginationControls.vue';
+import { 
+  formatToChineseYearMonth,
+  formatNumber, 
+  formatPercentage
+} from '@/utils/formatters.js';
 
 export default {
   name: 'LDataTable',
@@ -119,23 +124,9 @@ export default {
             this.currentPage = 1;
         }
     },
-    formatNumber(value) {
-      if (value === null || value === undefined || value === '') return '-';
-      const num = parseFloat(value);
-      if (isNaN(num)) return value;
-      return num.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    },
-    formatPercentage(value) {
-      if (value === null || value === undefined || value === '') return '-';
-      const num = parseFloat(value);
-      if (isNaN(num)) {
-        return value;
-      }
-      return (num * 100).toFixed(2) + '%';
-    }
+    formatToChineseYearMonth, 
+    formatNumber, 
+    formatPercentage
   },
 }
 </script>

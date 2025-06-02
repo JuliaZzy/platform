@@ -8,35 +8,40 @@ const adminTableConfigs = {
   'listed': {
     tableName: 'dataasset_listed_companies_2024',
     searchableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
-    filterableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"']
+    filterableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
+    defaultSort: 'ORDER BY status, "报告时间", "证券代码", id'
   },
   'nonlisted': { 
     tableName: 'dataasset_non_listed_companies',
-    searchableColumns: ['"status"', '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+    searchableColumns: ['"status"', '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_date"',
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
-                        '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
+                        '"finance_type"', '"finance_orgs"', '"company_name_now"',
                         '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
-    filterableColumns: ["status", '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_addr"', '"register_date"',
+    filterableColumns: ['"status"', '"province_area"', '"quarter_time"', '"month_time"', '"district_area"', '"company_name"', '"register_date"',
                         '"register_type"', '"sm_tech_flag"', '"high_tech_flag"', '"actual_controller"', '"company_type"', '"company_type_old"', '"admin_level"',
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
-                        '"finance_type"', '"finance_orgs"', '"finance_memo"', '"meaning"', '"other_comment"', '"links"', '"company_name_now"',
-                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"']
+                        '"finance_type"', '"finance_orgs"', '"company_name_now"',
+                        '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
+    defaultSort: 'ORDER BY status, month_time, company_name, id'
   },
   'finance-bank':{
     tableName: 'dataasset_finance_bank',
     searchableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"', '"status"'],
-    filterableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"', "status"]
+    filterableColumns: ['"month_time"', '"show_name"', '"dataasset_content"', '"finance_value"', '"finance_type"', '"finance_orgs"', "status"],
+    // defaultSort: 'ORDER BY "month_time" DESC'
   },
   'finance-stock':{ 
     tableName: 'dataasset_finance_stock',
-    searchableColumns: ["status", '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
-    filterableColumns: ["status", '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"']
+    searchableColumns: ['"status"', '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
+    filterableColumns: ['"status"', '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
+    defaultSort: 'ORDER BY status, "入股时间", "入股公司", id'
   },
   'finance-other':{ 
     tableName: 'dataasset_finance_other',
-    searchableColumns: ["status", '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
-    filterableColumns: ["status", '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"']
+    searchableColumns: ['"status"', '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
+    filterableColumns: ['"status"', '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
+    defaultSort: 'ORDER BY status, "日期", "企业", id'
   }
 };
 
@@ -126,11 +131,12 @@ router.get('/tabledata/:tabKey', async (req, res) => {
 
   // 3. 构建 WHERE 子句
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+  const orderByClause = config.defaultSort || 'ORDER BY status ASC, id ASC'; // 全局默认排序
 
   const dataQuery = `
     SELECT * FROM "${tableName}" 
     ${whereClause} 
-    ORDER BY status ASC , id ASC 
+    ${orderByClause}
     LIMIT $${queryValues.length + 1} OFFSET $${queryValues.length + 2}
   `;
   const countQuery = `SELECT COUNT(*) AS total FROM "${tableName}" ${whereClause}`;
@@ -143,17 +149,14 @@ router.get('/tabledata/:tabKey', async (req, res) => {
 
   const client = await db.getClient();
   try {
-    await client.query('BEGIN');
     const countResult = await client.query(countQuery, queryValues);
     const totalRows = countResult.rows?.[0] ? parseInt(countResult.rows[0].total, 10) : 0;
     const dataResult = await client.query(dataQuery, [...queryValues, pageSize, offset]);
-    await client.query('COMMIT');
     res.json({
       data: dataResult.rows,
       total: totalRows
     });
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(`❌ Admin - 查询失败 - 表 ${tableName} (tab: ${tabKey}):`, err);
     res.status(500).json({ error: 'Admin 后端数据查询失败', detail: err.message, stack: err.stack });
   } finally {
@@ -174,16 +177,30 @@ router.get('/distinct-values/:tabKey', async (req, res) => {
   const client = await db.getClient();
 
   try {
-    await client.query('BEGIN');
-    for (const dbColName of filterableColumns) {
+    // 1. 为 filterableColumns 中的每一列创建一个查询 Promise
+    const distinctValuePromises = filterableColumns.map(async (dbColName) => {
       const distinctQuery = `SELECT DISTINCT ${dbColName} FROM "${tableName}" WHERE ${dbColName} IS NOT NULL ORDER BY ${dbColName} ASC`;
       const result = await client.query(distinctQuery);
-      distinctValues[dbColName.replace(/"/g, '')] = result.rows.map(row => row[dbColName.toLowerCase().replace(/"/g, '')]); // PostgreSQL列名默认小写
-    }
-    await client.query('COMMIT');
+      const outputKey = dbColName.replace(/"/g, '');
+      const accessKeyInRow = dbColName.toLowerCase().replace(/"/g, '');
+
+      return {
+        key: outputKey,
+        values: result.rows.map(row => row[accessKeyInRow])
+      };
+    });
+
+    // 2. 并发执行所有的查询 Promise
+    const resultsArray = await Promise.all(distinctValuePromises);
+
+    // 3. 将结果组合到 distinctValues 对象中
+    resultsArray.forEach(item => {
+      distinctValues[item.key] = item.values;
+    });
+
     res.json(distinctValues);
+
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(`❌ Admin - 获取唯一值失败 - 表 ${tableName} (tab: ${tabKey}):`, err);
     res.status(500).json({ error: 'Admin 后端获取唯一值失败', detail: err.message });
   } finally {

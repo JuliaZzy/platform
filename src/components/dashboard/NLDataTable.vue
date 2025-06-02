@@ -67,8 +67,10 @@
 <script>
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { downloadPdf } from '@/utils/pdfDownloader.js';
-import { formatToChineseYearMonth } from '@/utils/formatters.js';
 import PaginationControls from '@/components/common/PaginationControls.vue';
+import { 
+  formatToChineseYearMonth
+} from '@/utils/formatters.js';
 
 export default {
   name: 'NLDataTable',
@@ -108,7 +110,6 @@ export default {
     }
   },
   methods: {
-    formatToChineseYearMonth, 
     changePage(page) {
       if (page < 1 || page > this.totalPages) return;
       this.loading = true; // ✅ 翻页时触发加载动画
@@ -122,15 +123,6 @@ export default {
     stopLoading() {
       this.loading = false;
       this.$emit('data-loaded');
-    },
-    formatNumber(value) {
-      if (value === null || value === undefined || value === '') return '-';
-      const num = parseFloat(value);
-      if (isNaN(num)) return value;
-      return num.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
     },
     handleExportCommand(command) {
       console.log('[DataTable] handleExportCommand called with command:', command); // 新增日志
@@ -162,7 +154,8 @@ export default {
           onFinish: () => { this.loading = false; },
           onError: (msg) => { alert(msg); }
       });
-    }
+    },
+    formatToChineseYearMonth
   }
 }
 </script>
