@@ -106,29 +106,31 @@ export function formatNumber(value, decimalPlaces = 2) {
 
 // 4. 将数字格式化为带百分号的字符串，并保留1位小数
 /**
- * @param {number|string} value
- * @param {number} decimalPlaces
- * @returns {string}
+ * 将数字转换为百分比字符串。
+ * @param {number | string | null | undefined} value - 需要格式化的值。
+ * @param {number} decimalPlaces - 希望保留的小数位数，默认为 1。
+ * @returns {string} 格式化后的百分比字符串。
  */
-export function formatPercentage(value, decimalPlaces = 1) {
-  // 1. 处理 null, undefined, 或纯空白字符串
-  if (value === null || value === undefined || String(value).trim() === '') {
-    return '-'; // 对于空或无效输入，返回占位符 '-'
+export function formatPercentage(value, decimalPlaces = 1) { // ✅ 增加 decimalPlaces 参数，并设置默认值为 1
+  // 检查值是否为 null、undefined 或空字符串
+  if (value == null || value === '') {
+    return '—';
   }
 
-  // 2. 尝试移除值中可能已存在的百分号，以正确解析数字
-  const stringValue = String(value).replace(/%/g, '');
-  const num = parseFloat(stringValue);
+  // 尝试将输入值转换为浮点数
+  const num = parseFloat(value);
 
-  // 3. 检查是否为有效数字
+  // 检查转换结果是否为有效数字
   if (isNaN(num)) {
-    console.warn('[formatAsPercentage] 输入值无法转换为有效数字以计算百分比:', value);
-    return String(value); // 如果无法转换为数字，返回原始输入的字符串形式
+    return '—';
   }
 
-  // 4. 将数字乘以100，然后保留指定小数位数，并添加 '%' 符号
-  return (num * 100).toFixed(decimalPlaces) + '%';
+  // ✅ 使用传入的 decimalPlaces 参数
+  const percentage = (num * 100).toFixed(decimalPlaces);
+
+  return `${percentage}%`;
 }
+
 
 export function formatToDateTimeSec(isoString) {
   if (!isoString) return ''; // 如果输入为空，返回空字符串

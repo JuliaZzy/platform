@@ -27,7 +27,7 @@
             <td>{{ row['省份'] }}</td>
             <td>{{ row['所属证券行业分布'] }}</td>
             <td class="number-cell">{{ formatNumber(row['数据资源入表总额（万元）']) }}</td>
-            <td class="number-cell">{{ formatPercentage(row['数据资产占总资产比例']) }}</td>
+            <td class="number-cell">{{ formatPercentage(row['数据资产占总资产比例'], 2) }}</td>
             <td class="number-cell">{{ formatNumber(row['无形资产-数据资源入表金额（万元）']) }}</td>
             <td class="number-cell">{{ formatNumber(row['开发支出-数据资源入表金额（万元）']) }}</td>
             <td class="number-cell">{{ formatNumber(row['存货-数据资源入表金额（万元）']) }}</td>

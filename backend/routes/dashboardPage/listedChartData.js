@@ -162,7 +162,7 @@ router.post('/group-field', async (req, res) => {
             UNION ALL
             SELECT '其他' AS name, "报告时间", COUNT(*) AS value
             FROM dataasset_listed_companies_2024
-            ${buildCategoryWhere(baseWhereClause, `"实控人" = '大学' OR "实控人" = '个人;境外' OR "实控人" = '境外'`)}
+            ${buildCategoryWhere(baseWhereClause, `"实控人" = '大学' OR "实控人" = '个人;境外' OR "实控人" = '境外' OR "实控人" = '其他'`)}
             GROUP BY "报告时间"
         ) AS t
       `;

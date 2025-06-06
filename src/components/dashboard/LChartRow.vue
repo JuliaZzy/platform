@@ -14,7 +14,7 @@
     </div>
 
     <div class="chart-row">
-      <div class="subject-chart-container equal-half" v-if="groupedSubjectData.countSeries?.length">
+      <div class="subject-chart-container width-40" v-if="groupedSubjectData.countSeries?.length">
         <GroupedBarChart
           :chart-data="groupedSubjectData.countSeries"
           chartTitle="A股数据资源入表公司分科目分布情况"
@@ -22,7 +22,7 @@
           col-key="报告时间" 
         />
       </div>
-      <div class="subject-chart-container equal-half" v-if="actualControllerData?.length">
+      <div class="subject-chart-container width-60" v-if="actualControllerData?.length">
         <GroupedBarChart
           :chart-data="actualControllerData"
           chartTitle="A股数据资源入表公司分实控人分布情况"
@@ -145,7 +145,7 @@ export default {
           axios.post('/api/lchart/subject-bars', { filters: this.filters }),
           axios.post('/api/lchart/group-field', { 
             filters: this.filters, 
-            field: '实控人' // 直接指定 field
+            field: '实控人'
           })
         ];
 
@@ -284,11 +284,13 @@ export default {
   /* 这个类可以只保留通用样式，宽度控制交给 .equal-half */
 }
 
-.equal-half {
-  flex-grow: 1;   /* 允许放大 */
-  flex-shrink: 1; /* 允许缩小 */
-  flex-basis: 0;    /* 从0开始，让flex-grow根据比例分配可用空间 */
-  min-width: 0;   /* 允许元素收缩到小于其内容的固有宽度，配合图表组件内部min-width的修改 */
-  /* 上面三行通常简写为: flex: 1; min-width: 0; */
+.width-40 {
+  flex: 0 0 43%; /* 不放大，不缩小，固定宽度 40% */
+  min-width: 0;
+}
+
+.width-60 {
+  flex: 0 0 50%; /* 不放大，不缩小，固定宽度 60% */
+  min-width: 0;
 }
 </style>

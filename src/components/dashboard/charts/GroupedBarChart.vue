@@ -158,14 +158,21 @@ export default defineComponent({
                 if (chartTitle === 'A股数据资源入表公司分实控人分布情况') {
                   switch (value) {
                     case '个人': return '{customStyle|个人}';
-                    case '中央': return '{customStyle|中央}\n{customStyle|（国资委、中央国家机关、中央国有企业）}';
-                    case '地方': return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、地方国有企业）}';
-                    case '其他': return '{customStyle|其他}\n{customStyle|（大学、个人境外、境外）}';
+                    case '中央': return '{customStyle|中央}\n{customStyle|（国资委、中央国家\n机关、中央国有企业）}';
+                    case '地方': return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、\n地方国有企业）}';
+                    case '其他': return '{customStyle|其他}';
                     default: return `{customStyle|${value}}`;
                   }
                 } else if (chartTitle === 'A股数据资源入表公司分行业分布情况') {
                   const lines = value.match(/.{1,6}/g) || [value];
                   return lines.map(line => `{customStyle|${line}}`).join('\n');
+                } else if (chartTitle === 'A股数据资源入表公司分科目分布情况') {
+                  switch (value) {
+                    case '无形资产': return '{customStyle|无形资产}';
+                    case '开发支出': return '{customStyle|开发支出}\n{customStyle| \n }';
+                    case '存货': return '{customStyle|存货}';
+                    default: return `{customStyle|${value}}`;
+                  }
                 } else {
                   return value;
                 }

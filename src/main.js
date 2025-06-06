@@ -20,7 +20,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 
 echarts.use([
   BarChart,
-  LineChart, // ✅ 必须加这个
+  LineChart,
   TooltipComponent,
   LegendComponent,
   GridComponent,

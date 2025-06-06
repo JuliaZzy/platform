@@ -81,7 +81,6 @@ router.post('/export', async (req, res) => {
     }
 
     // --- 2. 动态构建列宽和格式化规则 ---
-    // 这是最核心的修改，我们根据最终导出的列的“顺序”来应用规则
     const tableWidths = [];
     const formattingRules = {};
 
@@ -109,7 +108,7 @@ router.post('/export', async (req, res) => {
         // 要求 5: 第7列百分比格式、保留一位小数
         if (index === percentageFormatIndex) {
             // 使用 alignRight 和 formatPercentage 组合
-            formattingRules[key] = (value) => pdfFormatters.alignRight(pdfFormatters.formatPercentage(value, 1));
+            formattingRules[key] = (value) => pdfFormatters.alignRight(pdfFormatters.formatPercentage(value, 2));
         }
     });
 
