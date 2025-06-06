@@ -4,8 +4,6 @@
 
     <div class="header">
       <div class="header-logos">
-        <img src="@/assets/logo/SAIF LOGO.jpg" alt="SAIF Logo" />
-        <img src="../assets/logo/CAFR.png" alt="CAFR Logo" />
         <img src="../assets/logo/实验室.png" alt="Lab Logo" />
       </div>
 
@@ -359,7 +357,7 @@ export default {
     background-color: rgba(0, 41, 82, 0.85);
     position: relative;
     width: 100%; /* 确保背景铺满整个屏幕 */
-    min-height: 500px; /* 设置最小高度，确保内容不被压缩 */
+    min-height: 470px; /* 设置最小高度，确保内容不被压缩 */
     padding: 80px 30px;
     text-align: left;
     color: white;
@@ -380,18 +378,18 @@ export default {
 
   .header-logos {
     position: absolute;
-    top: 50px; /* 与顶部的距离 */
-    left: 50%; /* 先移动到中心 */
+    top: 30px; /* 与顶部的距离 */
+    left: 90%; /* 先移动到中心 */
     transform: translateX(-50%); /* 再通过 transform 精确居中 */
     display: flex;
-    align-items: center;
+    align-items: right;
     gap: 300px; /* Logo 之间的间距 */
     z-index: 5; /* 确保 Logo 在背景图和遮罩之上 */
   }
 
   .header-logos img {
-    height: 50px; /* 控制 Logo 的高度，宽度会自适应 */
-    max-height: 100px;
+    height: 120px; /* 控制 Logo 的高度，宽度会自适应 */
+    max-height: 200px;
   }
 
   .header-content {
@@ -401,7 +399,7 @@ export default {
     align-items: center;
     justify-content: flex-start;
     padding-left: 150px;
-    top: 90px;
+    top: 60px;
     height: 100%;
   }
 
@@ -410,7 +408,7 @@ export default {
     padding-left: 30px;
     margin-right: 30px;
     line-height: 55px;
-    top: 30px;
+    top: 10px;
   }
 
   .header-content .left h1 {
@@ -418,7 +416,7 @@ export default {
     letter-spacing: 16px;
     margin: 0;
     line-height: 1.3;
-    top: 30px;
+    top: 20px;
   }
 
   /* 主界面 "管理员登录" 按钮的样式 */
