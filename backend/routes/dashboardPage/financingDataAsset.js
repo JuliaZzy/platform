@@ -48,12 +48,12 @@ const tableMap = {
                 '注册资本（万元）': '注册资本（万元）'
             },
             order: ["入股时间", '作价入股企业', '数据资产', '入股公司', '融资金额（万元）', '股权占比', '注册资本（万元）'],
-            widths: [70, 'auto', 'auto', 'auto', 70, 60, 70],
+            widths: [70, 'auto', 'auto', 'auto', 80, 60, 80],
             rules: {
                 "入股时间": (v) => pdfFormatters.alignCenter(pdfFormatters.formatYearMonth(v)),
                 '融资金额（万元）': (v) => pdfFormatters.alignRight(pdfFormatters.formatNumber(v)),
                 '注册资本（万元）': (v) => pdfFormatters.alignRight(pdfFormatters.formatNumber(v)),
-                '股权占比': (v) => pdfFormatters.alignRight(pdfFormatters.formatPercentage(v))
+                '股权占比': (v) => pdfFormatters.alignCenter(pdfFormatters.formatPercentage(v))
             }
         }
     },
