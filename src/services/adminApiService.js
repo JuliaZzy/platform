@@ -44,7 +44,8 @@ export const loadAdminTableData = async (currentTab, params = {}) => {
 
     return { 
       data: response.data?.data || [], 
-      total: response.data?.total || 0 
+      total: response.data?.total || 0,
+      tableLastUpdate: response.data?.tableLastUpdate || null // 获取新字段
     };
   } catch (error) {
     return handleApiError(error, `加载 Admin Tab [${currentTab}] 数据失败`);
@@ -99,7 +100,6 @@ export const exportTableToExcel = (dbTableName) => {
 };
 
 export async function loadDistinctColumnValues(tabKey) {
-  // 确保这里的 API 路径与你后端定义的路由一致
   const endpoint = `/admintable/distinct-values/${tabKey}`;
   try {
     const response = await apiClient.get(endpoint);

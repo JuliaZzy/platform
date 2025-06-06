@@ -3,16 +3,19 @@
     <LoadingSpinner :visible="isLoading" />
 
     <div class="header">
-      <img src="../assets/header_image.jpg" alt="Header Image" />
+      <div class="header-logos">
+        <img src="@/assets/logo/SAIF LOGO.jpg" alt="SAIF Logo" />
+        <img src="../assets/logo/CAFR.png" alt="CAFR Logo" />
+        <img src="../assets/logo/实验室.png" alt="Lab Logo" />
+      </div>
+
+      <img class="header-bg-image" src="../assets/header_image.jpg" alt="Header Image" />
+      
       <div class="header-content">
         <div class="left">
-          <h1>中国企业数据资产<br />入表跟踪</h1>
+          <h1>中国企业数据资产<br />入表名录</h1>
         </div>
       </div>
-    </div>
-
-    <div class="admin">
-      <button class="admin-login-button" @click="openLoginModal">管理员登录</button>
     </div>
 
     <div v-if="isLoginModalVisible" class="login-modal">
@@ -152,8 +155,11 @@
     <div class="footer">
       <div class="footer-overlay"></div>
       <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image" />
+      <div class="admin">
+        <button class="admin-login-button" @click="openLoginModal">管理员登录</button>
+      </div>
       <div class="footer-content"> <div class="footer-links">
-          <p>联系我们：wpan@saif.sjtu.edu.cn</p>
+          <p>联系我们：dfcc@saif.sjtu.edu.cn</p>
           <a href="#" @click.prevent="openFeedbackModal">反馈意见/申报</a>
         </div>
       </div>
@@ -353,7 +359,7 @@ export default {
     background-color: rgba(0, 41, 82, 0.85);
     position: relative;
     width: 100%; /* 确保背景铺满整个屏幕 */
-    min-height: 460px; /* 设置最小高度，确保内容不被压缩 */
+    min-height: 500px; /* 设置最小高度，确保内容不被压缩 */
     padding: 80px 30px;
     text-align: left;
     color: white;
@@ -362,7 +368,7 @@ export default {
     box-sizing: border-box;
   }
 
-  .header img {
+  .header .header-bg-image {
     position: absolute;
     top: 0;
     left: 0;
@@ -372,6 +378,22 @@ export default {
     opacity: 0.2; /* 设置透明度，让文字更清晰 */
   }
 
+  .header-logos {
+    position: absolute;
+    top: 50px; /* 与顶部的距离 */
+    left: 50%; /* 先移动到中心 */
+    transform: translateX(-50%); /* 再通过 transform 精确居中 */
+    display: flex;
+    align-items: center;
+    gap: 300px; /* Logo 之间的间距 */
+    z-index: 5; /* 确保 Logo 在背景图和遮罩之上 */
+  }
+
+  .header-logos img {
+    height: 50px; /* 控制 Logo 的高度，宽度会自适应 */
+    max-height: 100px;
+  }
+
   .header-content {
     position: relative;
     z-index: 2;
@@ -379,7 +401,7 @@ export default {
     align-items: center;
     justify-content: flex-start;
     padding-left: 150px;
-    top: 10px;
+    top: 90px;
     height: 100%;
   }
 
@@ -402,13 +424,14 @@ export default {
   /* 主界面 "管理员登录" 按钮的样式 */
   .admin, .admin:visited, .admin:active {
     position: absolute;
-    right: 30px;
-    top: 40px;
+    left: 30px;
+    top: auto;
+    bottom: 40px;
     text-decoration: none;
     color: #003049; /* 字体颜色为 header 的深蓝色 */
     font-size: 16px;
     padding: 6px 14px;
-    z-index: 2;
+    z-index: 200;
   }
 
   .admin-login-button {
@@ -704,7 +727,7 @@ export default {
     object-fit: cover;
     z-index: 1;
     object-position: bottom;
-
+    opacity: 0.8;
   }
 
   .footer-overlay {
@@ -713,7 +736,7 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 48, 73, 0.5); /* 深蓝色透明层 */
+    background-color: rgba(0, 48, 73, 0.4); /* 深蓝色透明层 */
     z-index: 2;
   }
 

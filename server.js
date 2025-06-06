@@ -52,17 +52,19 @@ app.post('/api/feedback', async (req, res) => {
 
 // 后端 API 路由
 const loginRoutes = require('./backend/routes/login');
-const companyDataRoutes = require('./backend/routes/companiesData');
 const dataTableRoutes = require('./backend/routes/dataTable');
-const uploadRoutes = require('./backend/routes/excelUpload');
-const exportRoutes = require('./backend/routes/exportExcel');
-const nonListedAssetRoutes = require('./backend/routes/nonListedDataAsset');
-const listedAssetRoutes = require('./backend/routes/listedDataAsset');
-const listedChartRoutes = require('./backend/routes/listedChartData');
-const financeAssetRoutes = require('./backend/routes/financingDataAsset');
-const financeRoutes = require('./backend/routes/financeBank');
-const statusUpdateRoutes = require('./backend/routes/statusUpdateApi');
-const adminTableDataRoutes = require('./backend/routes/adminTableData');
+
+const companyDataRoutes = require('./backend/routes/dashboardPage/companiesData');
+const nonListedAssetRoutes = require('./backend/routes/dashboardPage/nonListedDataAsset');
+const listedAssetRoutes = require('./backend/routes/dashboardPage/listedDataAsset');
+const listedChartRoutes = require('./backend/routes/dashboardPage/listedChartData');
+const financeAssetRoutes = require('./backend/routes/dashboardPage/financingDataAsset');
+const financeRoutes = require('./backend/routes/dashboardPage/financeBank');
+
+const uploadRoutes = require('./backend/routes/adminPage/excelUpload');
+const exportRoutes = require('./backend/routes/adminPage/exportExcel');
+const statusUpdateRoutes = require('./backend/routes/adminPage/statusUpdateApi');
+const adminTableDataRoutes = require('./backend/routes/adminPage/adminTableData');
 
 
 app.use('/api/login', loginRoutes);
@@ -75,7 +77,7 @@ app.use('/api/lasset', listedAssetRoutes);
 app.use('/api/lchart', listedChartRoutes);
 app.use('/api/finance', financeAssetRoutes);
 app.use('/api/financeupload', financeRoutes);
-app.use('/api/adminpage', statusUpdateRoutes);
+app.use('/api/adminpage', statusUpdateRoutes.router);
 app.use('/api/admintable', adminTableDataRoutes);
 
 

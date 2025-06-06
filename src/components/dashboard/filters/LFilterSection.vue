@@ -219,7 +219,7 @@ export default {
         filters: { quarter: quarter },
         // 如果上市公司下载需要排除列，可以在这里添加：
         // excludedColumns: ["实控人", "市值（亿元）", "市值规模"], 
-        defaultFilename: `上市公司数据资产入表清单_${quarter}.pdf`,
+        defaultFilename: `A股上市公司数据资产入表清单_${quarter}.pdf`,
         onStart: () => { this.loading.download = true; },
         onFinish: () => { this.loading.download = false; },
         onError: (msg) => { alert(msg); } // 或者使用 Element UI 的 Message 组件
@@ -400,9 +400,6 @@ select {
   color: #003049;
 }
 
-/* 你可能还需要为 Element UI 的 el-dropdown-menu 和 el-dropdown-item 添加样式 */
-/* 以匹配你的整体风格，可以参考 DataTable.vue 中的相关样式 */
-/* 例如：*/
 .el-dropdown-menu {
   /* min-width: 120px; */ /* 根据内容调整 */
 }
@@ -415,15 +412,4 @@ select {
   color: #003049;      /* hover 时的文字颜色 */
 }
 
-/* 如果是 Element Plus (el-dropdown-menu-item) */
-/*
-.el-dropdown-menu .el-dropdown-menu__item {
-  font-size: 14px;
-  padding: 8px 20px;
-}
-.el-dropdown-menu .el-dropdown-menu__item:hover {
-  background-color: #f5f5f5;
-  color: #003049;
-}
-*/
 </style>

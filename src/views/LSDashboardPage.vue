@@ -3,7 +3,7 @@
     <LoadingSpinner :visible="isLoading" />
 
     <div class="dashboard-title-block" v-show="!isLoading">
-      <h1 class="dashboard-title">上市公司数据资产情况</h1>
+      <h1 class="dashboard-title">上市公司数据资产入表情况</h1>
     </div>
     
     <div class="dashboard-container" v-show="!isLoading">

@@ -19,7 +19,6 @@ function loadFonts() {
         let vfsObject = (vfsFontsModule && vfsFontsModule.pdfMake && vfsFontsModule.pdfMake.vfs) || 
                         (typeof vfsFontsModule === 'object' && vfsFontsModule['Roboto-Regular.ttf'] ? vfsFontsModule : null);
 
-        // ▼▼▼ 确保这里的路径相对于您项目中的 pdfGenerator.js 文件是正确的 ▼▼▼
         const customFontPathNormal = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Regular.otf');
         const customFontPathBold = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Bold.otf');
 
@@ -134,7 +133,6 @@ function createPdfDocument({
             tableHeader: {
                 bold: true, fontSize: 9, fillColor: '#eeeeee',
                 alignment: 'center', margin: [0, 2, 0, 2]
-                // 字体将在 defaultStyle 中设置，但如果需要可以覆盖
             }
         }
     };

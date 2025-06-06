@@ -92,7 +92,7 @@ function handleQuery(db, tableName, enableHideFlag) {
       const dataSql = `
         SELECT * FROM "${tableName}" 
         ${whereClause}
-        ORDER BY "id" ASC -- ✅ 建议为分页添加稳定排序 (假设所有表都有id主键)
+        ORDER BY "id" ASC
         LIMIT $${values.length + 1} OFFSET $${values.length + 2}
       `;
 

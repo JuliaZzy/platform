@@ -51,7 +51,7 @@
                 <template v-for="colKey in displayableTableHeaders">
                   <th :key="colKey" style="position: relative;">
                     <div class="th-wrapper">
-                      {{ colKey === 'status' ? '状态' : colKey }}
+                      {{ colKey === 'status' ? '状态' : (colKey === 'updated_at' ? '更新时间' : colKey) }}
                       
                       <template v-if="isColumnFilterable(colKey)">
                         <span
@@ -137,25 +137,9 @@
                         </div>
                     </div>
                   </template>
-                  <template v-else>
-                    <span v-if="colName === 'register_date' ">
-                      {{ formatToYYYYMMDD(row[colName]) }}
-                    </span>
 
-                    <span v-else-if="shouldFormatThisDateColumn(currentTab, colName)">
-                      {{ formatToChineseYearMonth(row[colName]) }}
-                    </span>
-                    
-                    <span v-else-if="colName === '数据资源入表总额（万元）' || colName === '市值（亿元）' || 
-                                     colName === '无形资产-数据资源入表金额（万元）' || colName === '开发支出-数据资源入表金额（万元）' || 
-                                     colName === '存货-数据资源入表金额（万元）' || colName === 'book_value' || 
-                                     colName === 'assess_value' || colName === 'finance_value' || 
-                                     colName === '融资金额（万元）' || colName === '注册资本（万元）' || colName === '融资金额（万元）' ">
-                      {{ formatNumber(row[colName]) }} </span>
-                    
-                    <span v-else-if="colName === '数据资产占总资产比例' || colName === '股权占比'">
-                      {{ formatPercentage(row[colName]) }} </span>
-                    <span v-else v-html="highlight(row[colName], colName)"></span>
+                  <template v-else>
+                    <span v-html="applyCellFormatting(row[colName], colName)"></span>
                   </template>
                 </td>
               </tr>
@@ -190,7 +174,8 @@ import {
   formatToChineseYearMonth,
   formatToYYYYMMDD,
   formatNumber,
-  formatPercentage
+  formatPercentage,
+  formatToDateTimeSec
 } from '@/utils/formatters.js';
 
 export default {
@@ -206,7 +191,7 @@ export default {
       tableDataTotalRows: 0,
       tableHeaders: [],
       processedTableHeaders: [],
-      lastUpdate: new Date(),
+      tableLastUpdateTimes: {},
       currentPage: 1,
       pageSize: 15,
       isSidebarCollapsed: false,
@@ -230,6 +215,38 @@ export default {
         'delete': '已删除',
         'kept': '已保留',
         null: '正常'
+      },
+      columnFormattersConfig: {
+        // === 日期格式化 ===
+        'register_date': formatToYYYYMMDD, 
+        'updated_at': formatToDateTimeSec,
+
+        'month_time': formatToChineseYearMonth, 
+        '入股时间': formatToChineseYearMonth,
+        '日期': formatToChineseYearMonth,
+
+        // === 数字格式化 (保留两位小数, 带千分位) ===
+        '数据资源入表总额（万元）': (val) => formatNumber(val, 2),
+        '市值（亿元）': (val) => formatNumber(val, 2),
+        '无形资产-数据资源入表金额（万元）': (val) => formatNumber(val, 2),
+        '开发支出-数据资源入表金额（万元）': (val) => formatNumber(val, 2),
+        '存货-数据资源入表金额（万元）': (val) => formatNumber(val, 2),
+        'book_value': (val) => formatNumber(val, 2),
+        'assess_value': (val) => formatNumber(val, 2),
+        'finance_value': (val) => formatNumber(val, 2),
+        '融资金额（万元）': (val) => formatNumber(val, 2), 
+        '注册资本（万元）': (val) => formatNumber(val, 2),
+
+        // === 百分比格式化 (乘以100, 保留一位小数, 加%) ===
+        '数据资产占总资产比例': (val) => formatPercentage(val, 1),
+        '股权占比': (val) => formatPercentage(val, 1)
+      },
+      tableNameMap: {
+        'listed': 'dataasset_listed_companies_2024',
+        'nonlisted': 'dataasset_non_listed_companies',
+        'finance-bank': 'dataasset_finance_bank',
+        'finance-stock': 'dataasset_finance_stock',
+        'finance-other': 'dataasset_finance_other'
       }
     };
   },
@@ -247,15 +264,20 @@ export default {
         default: return '数据明细管理';
       }
     },
+
     displayableTableHeaders() {
       return this.processedTableHeaders;
     },
-    formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
-      if (!this.lastUpdate) return '';
 
-      const d = new Date(this.lastUpdate);
-      return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
+      const lastUpdateTimeForCurrentTab = this.tableLastUpdateTimes[this.currentTab];
+      if (!lastUpdateTimeForCurrentTab) return '暂无记录'; // 或其他默认文本
+
+      const d = new Date(lastUpdateTimeForCurrentTab);
+      if (isNaN(d.getTime())) return '无效日期';
+      return this.formatToDateTimeSec(lastUpdateTimeForCurrentTab);
     },
+
     pagedData() {
       return this.tableData;
     },
@@ -268,35 +290,28 @@ export default {
     formatToYYYYMMDD,
     formatNumber,
     formatPercentage,
+    formatToDateTimeSec,
+
+    applyCellFormatting(value, columnName) {
+      const formatter = this.columnFormattersConfig[columnName];
+      if (typeof formatter === 'function') {
+        return formatter(value);
+      }
+      return this.highlight(String(value !== null && value !== undefined ? value : ''), columnName);
+    },
 
     isColumnFilterable(columnKey) {
-      // `this.uniqueColumnValues` 的键是后端返回的、移除了引号的列名。
-      // `columnKey` 来自 `displayableTableHeaders`，它是从 `Object.keys(this.tableData[0])` 得到的，
-      // 通常是数据库原始列名（可能带引号，也可能不带，例如 "公司" 或 status）。
-      // 为了正确匹配，我们需要对 columnKey 进行与 uniqueColumnValues 中键名一致的规范化。
       
-      let normalizedKey = String(columnKey); // 先确保是字符串
-      // 根据您后端 /distinct-values 接口返回的 distinctValues 对象的键是如何生成的，
-      // (之前是 dbColName.replace(/"/g, ''))，这里也做类似处理。
-      // 如果 columnKey 已经是不带引号的，这步操作不影响。
+      let normalizedKey = String(columnKey);
       normalizedKey = normalizedKey.replace(/"/g, '');
 
-      // 检查 uniqueColumnValues 中是否存在这个键，并且对应的选项数组不为空
       return Object.prototype.hasOwnProperty.call(this.uniqueColumnValues, normalizedKey) &&
             this.uniqueColumnValues[normalizedKey] &&
             this.uniqueColumnValues[normalizedKey].length > 0;
     },
-    shouldFormatThisDateColumn(tabKey, columnName) {
-      // 确保这里的键名与从后端获取的数据对象的键名一致
-      if (tabKey === 'nonlisted' && columnName === 'month_time') return true;
-      if (tabKey === 'finance-bank' && columnName === 'month_time') return true;
-      if (tabKey === 'finance-stock' && columnName === '入股时间') return true;
-      if (tabKey === 'finance-other' && columnName === '日期') return true;
-      return false;
-    },
-    // ✅ currentTabUsesBackendProcessing 现在可以始终返回 true
+
     currentTabUsesBackendProcessing() {
-      return true; // 假设所有 AdminPage 的 tab 都将使用新的后端处理逻辑
+      return true;
     },
     getRowClass(row) {
       if (!row || typeof row.status === 'undefined') return 'row-normal';
@@ -314,15 +329,14 @@ export default {
       if (this.currentTab === tab) return;
     
       this.currentTab = tab;
-      this.clearAllFilters(false); // 清除筛选条件，但不立即加载数据
+      this.clearAllFilters(false);
       this.currentPage = 1;
       this.tableData = [];
       this.tableDataTotalRows = 0;
       this.uniqueColumnValues = {};
     
-      // 确保 loading 状态被正确设置
       if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-        this.tableLoadingState[this.currentTab] = true; // 开始加载前，显示 spinner
+        this.tableLoadingState[this.currentTab] = true;
       }
     
       try {
@@ -336,7 +350,6 @@ export default {
         this.tableLoadingState[this.currentTab] = true;
       }
       try {
-        // ✅ 所有tab都发送分页、筛选和搜索参数
         const params = { 
           page: this.currentPage, 
           pageSize: this.pageSize,
@@ -348,11 +361,24 @@ export default {
         
         this.tableData = response.data || [];
         this.tableDataTotalRows = response.total || 0;
+
+        // 更新特定tab的最后更新时间
+        this.$set(this.tableLastUpdateTimes, this.currentTab, response.tableLastUpdate);
+
         // 1. 获取原始表头 (这部分不变)
         this.tableHeaders = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
 
         // 2. 【新增】处理和排序表头以生成 processedTableHeaders
         let newProcessedHeaders = [...this.tableHeaders]; // 创建副本
+
+        // *** 新增：处理 'updated_at' 列，将其移到末尾 ***
+        const updatedAtIndex = newProcessedHeaders.indexOf('updated_at');
+        if (updatedAtIndex > -1) {
+          // 从当前位置移除 'updated_at'
+          const updatedAtHeader = newProcessedHeaders.splice(updatedAtIndex, 1)[0];
+          // 将它添加到数组的末尾
+          newProcessedHeaders.push(updatedAtHeader);
+        }
 
         // 2a. 移除 'id' 列 (因为它不直接显示在主要数据区)
         const idIndex = newProcessedHeaders.indexOf('id');
@@ -376,9 +402,6 @@ export default {
         }
         
         this.processedTableHeaders = newProcessedHeaders; // 更新排序后的表头
-
-        // lastUpdate 在这里设置为 Date 对象，由 computed property formattedLastUpdate 格式化
-        this.lastUpdate = new Date(); 
       
       } catch (error) {
         const errorMessage = error.message || '数据加载失败！';
@@ -396,23 +419,17 @@ export default {
         }
       }
     },
+
     async updateRowStatus(row, newStatus) {
       if (!row || typeof row.id === 'undefined') {
         this.$message ? this.$message.error('行数据无效（缺少ID），无法更新状态。') : alert('行数据无效（缺少ID），无法更新状态。');
         return;
       }
       const rowId = row.id;
-      const currentTableDbNameMap = {
-        'listed': 'dataasset_listed_companies_2024',
-        'nonlisted': 'dataasset_non_listed_companies',
-        'finance-bank': 'dataasset_finance_bank',
-        'finance-stock': 'dataasset_finance_stock',
-        'finance-other': 'dataasset_finance_other',
-      };
-      const tableNameForApi = currentTableDbNameMap[this.currentTab];
 
+      const tableNameForApi = this.tableNameMap[this.currentTab]; // 使用映射
       if (!tableNameForApi) {
-        this.$message ? this.$message.error('未知数据表，无法更新状态。') : alert('未知数据表，无法更新状态。');
+        this.$message ? this.$message.error('当前数据类型未知或不支持状态更新。') : alert('当前数据类型未知或不支持状态更新。');
         return;
       }
 
@@ -424,6 +441,7 @@ export default {
         this.$message ? this.$message.error(error.message) : alert(error.message);
       }
     },
+
     async handleUpload(event) {
       const file = event.target.files[0];
       if (!this.$refs.fileInput) return; 
@@ -434,14 +452,8 @@ export default {
       const formData = new FormData();
       formData.append('file', file);
 
-      const tableNameMap = {
-        listed: 'dataasset_listed_companies_2024',
-        nonlisted: 'dataasset_non_listed_companies',
-        'finance-stock': 'dataasset_finance_stock',
-        'finance-other': 'dataasset_finance_other',
-      };
-      const tableName = tableNameMap[this.currentTab];
-      if (!tableName) {
+      const tableName = this.tableNameMap[this.currentTab];
+      if (!tableName || this.currentTab === 'finance-bank') {
         this.$message ? this.$message.error('当前数据类型不支持上传。') : alert('当前数据类型不支持上传。');
         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         return;
@@ -460,7 +472,10 @@ export default {
         }
 
         this.currentPage = 1; 
-        await this.loadData(); 
+
+        await this.loadFilterOptions(); // <-- 先加载筛选器选项
+        await this.loadData();         // <-- 后加载表格数据
+
       } catch (error) {
         this.$message ? this.$message.error(error.message) : alert(error.message);
       } finally {
@@ -595,18 +610,13 @@ export default {
       }
     },
     exportExcel() {
-      const tableNameMap = {
-        listed: 'dataasset_listed_companies_2024',
-        nonlisted: 'dataasset_non_listed_companies',
-        'finance-bank': 'dataasset_finance_bank',
-        'finance-stock': 'dataasset_finance_stock',
-        'finance-other': 'dataasset_finance_other'
-      };
-      const dbTableName = tableNameMap[this.currentTab]; 
+      const dbTableName = this.tableNameMap[this.currentTab]; // 使用映射
+
       if (!dbTableName) {
         this.$message ? this.$message.error('当前数据类型不支持导出。') : alert('当前数据类型不支持导出。');
         return;
       }
+
       try {
         // ✅ 导出时不再传递 filters 和 searchKeyword，因为后端 exportExcel.js 不处理它们
         adminService.exportTableToExcel(dbTableName);

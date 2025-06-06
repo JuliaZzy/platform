@@ -35,7 +35,6 @@ export function formatToChineseYearMonth(dateInput) {
     let year;
     let month;
 
-    // ▼▼▼ 【关键修改点：区分处理，确保从 "YYYY-MM" 输入得到的月份正确】 ▼▼▼
     // 如果原始输入是 "YYYY-MM" 格式的字符串，我们之前将其强制按UTC解析，
     // 所以提取年月日时也应该用UTC方法，以避免本地时区偏移导致月份错误。
     if (typeof dateInput === 'string' && /^\d{4}-\d{2}$/.test(dateInput)) {
@@ -47,7 +46,6 @@ export function formatToChineseYearMonth(dateInput) {
       year = dateObj.getFullYear();
       month = String(dateObj.getMonth() + 1).padStart(2, '0'); // getMonth() 是 0-11
     }
-    // ▲▲▲ 【关键修改点结束】 ▲▲▲
 
     return `${year}年${month}月`;
   }
@@ -132,3 +130,22 @@ export function formatPercentage(value, decimalPlaces = 1) {
   return (num * 100).toFixed(decimalPlaces) + '%';
 }
 
+export function formatToDateTimeSec(isoString) {
+  if (!isoString) return ''; // 如果输入为空，返回空字符串
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString; // 如果日期无效，返回原始值
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch (e) {
+    console.error('Error formatting date to YYYY-MM-DD HH:MM:SS:', isoString, e);
+    return isoString; // 出错时返回原始值
+  }
+}

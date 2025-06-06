@@ -22,13 +22,12 @@
           col-key="报告时间" 
         />
       </div>
-      <div class="subject-chart-container equal-half" v-if="groupedSubjectData.sumSeries?.length">
+      <div class="subject-chart-container equal-half" v-if="actualControllerData?.length">
         <GroupedBarChart
-          :chart-data="groupedSubjectData.sumSeries"
-          chartTitle="A股数据资源入表公司分科目金额分布情况（亿元）"
-          row-key="入表科目"
+          :chart-data="actualControllerData"
+          chartTitle="A股数据资源入表公司分实控人分布情况"
+          row-key="name"
           col-key="报告时间"
-          yAxisName="入表企业金额（亿）"
         />
       </div>
     </div>
@@ -64,13 +63,13 @@ export default {
     return {
       comboData: { barSeries: [], lineSeries: {} },
       groupedSubjectData: { countSeries: [], sumSeries: [] },
+      actualControllerData: [], 
       groupedFields: [
         { field: '所属证券行业分布', displayKey: '所属证券行业分布', title: 'A股数据资源入表公司分行业分布情况' },
         { field: '市值规模', displayKey: '市值规模', title: 'A股数据资源入表公司分市值规模分布情况' },
-        { field: '省份', displayKey: '省份', title: 'A股数据资源入表公司分区域位置分布情况' },
-        { field: '实控人', displayKey: '实控人', title: 'A股数据资源入表公司分实控人分布情况' }
+        { field: '省份', displayKey: '省份', title: 'A股数据资源入表公司分区域位置分布情况' }
       ],
-      groupedCharts: {},   // 给 GroupedBarChart 用的嵌套数据
+      groupedCharts: {},
       isTablesLoading: true
     };
   },
@@ -83,25 +82,58 @@ export default {
   },
   methods: {
     restructureDataForGroupedBarChart(flatData, seriesNameKey, categoryNameKey, valueKey) {
-      if (!flatData || flatData.length === 0) return [];
-      const seriesCollection = new Map();
+      // 如果没有数据，直接返回空数组
+      if (!flatData || flatData.length === 0) {
+        return [];
+      }
+
+      // 步骤 1: 提取唯一且保持后端排序的X轴分类 (Categories)
+      // 这是整个排序正确的关键。因为 flatData 已经由后端排好序，
+      // 我们按顺序提取不重复的 categoryName，就得到了最终的X轴顺序。
+      const categories = [];
+      const seenCategories = new Set();
       flatData.forEach(item => {
-        const seriesName = item[seriesNameKey];     
-        const categoryName = item[categoryNameKey]; 
-        const rawValue = item[valueKey];
-        const value = parseFloat(rawValue);   
-        if (!seriesCollection.has(seriesName)) {
-          seriesCollection.set(seriesName, {
-            name: seriesName, 
-            data: []          
-          });
+        const categoryName = item[categoryNameKey];
+        if (!seenCategories.has(categoryName)) {
+          seenCategories.add(categoryName);
+          categories.push(categoryName);
         }
-        seriesCollection.get(seriesName).data.push({
-          [categoryNameKey]: categoryName, 
-          [valueKey]: isNaN(value) ? 0 : value 
-        });
       });
-      return Array.from(seriesCollection.values());
+
+      // 步骤 2: 将扁平数据按季度（Series Name）进行分组
+      // 我们得到一个 Map，键是季度名，值是那个季度的所有数据。
+      const dataBySeries = new Map();
+      flatData.forEach(item => {
+        const seriesName = item[seriesNameKey];
+        if (!dataBySeries.has(seriesName)) {
+          dataBySeries.set(seriesName, []);
+        }
+        dataBySeries.get(seriesName).push(item);
+      });
+
+      // 步骤 3: 构建最终的 ECharts Series 结构
+      // 确保每个季度的 series.data 都包含所有 categories，且顺序一致
+      const sortedSeriesNames = Array.from(dataBySeries.keys()).sort(); // 对季度名进行排序 ('2024Q1', '2024Q2'...)
+      
+      const finalSeries = sortedSeriesNames.map(seriesName => {
+        const seriesItems = dataBySeries.get(seriesName);
+        // 为当前季度的已有数据创建一个快速查找的 Map
+        const valueMap = new Map(
+          seriesItems.map(item => [item[categoryNameKey], parseFloat(item[valueKey]) || 0])
+        );
+
+        return {
+          name: seriesName,
+          // 遍历我们排好序的 master categories 列表
+          data: categories.map(category => ({
+            [categoryNameKey]: category,
+            // 如果当前季度有这个 category 的值，就用它；否则补 0
+            [valueKey]: valueMap.get(category) || 0
+          }))
+        };
+      });
+      
+      return finalSeries;
     },
 
     async loadAllData() {
@@ -111,6 +143,10 @@ export default {
         const promises = [
           axios.post('/api/lchart/combo1', { filters: this.filters }),
           axios.post('/api/lchart/subject-bars', { filters: this.filters }),
+          axios.post('/api/lchart/group-field', { 
+            filters: this.filters, 
+            field: '实控人' // 直接指定 field
+          })
         ];
 
         // 添加 groupedFields 的请求
@@ -124,11 +160,13 @@ export default {
         // ✅ 使用 await Promise.all(promises) 获取所有结果
         const results = await Promise.all(promises);
 
-        // ✅ 按顺序解构结果
+        // 解构结果
         const comboRes = results[0];
         const barRes = results[1];
-        // groupedFields 的结果从索引 2 开始，长度是 this.groupedFields.length
-        const groupedFieldsResponses = results.slice(2, 2 + this.groupedFields.length); 
+        // ✅ “实控人”图表的结果是第三个
+        const controllerRes = results[2]; 
+        // 其他 groupedFields 的结果从索引 3 开始
+        const groupedFieldsResponses = results.slice(3); 
 
 
         // ComboData 处理
@@ -169,23 +207,36 @@ export default {
             sumSeries: transformedSumSeries
         };
 
+        // ✅ 新增：处理“实控人”图表数据
+        const rawControllerData = controllerRes.data ?? [];
+        this.actualControllerData = this.restructureDataForGroupedBarChart(
+          rawControllerData, 
+          '报告时间', 
+          'name',
+          'value'
+        );
+
         // Grouped Fields Data
         this.groupedFields.forEach((f, idx) => {
-          // ▼▼▼ 使用 groupedFieldsResponses[idx] ▼▼▼
-          const rawBackendData = (groupedFieldsResponses[idx] && groupedFieldsResponses[idx].data) ? groupedFieldsResponses[idx].data : []; 
+          // ✅ 使用可选链和空值合并运算符简化
+          const rawBackendData = groupedFieldsResponses[idx]?.data ?? [];
           const structuredChartData = this.restructureDataForGroupedBarChart(
-            rawBackendData, 
-            '报告时间', 
-            'name',    
-            'value'    
+              rawBackendData,
+              '报告时间',
+              'name',
+              'value'
           );
           this.$set(this.groupedCharts, f.field, structuredChartData);
-        });
+      });
       } catch (err) {
         console.error('❌ 加载图表数据失败 LChartRow:', err);
         this.comboData = { barSeries: [], lineSeries: {} };
         this.groupedSubjectData = { countSeries: [], sumSeries: [] };
         this.groupedCharts = {};
+        this.actualControllerData = [];
+      } finally {
+          // ✅ 无论成功还是失败，最终都将加载状态设置为 false
+          if (this.isTablesLoading !== undefined) this.isTablesLoading = false;
       }
     }
   }

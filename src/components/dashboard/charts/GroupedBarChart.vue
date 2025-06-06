@@ -50,103 +50,89 @@ export default defineComponent({
     const vueChartRef = ref(null);
 
     const updateChart = () => {
-      // 在 GroupedBarChart.vue 的 setup -> updateChart 方法开头
-      console.log(`GroupedBarChart [${props.chartTitle}] received chartData:`, JSON.parse(JSON.stringify(props.chartData)));
-      console.log(`GroupedBarChart [${props.chartTitle}] rowKey: ${props.rowKey}, valKey: ${props.valKey}`);
-
       loading.value = true;
 
       setTimeout(() => {
-        // ✅ 加默认值防御
         const data = props.chartData || [];
 
+        if (data.length === 0) {
+          chartOption.value = {};
+          loading.value = false;
+          return;
+        }
+
+        // ✅ 步骤 A: 恢复颜色和柱顶标签的定义
+        // 恢复颜色定义
         const numSeries = data.length;
-          let  colorPaletteForChart = [...chartColors]; // 默认使用原始颜色列表
+        let colorPaletteForChart = [...chartColors];
+        if (numSeries > 0) {
+          const activeColors = chartColors.slice(0, numSeries);
+          colorPaletteForChart = [...activeColors].reverse();
+        }
 
-          if (numSeries > 0) {
-              const activeColors = chartColors.slice(0, numSeries);
-              colorPaletteForChart = [...activeColors].reverse(); 
-          }
-
-        // 1. 提取所有唯一类目
-        const categoriesSet = new Set();
-        data.forEach(series => {
-          (series.data || []).forEach(item => {
-            categoriesSet.add(item[props.rowKey]);
-          });
-        });
-        const categories = Array.from(categoriesSet);
-
+        // 恢复柱顶标签定义
         const barLabelOption = {
-          show: true,         // 是否显示标签
-          position: 'top',    // 标签的位置，'top'表示在柱子顶部
+          show: true,
+          position: 'top',
           formatter: function (params) {
-            if (params.value == null || isNaN(parseFloat(params.value))) { // 增加 parseFloat 检查
-              return ''; // 如果值是 null, undefined 或无法转为数字，显示空
+            if (params.value == null || isNaN(parseFloat(params.value))) {
+              return '';
             }
             const value = parseFloat(params.value);
-            // 检查 props.chartTitle 是否存在并且包含“金额”
             if (props.chartTitle && props.chartTitle.includes("亿")) {
-              return value.toFixed(2); // 金额类，保留两位小数
+              return value.toFixed(2);
             } else {
-              return value.toFixed(0); // 其他（如数量类），取整数
+              return value.toFixed(0);
             }
           },
-          fontSize: 10,       // 标签字体大小
-          color: '#005f73',   // 标签字体颜色，深灰色
-          // distance: 5,     // 可选：标签与图形的距离
+          fontSize: 10,
+          color: '#005f73',
         };
 
-        // 2. 构建每个 series 的 data（对齐 categories）
+        // 步骤 1: 提取 categories (此逻辑正确)
+        // 父组件已保证 data[0].data 存在且顺序正确
+        const categories = data[0].data.map(item => item[props.rowKey]);
+
+        // 步骤 2: 构建 series
         const seriesData = data.map((series, idx) => {
-          const dataMap = Object.fromEntries(
-            (series.data || []).map(item => [item[props.rowKey], item[props.valKey]])
-          );
-          const alignedData = categories.map(c => dataMap[c] || 0);
           return {
             name: series.name,
             type: 'bar',
-            data: alignedData,
+            data: series.data.map(item => item[props.valKey]),
             barGap: 0,
             barCategoryGap: '50%',
+            // ✅ 步骤 B: 恢复 itemStyle 和 label
             itemStyle: {
               color: colorPaletteForChart[idx % colorPaletteForChart.length]
             },
             label: barLabelOption
           };
         });
-
+        
+        // 步骤 3: 组装最终的 chartOption (此逻辑正确)
         chartOption.value = {
-          color: colorPaletteForChart, 
+          // color, tooltip, legend, grid, xAxis, yAxis 等所有配置都从您之前的文件中恢复
+          color: colorPaletteForChart,
           tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
             formatter: function (params) {
               let tooltipString = '';
               if (params && params.length > 0) {
-                // 获取X轴类目名
-                tooltipString = params[0].axisValueLabel || params[0].name; 
+                tooltipString = params[0].axisValueLabel || params[0].name;
                 tooltipString += '<br/>';
               }
-              const isAmountChart = props.chartTitle && props.chartTitle.includes('金额'); 
-
+              const isAmountChart = props.chartTitle && props.chartTitle.includes('金额');
               params.forEach(param => {
-                let valueToShow = param.value; // ECharts 提供的原始值
-                
+                let valueToShow = param.value;
                 if (valueToShow != null && !isNaN(parseFloat(valueToShow))) {
                   const num = parseFloat(valueToShow);
-                  if (isAmountChart) {
-                    valueToShow = num.toFixed(2); // 金额类，保留两位小数
-                  } else {
-                    valueToShow = num.toFixed(0); // 其他（如数量类），取整数
-                  }
-                } else if (valueToShow == null) { // 处理 null 或 undefined
-                  valueToShow = '—'; 
+                  valueToShow = isAmountChart ? num.toFixed(2) : num.toFixed(0);
+                } else if (valueToShow == null) {
+                  valueToShow = '—';
                 } else {
-                  valueToShow = String(valueToShow); // 如果不是有效数字且非null，原样显示
+                  valueToShow = String(valueToShow);
                 }
-                
-                // 构建每条系列信息的字符串，不加粗，默认对齐
                 tooltipString += param.marker + ' ' + param.seriesName + ': ' + valueToShow + '<br/>';
               });
               return tooltipString;
@@ -166,36 +152,22 @@ export default defineComponent({
               fontSize: 11,
               rotate: 0,
               interval: 0,
-              rich: {
-                customStyle: {
-                  lineHeight: 20 // ✅ 设置你想要的行间距（单位是像素）
-                }
-              },
-              formatter: (value) => { // value 就是原始的类别名，如 '个人', '中央'等
-                const chartTitle = props.chartTitle; // 获取当前图表的标题
-
+              rich: { customStyle: { lineHeight: 20 } },
+              formatter: (value) => {
+                const chartTitle = props.chartTitle;
                 if (chartTitle === 'A股数据资源入表公司分实控人分布情况') {
-                  // 这是“实控人”图表，应用新的标签
                   switch (value) {
-                    case '个人':
-                      return '{customStyle|个人}'; // 如果只有一行，也用 rich text 保证样式一致性
-                    case '中央':
-                      // 使用 \n 进行换行，ECharts rich text 会处理
-                      return '{customStyle|中央}\n{customStyle|（国资委、中央国家机关、中央国有企业）}';
-                    case '地方':
-                      return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、地方国有企业）}';
-                    case '其他':
-                      return '{customStyle|其他}\n{customStyle|（大学、个人境外、境外）}';
-                    default:
-                      return `{customStyle|${value}}`; // 对于未匹配到的，也应用样式
+                    case '个人': return '{customStyle|个人}';
+                    case '中央': return '{customStyle|中央}\n{customStyle|（国资委、中央国家机关、中央国有企业）}';
+                    case '地方': return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、地方国有企业）}';
+                    case '其他': return '{customStyle|其他}\n{customStyle|（大学、个人境外、境外）}';
+                    default: return `{customStyle|${value}}`;
                   }
                 } else if (chartTitle === 'A股数据资源入表公司分行业分布情况') {
-                  // 您已有的针对“行业分布”图表的换行逻辑
                   const lines = value.match(/.{1,6}/g) || [value];
                   return lines.map(line => `{customStyle|${line}}`).join('\n');
                 } else {
-                  // 其他图表，直接返回原始标签值 (或者也应用 customStyle)
-                  return value; // 或者 return `{customStyle|${value}}`;
+                  return value;
                 }
               }
             }
@@ -213,10 +185,8 @@ export default defineComponent({
         loading.value = false;
         nextTick(() => {
           if (vueChartRef.value && vueChartRef.value.chart) {
-            // console.log(`[${props.chartTitle}] Resizing GroupedBarChart after update`); // 调试日志
             vueChartRef.value.chart.resize();
           } else if (vueChartRef.value && typeof vueChartRef.value.resize === 'function') {
-            // console.log(`[${props.chartTitle}] Resizing GroupedBarChart component after update`); // 调试日志
             vueChartRef.value.resize();
           }
         });

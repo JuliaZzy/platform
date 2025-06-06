@@ -224,7 +224,11 @@ export default {
       if (type === 'bank' && dataArray && dataArray.length > 0) {
         return this.bankTableDisplayConfig.columnOrder; 
       }
-      return dataArray && dataArray.length > 0 ? Object.keys(dataArray[0]) : [];
+      if (dataArray && dataArray.length > 0) {
+        // ✨ 在这里添加 .filter
+        return Object.keys(dataArray[0]).filter(key => key !== 'updated_at');
+      }
+      return [];
     },
     formatValue(value) {
         return value !== null && value !== undefined ? String(value) : ''; // 确保转为字符串
@@ -244,7 +248,7 @@ export default {
         const response = await axios.get(`${this.apiBase}/data/${type}`, {
           params: {
             page: page,
-            pageSize: effectivePageSize // (3) 使用 effectivePageSize
+            pageSize: effectivePageSize
           }
         });
 
@@ -291,9 +295,9 @@ export default {
       // 获取当前日期用于文件名 (可选)
       const today = new Date();
       const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // 月份从0开始，所以+1
+      const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
-      const dateString = `${year}${month}${day}`; // 例如 "20230529"
+      const dateString = `${year}${month}${day}`;
     
       // 根据 type 设置不同的文件名
       switch (type) {
