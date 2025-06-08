@@ -240,7 +240,7 @@ export default {
   .dashboard-title {
     font-size: 24px;
     font-weight: bold;
-    color: #003049;
+    color: #2e3968;
     margin: 0;
   }
 

@@ -172,11 +172,11 @@ export default {
     font-size: 18px;
     font-weight: bold;
     margin-bottom: 12px;
-    color: #003049;
+    color: #2e3968;
   }
 
   .el-button {
-    background-color: #003049;
+    background-color: #2e3968;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -185,7 +185,7 @@ export default {
   }
   .el-button:hover {
     text-decoration: underline;
-    background-color: #003049;
+    background-color: #2e3968;
     color: #ffffff;
   }
   .el-dropdown-menu {
@@ -197,7 +197,7 @@ export default {
   }
   .el-dropdown-item:hover {
     background-color: #f5f5f5;
-    color: #003049;
+    color: #2e3968;
   }
 
   .table-wrapper {
@@ -209,13 +209,13 @@ export default {
     font-size: 14px;
   }
   .data-table th {
-    color: #003049;
+    color: #2e3968;
     border: 1px solid #ccc;
     font-weight: bold;
     padding: 11px;
     text-align: center;
-    border-top: 2px solid #003049;
-    border-bottom: 2px solid #003049;
+    border-top: 2px solid #2e3968;
+    border-bottom: 2px solid #2e3968;
 
   }
   .data-table td {
@@ -263,7 +263,7 @@ export default {
   }
 
   tr:last-child td {
-    border-bottom: 2px solid #003049;
+    border-bottom: 2px solid #2e3968;
   }
 
   /* ✅ 去掉最左边竖线 */
@@ -302,7 +302,7 @@ export default {
   }
 
   .export-small-btn {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     border: none;
     padding: 12px 20px;
@@ -311,11 +311,11 @@ export default {
   }
   .export-small-btn:hover {
     background-color: #f0f0f0;
-    color: #003049;
+    color: #2e3968;
   }
 
   .pagination button {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -325,7 +325,7 @@ export default {
   }
   .pagination button:hover {
     background-color: #f0f0f0;
-    color: #003049;
+    color: #2e3968;
   }
   .pagination button:disabled {
     opacity: 0.5;
@@ -333,6 +333,6 @@ export default {
   }
   .page-info {
     font-weight: bold;
-    color: #003049;
+    color: #2e3968;
   }
 </style>

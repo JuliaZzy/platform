@@ -654,7 +654,7 @@ export default {
   .sidebar {
     width: 240px;
     height: 100vh;
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     display: flex;
     flex-direction: column;
@@ -669,7 +669,7 @@ export default {
     left: 10px;
     top: 10px;
     z-index: 1000;
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     border: none;
     padding: 6px 10px;
@@ -710,7 +710,7 @@ export default {
   }
   .menu-item.active {
     background-color: white;
-    color: #003049;
+    color: #2e3968;
     font-weight: bold;
   }
 
@@ -750,7 +750,7 @@ export default {
   }
   .clear-all-btn {
     background-color: #f0f0f0;
-    color: #003049;
+    color: #2e3968;
     border: 1px solid #ccc;
     padding: 6px 12px;
     border-radius: 4px;
@@ -759,9 +759,9 @@ export default {
     margin-right: 12px;
   }
   .clear-all-btn:hover {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
-    border-color: #003049;
+    border-color: #2e3968;
   }
 
   /* === 表格 === */
@@ -821,7 +821,7 @@ export default {
     margin-left: 6px;
     cursor: pointer;
     font-size: 13px;
-    color: #003049;
+    color: #2e3968;
   }
   .filter-dropdown {
     position: absolute;
@@ -881,7 +881,7 @@ export default {
     font-size: 13px;
   }
   .filter-footer button:hover {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
   }
 
@@ -978,7 +978,7 @@ export default {
   }
   .export-btn,
   .upload-btn {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -989,11 +989,11 @@ export default {
   .export-btn:hover,
   .upload-btn:hover {
     background-color: white;
-    color: #003049;
-    border: 1px solid #003049;
+    color: #2e3968;
+    border: 1px solid #2e3968;
   }
   .upload-btn {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -1029,7 +1029,7 @@ export default {
   }
   .menu-subitem.active {
     background-color: white;
-    color: #003049;
+    color: #2e3968;
     font-weight: bold;
   }
 

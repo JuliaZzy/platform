@@ -407,14 +407,14 @@ export default {
 .dashboard-title {
   font-size: 24px;
   font-weight: bold;
-  color: #003049;
+  color: #2e3968;
   margin: 0;
 }
 
 .section-title {
   font-size: 20px;
   font-weight: 600;
-  color: #003049;
+  color: #2e3968;
   margin: 0;
 }
 
@@ -455,13 +455,13 @@ export default {
 
 /* Table Headers (th) */
 .data-table th {
-  color: #003049;
+  color: #2e3968;
   border: 1px solid #e0e0e0; /* Default left/right border */
   font-weight: bold;
   padding: 12px 15px;
   text-align: center; /* Corrected from 'centre' */
-  border-top: 2px solid #003049;
-  border-bottom: 2px solid #003049;
+  border-top: 2px solid #2e3968;
+  border-bottom: 2px solid #2e3968;
   white-space: nowrap;
 }
 
@@ -479,7 +479,7 @@ export default {
 }
 
 .data-table tr:last-child td { /* Ensures the last data row has a strong bottom border */
-  border-bottom: 2px solid #003049;
+  border-bottom: 2px solid #2e3968;
 }
 
 /* --- Column-Specific Table Styles --- */
@@ -542,7 +542,7 @@ export default {
 }
 
 .download-btn-pagination.el-button {
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
   border: none;
   margin-top: 20px;
@@ -554,12 +554,12 @@ export default {
 
 .download-btn-pagination.el-button:hover {
   background-color: #f0f0f0; /* Standard hover: light background, dark text */
-  color: #003049;
+  color: #2e3968;
 }
 
 /* Page Navigation Buttons (native <button>) */
 .page-button {
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
   border: none;
   padding: 8px 16px; /* Standard padding */
@@ -570,7 +570,7 @@ export default {
 
 .page-button:hover:not(:disabled) { /* Apply hover only if not disabled */
   background-color: #f0f0f0;
-  color: #003049;
+  color: #2e3968;
 }
 
 .page-button:disabled {
@@ -581,6 +581,6 @@ export default {
 /* Page Info Text */
 .page-info {
   font-weight: bold;
-  color: #003049;
+  color: #2e3968;
 }
 </style>

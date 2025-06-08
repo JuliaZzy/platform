@@ -349,18 +349,18 @@ export default {
     margin: 0;
     padding: 0; /* 去掉整体的上下左右间隙 */
     background-color: #F5F3F4; /* 浅灰色背景 */
-    color: #333;
+    color: #d9dce7;
     overflow-x: hidden; /* 彻底移除横向滚动条 */
   }
 
   .header {
-    background-color: rgba(0, 41, 82, 0.85);
+    background-color: #2e3968;
     position: relative;
     width: 100%; /* 确保背景铺满整个屏幕 */
     min-height: 470px; /* 设置最小高度，确保内容不被压缩 */
     padding: 80px 30px;
     text-align: left;
-    color: white;
+    color: #BDA36C;
     font-size: 36px;
     letter-spacing: 8px;
     box-sizing: border-box;
@@ -379,16 +379,14 @@ export default {
   .header-logos {
     position: absolute;
     top: 30px; /* 与顶部的距离 */
-    left: 90%; /* 先移动到中心 */
-    transform: translateX(-50%); /* 再通过 transform 精确居中 */
+    left: 85%; /* 先移动到中心 */
     display: flex;
     align-items: right;
-    gap: 300px; /* Logo 之间的间距 */
     z-index: 5; /* 确保 Logo 在背景图和遮罩之上 */
   }
 
   .header-logos img {
-    height: 120px; /* 控制 Logo 的高度，宽度会自适应 */
+    height: 100px; /* 控制 Logo 的高度，宽度会自适应 */
     max-height: 200px;
   }
 
@@ -404,7 +402,7 @@ export default {
   }
 
   .header-content .left {
-    border-left: 5px solid white;
+    border-left: 5px solid #BDA36C;
     padding-left: 30px;
     margin-right: 30px;
     line-height: 55px;
@@ -412,7 +410,7 @@ export default {
   }
 
   .header-content .left h1 {
-    font-size: 76px; /* 中文稍大 */
+    font-size: 76px;
     letter-spacing: 16px;
     margin: 0;
     line-height: 1.3;
@@ -426,15 +424,15 @@ export default {
     top: auto;
     bottom: 40px;
     text-decoration: none;
-    color: #003049; /* 字体颜色为 header 的深蓝色 */
+    color: #2e3968; /* 字体颜色为 header 的深蓝色 */
     font-size: 16px;
     padding: 6px 14px;
     z-index: 200;
   }
 
   .admin-login-button {
-    background-color: #003049;  /* 深蓝色背景 */
-    color: white;
+    background-color: white;  /* 深蓝色背景 */
+    color: #2e3968;
     padding: 10px 20px;  /* 增大按钮的内边距 */
     border: none;
     border-radius: 8px;  /* 圆角效果 */
@@ -444,8 +442,8 @@ export default {
   }
 
   .admin-login-button:hover {
-    background-color: white;  /* 鼠标悬停时背景色变为白色 */
-    color: #003049;           /* 鼠标悬停时字体颜色变为深蓝色 */
+    background-color: #BDA36C;  /* 鼠标悬停时背景色变为白色 */
+    color: white;           /* 鼠标悬停时字体颜色变为深蓝色 */
   }
 
   /* 弹窗样式 */
@@ -490,7 +488,7 @@ export default {
   }
 
   .login-close-button:hover {
-    color: #003049;  /* 鼠标悬停时字体颜色变为深蓝色 */
+    color: #2e3968;  /* 鼠标悬停时字体颜色变为深蓝色 */
     text-decoration: underline;
     background-color: transparent !important; /* 确保背景色不会改变 */
   }
@@ -511,28 +509,35 @@ export default {
     padding: 30px 20px; /* 内边距 */
     text-align: center;
     font-size: 32px;
-    color: #003049; /* 深蓝色文字 */
+    color: #2e3968; /* 深蓝色文字 */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* 阴影效果增强 */
     position: relative;
     z-index: 1;
-    border-radius: 10px; /* 边框圆角 */
     transition: all 0.2s ease; /* 添加平滑过渡效果 */
     min-height: 240px;
   }
 
   .status-box:hover {
-    transform: scale(1.03); /* 鼠标悬停时放大至原有的110% */
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); /* 鼠标悬停时阴影更强 */
+    transform: scale(1.03);
+    background-color: #2e3968; /* 1. 背景变蓝 */
+    color: #f0dfc7;             /* 2. 基础文字颜色变为目标色 */
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
   }
+
+  /* 新增：这条规则是关键，确保所有子元素的文字颜色都被覆盖 */
+  .status-box:hover * {
+    color: #f0dfc7; /* 3. 所有子元素的文字颜色也变为目标色 */
+  }
+
 
   .status-box h3 {
     margin: 0;
-    font-size: 20px; /* 标题的字体大小 */
+    font-size: 20px;
     text-align: left;
-    color: #003049; /* 深蓝色标题 */
-    font-weight: bold; /* 突出标题 */
-    margin-bottom: 10px; /* 让标题稍微向上移动 */
-    text-transform: uppercase; /* 标题大写，增加视觉冲击力 */
+    color: #2e3968;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-transform: uppercase;
   }
 
   .status-box p span.number {
@@ -550,19 +555,19 @@ export default {
     font-weight: normal;
     margin: 0;
     margin-top: 40px;
-    color: #003049;
+    color: #2e3968;
   }
 
   .status-number {
     font-size: 48px;
     font-weight: bold;
     margin: 10px 0 0;
-    color: #003049;
+    color: #2e3968;
   }
 
   .status-note {
     font-size: 14px;
-    color: #003049;
+    color: #2e3968;
     text-align: right;
     margin-top: 50px;
     text-transform: none;
@@ -585,7 +590,7 @@ export default {
   }
 
   .table-header {
-    background: linear-gradient(to right, #003049 0%, rgba(0, 48, 73, 0) 30%); /* 深蓝色背景 */
+    background: linear-gradient(to right, #2e3968 0%, rgba(0, 48, 73, 0) 30%); /* 深蓝色背景 */
     border-radius: 5px;
     color: white;
     font-size: 24px;
@@ -628,22 +633,23 @@ export default {
   }
 
   th {
-    color: #003049;
+    color: #2e3968;
     font-weight: bold;
     padding: 14px;
     text-align: center;
-    border-top: 2px solid #003049;
-    border-bottom: 2px solid #003049;
+    border-top: 2px solid #2e3968;
+    border-bottom: 2px solid #2e3968;
   }
 
   td {
+    height: 50px;
     padding: 8px;
     color: #333;
     border-bottom: 1px solid #d3d3d3;
   }
 
   tr:last-child td {
-    border-bottom: 2px solid #003049;
+    border-bottom: 2px solid #2e3968;
   }
 
   .pagination {
@@ -672,7 +678,7 @@ export default {
 
   .pagination button {
     background-color: #F5F3F4;
-    color: #003049;
+    color: #2e3968;
     border: none;
     padding: 8px 16px;
     border-radius: 5px;
@@ -687,13 +693,13 @@ export default {
   }
 
   .pagination button:hover:not(:disabled) {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
   }
 
   .page-info {
     font-size: 16px;
-    color: #003049;
+    color: #2e3968;
   }
 
   .footer {
@@ -785,7 +791,8 @@ export default {
 }
 
 .footer-links a:hover {
-  border-bottom: 1px solid white; /* 悬停时显示下划线 */
+  color: #f0dfc7;
+  border-bottom: 1px solid #f0dfc7;
 }
 
 /* --- 反馈弹窗样式 (基本样式，你可以根据需要调整) --- */
@@ -814,7 +821,7 @@ export default {
 
 .feedback-modal-content h2 {
     text-align: center;
-    color: #003049;
+    color: #2e3968;
     margin-top: 0;
     margin-bottom: 30px;
 }
@@ -861,7 +868,7 @@ export default {
 }
 
 .feedback-form .submit-button {
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
 }
 .feedback-form .submit-button:hover {

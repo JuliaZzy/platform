@@ -226,6 +226,6 @@ export default defineComponent({
   font-weight: bold;
   margin: 20px 0;
   text-align: center;
-  color: #003049;
+  color: #2e3968;
 }
 </style>

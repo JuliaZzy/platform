@@ -257,7 +257,7 @@ export default {
 
 .filter-item label {
   font-weight: bold;
-  color: #003049;
+  color: #2e3968;
   white-space: nowrap; /* 防止标签文字换行 */
   width: 130px;         /* 给标签一个固定宽度，你需要根据你最长的标签来调整这个值 */
                         /* 例如“所属证券行业分布：”这个标签比较长 */
@@ -330,10 +330,10 @@ select {
 /* 按钮样式 */
 .confirm-btn,
 .clear-all-btn {
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
   padding: 6px 22px;
-  border: 1px solid #003049; 
+  border: 1px solid #2e3968; 
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
@@ -348,7 +348,7 @@ select {
 .confirm-btn:hover,
 .clear-all-btn:hover {
   background-color: white;
-  color: #003049;
+  color: #2e3968;
 }
 
 .row-actions {
@@ -365,10 +365,10 @@ select {
 .confirm-btn,
 .clear-all-btn,
 .download-btn { /* ▼▼▼ 将 .download-btn 加入到通用按钮样式组 ▼▼▼ */
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
   padding: 0 22px; /* 修改 padding 以适应固定高度和文字居中 */
-  border: 1px solid #003049; 
+  border: 1px solid #2e3968; 
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
@@ -397,7 +397,7 @@ select {
 .clear-all-btn:hover,
 .download-btn:hover { /* ▼▼▼ download-btn 也应用 hover 效果 ▼▼▼ */
   background-color: white;
-  color: #003049;
+  color: #2e3968;
 }
 
 .el-dropdown-menu {
@@ -409,7 +409,7 @@ select {
 }
 .el-dropdown-menu__item:hover {
   background-color: #f5f5f5; /* 一个通用的 hover 背景色 */
-  color: #003049;      /* hover 时的文字颜色 */
+  color: #2e3968;      /* hover 时的文字颜色 */
 }
 
 </style>

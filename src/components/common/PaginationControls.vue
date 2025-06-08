@@ -103,7 +103,7 @@ export default {
 }
 
 .pagination button {
-  background-color: #003049;
+  background-color: #2e3968;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -115,7 +115,7 @@ export default {
 }
 .pagination button:hover:not(:disabled) {
   background-color: #f0f0f0;
-  color: #003049;
+  color: #2e3968;
 }
 .pagination button:disabled {
   background-color: #eef0f6;
@@ -126,7 +126,7 @@ export default {
 }
 .page-info {
   font-weight: bold;
-  color: #003049;
+  color: #2e3968;
   font-size: 14px;
   margin: 0 8px;
   display: flex;

@@ -75,7 +75,7 @@ export default {
   width: 40px; /* Spinner 大小 */
   height: 40px;
   border: 4px solid #f3f3f3; /* 浅灰色轨道 */
-  border-top: 4px solid #003049; /* 主题色旋转部分 */
+  border-top: 4px solid #2e3968; /* 主题色旋转部分 */
   border-radius: 50%;
   animation: spin 1s linear infinite;
   z-index: 2; /* 确保 spinner 在水印之上 */

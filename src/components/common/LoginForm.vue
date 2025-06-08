@@ -75,7 +75,7 @@ export default {
 
 .title {
   font-size: 24px;  /* 标题字体大小 */
-  color: #003049;  /* 深蓝色字体 */
+  color: #2e3968;  /* 深蓝色字体 */
   text-align: center;  /* 居中 */
   margin-bottom: 20px;  /* 标题与表单之间的间距 */
 }
@@ -86,7 +86,7 @@ export default {
 
 label {
   font-size: 16px;
-  color: #003049;  /* 深蓝色字体 */
+  color: #2e3968;  /* 深蓝色字体 */
   display: block;
   margin-bottom: 5px;  /* 标签与输入框之间的间距 */
 }
@@ -106,16 +106,15 @@ button {
   width: 100%;
   padding: 12px;
   margin-top: 20px;
-  background-color: #003049;  /* 深蓝色背景 */
+  background-color: #2e3968;  /* 深蓝色背景 */
   color: white;
   border: none;
-  border-radius: 8px;
   font-size: 18px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #679898;  /* 鼠标悬停时的过渡色 */
+  background-color: #BDA36C;  /* 鼠标悬停时的过渡色 */
 }
 </style>

@@ -215,7 +215,7 @@ export default {
 
   .filter-item label {
     font-weight: bold;
-    color: #003049;
+    color: #2e3968;
     white-space: nowrap; /* 防止标签文字换行 */
     width: 110px;         /* 给标签一个固定宽度，你需要根据你最长的标签来调整这个值 */
                           /* 例如“所属证券行业分布：”这个标签比较长 */
@@ -244,7 +244,7 @@ export default {
   }
   .confirm-btn,
   .clear-all-btn {
-    background-color: #003049;
+    background-color: #2e3968;
     color: white;
     padding: 6px 22px;
     border-radius: 4px;
@@ -258,7 +258,7 @@ export default {
   .confirm-btn:hover,
   .clear-all-btn:hover {
     background-color: white;
-    color: #003049;
+    color: #2e3968;
   }
 
 </style>
