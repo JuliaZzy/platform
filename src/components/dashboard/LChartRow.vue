@@ -272,25 +272,31 @@ export default {
 
 /* LChartRow.vue <style scoped> */
 .chart-row {
-  display: flex;
-  gap: 20px; /* 两个图表之间的间隙 */
-  /* flex-wrap: wrap; */ /* 如果希望在屏幕非常窄时换行，可以保留；如果必须并排，可以去掉或测试效果 */
+  display: flex;           /* 启用 Flexbox 布局，让内部元素可以横向排列 */
+  justify-content: center; /* 核心：让所有子项作为一个整体，在水平方向上居中 */
+  align-items: flex-start; /* 推荐：确保图表们的顶部对齐，防止因高度不同而错乱 */
+  gap: 30px;               /* 推荐：在图表之间创建一个30像素的固定间距，比 margin 更稳定 */
+  width: 100%;             /* 确保父容器占满整行宽度 */
+  flex-wrap: wrap;         /* 允许在小屏幕上自动换行，增强网页的响应式能力 */
 }
 
-.subject-chart-container { /* 通用样式 */
+.subject-chart-container {
+  /* 核心：让每个图表容器弹性增长，占据相等的空间 */
+  flex: 1;
+  /* 建议：设置一个最小宽度，防止在非常窄的屏幕上被过度挤压 */
+  min-width: 500px; 
+  /* --- 以下是你的通用样式，保持不变 --- */
   background: #fff;
   padding: 20px;
   border-radius: 8px;
-  /* 这个类可以只保留通用样式，宽度控制交给 .equal-half */
 }
 
-.width-40 {
-  flex: 0 0 43%; /* 不放大，不缩小，固定宽度 40% */
-  min-width: 0;
-}
-
-.width-60 {
-  flex: 0 0 50%; /* 不放大，不缩小，固定宽度 60% */
-  min-width: 0;
+.subject-chart-container {
+  /* 示例1：给每个图表一个固定的宽度，比如 600px */
+  /* 这种方式在各种屏幕上大小都一样，很稳定 */
+  width: 640px; 
+  
+  /* 示例2：或者一个灵活的最大宽度，让它自适应，但又不超过一定范围 */
+  max-width: 48%;
 }
 </style>

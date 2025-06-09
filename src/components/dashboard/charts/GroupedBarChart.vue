@@ -158,8 +158,8 @@ export default defineComponent({
                 if (chartTitle === 'A股数据资源入表公司分实控人分布情况') {
                   switch (value) {
                     case '个人': return '{customStyle|个人}';
-                    case '中央': return '{customStyle|中央}\n{customStyle|（国资委、中央国家\n机关、中央国有企业）}';
-                    case '地方': return '{customStyle|地方}\n{customStyle|（地方国资委、地方政府、\n地方国有企业）}';
+                    case '中央': return '{customStyle|中央}\n{customStyle|（国资委、中央\n国家机关、中央\n国有企业）}';
+                    case '地方': return '{customStyle|地方}\n{customStyle|（地方国资委、\n地方政府、地方\n国有企业）}';
                     case '其他': return '{customStyle|其他}';
                     default: return `{customStyle|${value}}`;
                   }
