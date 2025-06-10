@@ -892,4 +892,117 @@ export default {
     pointer-events: none;
   }
 
+/* ===================================================================
+  ✨ 新增：响应式布局 (MEDIA QUERIES) ✨
+  当屏幕宽度小于或等于 768px 时，以下样式生效 
+ ===================================================================
+*/
+@media (max-width: 768px) {
+
+  /* --- 头部调整 --- */
+  .header {
+    min-height: 300px; /* 减小头部最小高度 */
+    padding: 60px 15px 20px 15px; /* 减小上下左右内边距 */
+    text-align: center; /* 标题居中显示 */
+  }
+
+  .header-content {
+    padding-left: 0; /* 移除左侧的大内边距 */
+    justify-content: center; /* 内容整体居中 */
+    top: 30px; /* 调整内容位置 */
+  }
+
+  .header-content .left {
+    border-left: 4px solid #BDA36C; /* 可以稍微减小边框 */
+    padding-left: 20px; /* 减小内边距 */
+    margin-right: 0;
+  }
+  
+  .header-content .left h1 {
+    font-size: 36px; /* 大幅缩小标题字体 */
+    letter-spacing: 4px; /* 减小字间距 */
+    line-height: 1.4; /* 调整行高 */
+  }
+
+  .header-logos {
+    top: 15px;
+    left: 50%; /* 定位到中心 */
+    transform: translateX(-50%); /* 精准居中 */
+    align-items: center;
+  }
+
+  .header-logos img {
+    height: 60px; /* 缩小Logo高度 */
+  }
+
+  /* --- 状态盒子调整 --- */
+  .status-row {
+    flex-direction: column; /* 将横向排列改为垂直堆叠 */
+    margin-left: 20px; /* 减小左右边距 */
+    margin-right: 20px;
+    margin-top: -50px; /* 调整与头部的重叠距离 */
+  }
+  
+  .status-box {
+    width: 100%; /* 每个盒子占据100%的宽度 */
+    margin-bottom: 25px; /* 增加盒子之间的垂直间距 */
+    min-height: auto; /* 高度自适应 */
+    padding: 20px;
+  }
+
+  .status-box:last-child {
+    margin-bottom: 0; /* 最后一个盒子不需要下边距 */
+  }
+
+  .status-title {
+    font-size: 24px; /* 调整字体大小 */
+    margin-top: 20px;
+  }
+
+  .status-number {
+    font-size: 40px; /* 调整字体大小 */
+  }
+
+  .status-note {
+    margin-top: 30px; /* 调整边距 */
+  }
+
+  /* --- 榜单和表格调整 --- */
+  .table-header-container {
+    margin: 40px 20px 0 20px; /* 减小左右边距和上边距 */
+  }
+
+  .grid-container {
+    grid-template-columns: 1fr; /* 将三列表格布局改为单列 */
+    gap: 40px; /* 减小表格之间的间距 */
+    width: auto; /* 宽度自动，由外层边距控制 */
+    margin-left: 20px; /* 减小左右边距 */
+    margin-right: 20px;
+  }
+  
+  /* --- 页脚调整 --- */
+  .footer-content {
+    justify-content: center; /* 内容居中 */
+    padding-right: 20px;
+    padding-left: 20px;
+    flex-direction: column; /* 垂直排列 */
+    gap: 15px;
+    text-align: center;
+  }
+
+  .admin {
+    position: static; /* 取消绝对定位，融入正常文档流 */
+    order: 2; /* 将管理员登录按钮放到下方 */
+  }
+
+  .footer-links {
+    order: 1; /* 将联系信息放到上方 */
+    text-align: center;
+  }
+
+  .feedback-modal-content {
+    padding: 20px; /* 弹窗内边距也可以适当减小 */
+  }
+}
+
 </style>
