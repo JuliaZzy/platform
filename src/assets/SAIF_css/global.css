@@ -1,0 +1,359 @@
+﻿/* --- 基础重置 --- */
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video,
+button,
+input {
+    margin: 0;
+    padding: 0;
+}
+
+fieldset,
+img,
+button,
+input {
+    border: none;
+    outline-style: none;
+}
+
+ul,
+ol,
+dl {
+    list-style: none;
+}
+
+input {
+    font-family: "Noto Sans SC";
+}
+
+img {
+    vertical-align: top;
+}
+
+select,
+input,
+textarea {
+    font-size: 12px;
+    margin: 0;
+    vertical-align: middle;
+}
+
+textarea {
+    resize: none;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+s,
+del {
+    text-decoration: none;
+}
+
+a {
+    outline: 0;
+    list-style: none;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-size: 100%;
+    font-weight: normal;
+}
+
+body {
+    font-size: 14px;
+    color: #888;
+    overflow-x: hidden;
+    font-family: "Noto Sans SC";
+}
+
+/* --- 通用辅助类 --- */
+p,
+h5 {
+    word-wrap: break-word;
+}
+.fl {
+    float: left;
+}
+.fr {
+    float: right;
+}
+.clearfix {
+    zoom: 1;
+}
+.clearfix:after {
+    content: '';
+    display: block;
+    clear: both;
+    height: 0;
+    visibility: hidden;
+    font-size: 0
+}
+.content {
+    width: 100%;
+    margin: 0 auto;
+}
+.content_960 {
+    width: 79%;
+}
+.tac {
+    text-align: center;
+}
+.textR {
+    text-align: right;
+}
+
+/* --- Footer 核心样式 (必须保留) --- */
+.new-footer {
+    width: 100%;
+    background-color: #171d8f;
+    margin: 0 auto;
+}
+
+.new-footer .top {
+    padding-top: 50px;
+    padding-bottom: 30px;
+    /* 背景图已被注释，因为您已删除图片文件，下同 */
+    /* background: url(../images/newFooter/footer1.png); */
+    background-repeat: no-repeat;
+    background-position: left bottom;
+    padding-left: 400px;
+}
+
+.new-footer .top .top-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #5f63b9;
+    padding-bottom: 20px;
+}
+
+.new-footer .top-bottom {
+    background: #33389D;
+    margin: 20px 0 0;
+}
+.new-footer .bottom .l {
+    color: #fff;
+}
+.new-footer .top-bottom .footer-tab {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.new-footer .footer-tab li {
+    cursor: pointer;
+    width: 80px;
+    line-height: 42px;
+    text-align: center;
+    color: #fff;
+    background: #4D51A9;
+}
+
+.new-footer .footer-tab li.active {
+    background: transparent;
+}
+
+.new-footer .footer-tab-change li {
+    padding-left: 15px;
+    flex-direction: column;
+    justify-content: center;
+    height: 175px;
+    display: none;
+    padding-left: 15px;
+}
+
+.new-footer .footer-tab-change li.active {
+    display: flex;
+}
+
+.new-footer .footer-tab-change li:nth-child(1) {
+    /* background: url(../images/newFooter/footer4.png); */
+    background-repeat: no-repeat;
+    background-position: right 60px center;
+}
+
+.new-footer .footer-tab-change li:nth-child(2) {
+    /* background: url(../images/newFooter/footer3.png); */
+    background-repeat: no-repeat;
+    background-position: right 60px center;
+}
+
+.new-footer .footer-tab-change li:nth-child(3) {
+    /* background: url(../images/newFooter/footer2.png); */
+    background-repeat: no-repeat;
+    background-position: right 60px center;
+}
+
+.new-footer .footer-tab-change p {
+    font-size: 14px;
+    color: #fff;
+    line-height: 24px;
+}
+
+.new-footer .bottom {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    padding: 20px 0;
+    border-top: 1px solid #5f63b9;
+}
+.new-footer .bottom a {
+    color: #fff;
+}
+.new-footer .bottom a:hover {
+    color: #eea01d;
+}
+
+/* --- .footer_inner 样式 (Footer中的一个列表) --- */
+.footer_inner li {
+    float: left;
+    margin-right: 23px;
+}
+
+.footer_inner li a {
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.footer_inner li a img {
+    margin-right: 5px;
+}
+
+.footer_inner li:hover a,
+.footer_inner li a:hover {
+    color: #eea01d;
+}
+
+.footer_inner li:last-child {
+    margin-right: 0px;
+}
+
+.footer_inner_hover {
+    display: none;
+}
+
+/* --- 响应式布局中的 Footer 相关样式 --- */
+@media screen and (min-width: 1280px) and (max-width: 1680px) {
+    .footer { /* 这是另一个旧的footer样式，为安全起见保留 */
+        height: auto;
+    }
+}
+
+@media screen and (min-width:960px) and (max-width:1280px) {
+    .content {
+        width: 960px;
+    }
+    .footer_inner li {
+        margin-right: 15px;
+    }
+    .footer_inner li a {
+        font-size: 12px;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 960px) {
+    .content {
+        width: 100%;
+    }
+    .footer {
+        height: auto;
+    }
+    .footer .content {
+        box-sizing: border-box;
+        padding: 0 30px;
+    }
+}

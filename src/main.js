@@ -17,6 +17,13 @@ import {
   GridComponent
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
+// --- Font Awesome ---
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+library.add(fas) // 将所有实体图标添加到库中
+
+Vue.component('font-awesome-icon', FontAwesomeIcon) // 全局注册组件
 
 echarts.use([
   BarChart,

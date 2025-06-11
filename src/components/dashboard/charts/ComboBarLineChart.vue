@@ -5,7 +5,7 @@
     <v-chart
       v-if="!loading && chartOption.series && chartOption.series.length"
       :option="chartOption"
-      style="width: 100%; height: 440px;"
+      :style="{ width: '100%', height: chartHeight + 'px' }"
     />
   </div>
 </template>
@@ -46,7 +46,42 @@ export default defineComponent({
     yAxisLineName: {
       type: String,
       default: '金额（亿元）'
+    },
+    // ▼▼▼ 新增代码开始 ▼▼▼
+    // 左侧 Y 轴（柱状图）的最大值
+    yAxisBarMax: {
+        type: Number,
+        default: 120
+    },
+    // 左侧 Y 轴（柱状图）的刻度间隔
+    yAxisBarInterval: {
+        type: Number,
+        default: 20
+    },
+    // 右侧 Y 轴（折线图）的最大值
+    yAxisLineMax: {
+        type: Number,
+        default: 24
+    },
+    // 右侧 Y 轴（折线图）的刻度间隔
+    yAxisLineInterval: {
+        type: Number,
+        default: 4
+    },
+    // ▼▼▼ 新增代码开始 ▼▼▼
+    // 用于图表注释的文本，可选
+    chartAnnotation: {
+      type: String,
+      default: '' // 默认值为空字符串
+    },
+
+    // ▼▼▼ 新增代码开始 ▼▼▼
+    // 用于控制图表组件的整体高度
+    chartHeight: {
+      type: Number,
+      default: 440 // 默认高度为 440px
     }
+    // ▲▲▲ 新增代码结束 ▲▲▲
   },
   setup(props) {
     const chartOption = ref({});
@@ -80,7 +115,9 @@ export default defineComponent({
 
         const lineLabelOption = {
           show: true,         // 是否显示标签
-          position: 'top',    // 标签的位置，'top'表示在柱子顶部
+          position: 'right',    // 标签的位置，'top'表示在柱子顶部
+          offset: [3, -25],
+          distance: 8,
           formatter: function (params) {
             // 检查 null/undefined 或无法转换为数字的情况
             if (params.value == null || isNaN(parseFloat(params.value))) { 
@@ -162,7 +199,7 @@ export default defineComponent({
           grid: {
             left: '3%',
             right: '4%',
-            bottom: '3%',
+            bottom: '60px',
             containLabel: true
           },
           xAxis: {
@@ -179,9 +216,9 @@ export default defineComponent({
             {
               type: 'value',
               name: props.yAxisBarName,
-              min: 0,                  // 设置最小值为 0
-              max: 120,                // 设置最大值为 100
-              interval: 20,            // 设置刻度间隔为 20
+              min: 0,
+              max: props.yAxisBarMax,
+              interval: props.yAxisBarInterval,
               nameLocation: 'middle',
               nameGap: 45,
               nameTextStyle: { fontSize: 14 }
@@ -189,9 +226,9 @@ export default defineComponent({
             {
               type: 'value',
               name: props.yAxisLineName,
-              min: 0,                  // 设置最小值为 0
-              max: 24,                // 设置最大值为 100
-              interval: 4,            // 设置刻度间隔为 20
+              min: 0,
+              max: props.yAxisLineMax,
+              interval: props.yAxisLineInterval,
               nameLocation: 'middle',
               nameGap: 45,
               nameTextStyle: { fontSize: 14 }
@@ -199,6 +236,27 @@ export default defineComponent({
           ],
           series: [...bar, line]
         };
+
+        // ▼▼▼ 新增代码开始 ▼▼▼
+        // 如果父组件传入了注释文本，则添加 graphic 配置
+        if (props.chartAnnotation) {
+          chartOption.value.graphic = {
+            type: 'text', // 类型为文本
+            left: 'center',   // 位置：距离左侧 10%
+            bottom: 25,    // 位置：距离底部 25px
+            style: {
+              text: props.chartAnnotation, // 使用传入的文本
+              fill: '#BDA36C',               // 文本颜色
+              fontSize: 12,               // 字体大小
+              textAlign: 'center', // 文本内容也居中
+
+              // ▼▼▼ 限制宽度和自动换行 ▼▼▼
+              width: '30%',      // 设置宽度为父容器的 30%
+              overflow: 'break', // 超出宽度时自动换行
+              lineHeight: 18     // 可选：调整行高，使换行文本更易读
+            }
+          };
+        }
 
         loading.value = false;
       }, 500);
@@ -223,9 +281,9 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
-  width: 100%;
+  width: 90%;
   min-width: 0px;
+  margin: 20px auto; 
 }
 
 .chart-title {
@@ -235,4 +293,5 @@ export default defineComponent({
   text-align: center;
   color: #2e3968;
 }
+
 </style>

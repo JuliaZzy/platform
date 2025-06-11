@@ -1,20 +1,9 @@
 <template>
+  <div> <SAIFHeader />
+
   <div class="page-container">
     <LoadingSpinner :visible="isLoading" />
-
-    <div class="header">
-      <div class="header-logos">
-        <img src="../assets/logo/实验室.png" alt="Lab Logo" />
-      </div>
-
-      <img class="header-bg-image" src="../assets/header_image.jpg" alt="Header Image" />
-      
-      <div class="header-content">
-        <div class="left">
-          <h1>中国企业数据资产<br />入表名录</h1>
-        </div>
-      </div>
-    </div>
+    <PageHeader />
 
     <div v-if="isLoginModalVisible" class="login-modal">
       <div class="modal-content">
@@ -22,7 +11,6 @@
         <button class="login-close-button" @click="closeLoginModal">关闭</button>
       </div>
     </div>
-
     <div v-if="isFeedbackModalVisible" class="feedback-modal">
       <div class="feedback-modal-content">
         <h2>反馈意见 / 信息申报</h2>
@@ -52,33 +40,28 @@
     </div>
 
     <div class="status-row">
-      <div class="status-box clickable" @click="handleStatusBoxClick('上市公司入表')">
-        <h3>2024年度</h3>
-        <p class="status-title">上市公司入表</p>
-        <p class="status-number">
-          {{ listedCompanyCount }} 家
-        </p>
-        <div class="status-note">点击查看详情</div>
-      </div>
-
-      <div class="status-box clickable" @click="handleStatusBoxClick('非上市公司入表')">
-        <h3>{{ nonListedMonthDisplay }}</h3>
-        <p class="status-title">非上市公司入表</p>
-        <p class="status-number">
-          {{ nonListedCompanyCount }} 家
-        </p>
-        <div class="status-note">点击查看详情</div>
-      </div>
-
-      <div class="status-box clickable" @click="handleStatusBoxClick('数据相关融资')">
-        <h3>截至2025年03月</h3>
-        <p class="status-title">数据相关融资</p>
-        <p class="status-number">
-          {{ financeCompanyCount }} 项
-        </p>
-        <div class="status-note">点击查看详情</div>
-        </div>
+      <StatusCard
+        :date-text="listedDateDisplay"
+        title="上市公司入表"
+        :count="listedCompanyCount"
+        @card-click="handleStatusBoxClick('上市公司入表')"
+      />
+      <StatusCard
+        :date-text="nonListedMonthDisplay"
+        title="非上市公司入表"
+        :count="nonListedCompanyCount"
+        @card-click="handleStatusBoxClick('非上市公司入表')"
+      />
+      <StatusCard
+        date-text="截至2025年03月"
+        title="数据相关融资"
+        :count="financeCompanyCount"
+        unit="项"
+        @card-click="handleStatusBoxClick('数据相关融资')"
+      />
     </div>
+
+    <PdfReport />
 
     <div class="table-header-container">
       <div class="table-header">
@@ -87,126 +70,79 @@
     </div>
 
     <div class="grid-container">
-      <div class="grid-item">
-        <div class="table-wrapper">
-          <ChartSpinner :visible="isFirstTableLoading" />
-          <table>
-            <tr><th colspan="2">上市公司入表清单</th></tr>
-            <tr v-for="(company, index) in pagedListedCompanies" :key="index">
-              <td v-text="company.company_name"></td>
-            </tr>
-            <tr v-if="firstTablePages > 1">
-              <td colspan="2">
-                <div class="pagination">
-                  <button :disabled="firstTablePage === 1" @click="changePage('firstTable', firstTablePage - 1)">上一页</button>
-                  <span>{{ firstTablePage }} / {{ firstTablePages }}</span>
-                  <button :disabled="firstTablePage === firstTablePages" @click="changePage('firstTable', firstTablePage + 1)">下一页</button>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="grid-item">
-        <div class="table-wrapper">
-          <ChartSpinner :visible="isSecondTableLoading" />
-          <table>
-            <tr><th colspan="2">非上市公司入表清单</th></tr>
-            <tr v-for="(company, index) in pagedNonListedCompanies" :key="index">
-              <td v-text="company.company_name"></td>
-            </tr>
-            <tr v-if="secondTablePages > 1">
-              <td colspan="2">
-                <div class="pagination">
-                  <button :disabled="secondTablePage === 1" @click="changePage('secondTable', secondTablePage - 1)">上一页</button>
-                  <span>{{ secondTablePage }} / {{ secondTablePages }}</span>
-                  <button :disabled="secondTablePage === secondTablePages" @click="changePage('secondTable', secondTablePage + 1)">下一页</button>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="grid-item">
-        <div class="table-wrapper">
-          <ChartSpinner :visible="isThirdTableLoading" />
-          <table>
-            <tr><th colspan="2">数据相关融资企业清单</th></tr>
-            <tr v-for="(company, index) in pagedFinancingCompanies" :key="index">
-              <td>{{ company.name }}</td> </tr>
-            <tr v-if="thirdTablePages > 1">
-              <td colspan="2">
-                <div class="pagination">
-                  <button :disabled="thirdTablePage === 1" @click="changePage('thirdTable', thirdTablePage - 1)">上一页</button>
-                  <span>{{ thirdTablePage }} / {{ thirdTablePages }}</span>
-                  <button :disabled="thirdTablePage === thirdTablePages" @click="changePage('thirdTable', thirdTablePage + 1)">下一页</button>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
+      <InfoTable
+        title="上市公司入表清单"
+        :items="listedCompanies"
+        :is-loading="isFirstTableLoading"
+        item-key="company_name"
+      />
+      <InfoTable
+        title="非上市公司入表清单"
+        :items="nonListedCompanies"
+        :is-loading="isSecondTableLoading"
+        item-key="company_name"
+      />
+      <InfoTable
+        title="数据相关融资企业清单"
+        :items="financingCompanies"
+        :is-loading="isThirdTableLoading"
+        item-key="name"
+      />
     </div>
 
-    <div class="footer">
-      <div class="footer-overlay"></div>
-      <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image" />
-      <div class="admin">
-        <button class="admin-login-button" @click="openLoginModal">管理员登录</button>
-      </div>
-      <div class="footer-content"> <div class="footer-links">
-          <p>联系我们：dfcc@saif.sjtu.edu.cn</p>
-          <a href="#" @click.prevent="openFeedbackModal">反馈意见/申报</a>
-        </div>
-      </div>
-    </div>
+    <PageFooter @open-login="openLoginModal" @open-feedback="openFeedbackModal" />
+    <SAIFFooter />
+  </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import LoginForm from '@/components/common/LoginForm.vue';
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
-import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
 
+// Common Components
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import LoginForm from '@/components/common/LoginForm.vue';
+// Homepage Specific Components
+import SAIFHeader from '@/components/homepage/SAIFHeader.vue';
+import SAIFFooter from '@/components/homepage/SAIFFooter.vue';
+import PageHeader from '@/components/homepage/PageHeader.vue';
+import StatusCard from '@/components/homepage/StatusCard.vue';
+import PdfReport from '@/components/homepage/PdfReport.vue';
+import InfoTable from '@/components/homepage/InfoTable.vue';
+import PageFooter from '@/components/homepage/PageFooter.vue';
+
+
 export default {
-  name: 'HomePage', // 建议使用多词名称
+  name: 'HomePage',
   components: {
-    LoginForm,
     LoadingSpinner,
-    ChartSpinner
+    LoginForm,
+    SAIFHeader,
+    SAIFFooter,
+    PageHeader,
+    StatusCard,
+    PdfReport,
+    InfoTable,
+    PageFooter
   },
   data() {
     return {
       isLoading: true,
-      isFirstTableLoading: false, // 改为 false，让主 loading 控制
+      isFirstTableLoading: false,
       isSecondTableLoading: false,
       isThirdTableLoading: false,
-      // currentMonth: '', // 移除，不再需要
-      latestNonListedMonth: '', // 新增：存储非上市公司最新月份
-      labels: ['上市公司入表', '非上市公司入表', '数据相关融资'], // 修改第三个标签
+      latestListedDate: '',
+      latestNonListedMonth: '',
       listedCompanyCount: 0,
       nonListedCompanyCount: 0,
       financeCompanyCount: 0,
-
       listedCompanies: [],
-      firstTablePage: 1,
-      firstTablePages: 1,
-
       nonListedCompanies: [],
-      secondTablePage: 1,
-      secondTablePages: 1,
-
       financingCompanies: [],
-      thirdTablePage: 1,
-      thirdTablePages: 1,
-
       isLoginModalVisible: false,
-      isFeedbackModalVisible: false, // 新增：控制反馈弹窗
-      feedbackForm: { // 新增：存储反馈表单数据
+      isFeedbackModalVisible: false,
+      feedbackForm: {
         name: '',
         contact: '',
         organization: '',
@@ -215,72 +151,48 @@ export default {
     };
   },
   computed: {
-    pagedListedCompanies() {
-      const list = this.listedCompanies || [];
-      const start = (this.firstTablePage - 1) * 10;
-      return list.slice(start, start + 10);
-    },
-    pagedNonListedCompanies() {
-      const list = this.nonListedCompanies || [];
-      const start = (this.secondTablePage - 1) * 10;
-      return list.slice(start, start + 10);
-    },
-    pagedFinancingCompanies() {
-      const list = this.financingCompanies || [];
-      const start = (this.thirdTablePage - 1) * 10;
-      return list.slice(start, start + 10);
+    listedDateDisplay() {
+      if (this.latestListedDate) {
+        return `截至${this.latestListedDate}`;
+      }
+      return '截至....'; 
     },
     nonListedMonthDisplay() {
       if (!this.latestNonListedMonth) {
-        return '截至....年..月'; // 如果没有数据，显示占位符
+        return '截至....年..月';
       }
-      // ✅ 使用 formatToChineseYearMonth 函数进行格式化
       const formattedMonth = formatToChineseYearMonth(this.latestNonListedMonth);
       return `截至${formattedMonth}`; 
     }
   },
   mounted() {
-    // 移除 currentMonth 的设置
     this.loadAllData();
   },
   methods: {
     async loadAllData() {
       this.isLoading = true;
-      // 可以在这里设置表格 loading 为 true
       this.isFirstTableLoading = true;
       this.isSecondTableLoading = true;
       this.isThirdTableLoading = true;
       try {
         const res = await axios.get('/api/company/homepage-summary');
         const data = res.data;
+        this.latestListedDate = data.latestListedDate;
         this.listedCompanyCount = data.listedCompanyCount;
         this.listedCompanies = data.listedCompanies || [];
-        this.firstTablePages = Math.ceil(data.listedCompanyCount / 10);
-
         this.nonListedCompanyCount = data.nonListedCompanyCount;
         this.nonListedCompanies = data.nonListedCompanies || [];
-        this.secondTablePages = Math.ceil(data.nonListedCompanyCount / 10);
-        this.latestNonListedMonth = data.latestNonListedMonth; // 接收后端传来的最新月份
-
+        this.latestNonListedMonth = data.latestNonListedMonth;
         this.financeCompanyCount = data.financeCompanyCount;
         this.financingCompanies = data.financingCompanies || [];
-        this.thirdTablePages = Math.ceil(this.financingCompanies.length / 10); 
-
       } catch (err) {
         console.error('加载数据出错：', err);
-        // 可以添加用户友好的错误提示
       } finally {
         this.isLoading = false;
-        // 关闭表格 loading
         this.isFirstTableLoading = false;
         this.isSecondTableLoading = false;
         this.isThirdTableLoading = false;
       }
-    },
-    changePage(table, page) {
-      if (page < 1 || page > this[`${table}Pages`]) return;
-      this[`${table}Page`] = page;
-      // 注意：这里是前端分页，如果数据量很大，未来可能需要改为后端分页
     },
     openLoginModal() {
       this.isLoginModalVisible = true;
@@ -294,157 +206,93 @@ export default {
       window.open(routeData.href, '_blank');
     },
     handleStatusBoxClick(label) {
-      let routeData;
-      if (label === '非上市公司入表') {
-        routeData = this.$router.resolve({ name: 'NLSDashboardPage' });
-        window.open(routeData.href, '_blank');
-      } else if (label === '上市公司入表') {
-        routeData = this.$router.resolve({ name: 'LSDashboardPage' });
-        window.open(routeData.href, '_blank');
-      } else if (label === '数据相关融资') { 
-        // ⚠️ 请确保 'FinanceDashboardPage' 是您在路由中定义的正确名称
-        routeData = this.$router.resolve({ name: 'FinanceDashboardPage' });
+      let routeName = '';
+      if (label === '上市公司入表') routeName = 'LSDashboardPage';
+      else if (label === '非上市公司入表') routeName = 'NLSDashboardPage';
+      else if (label === '数据相关融资') routeName = 'FinanceDashboardPage';
+      
+      if(routeName) {
+        const routeData = this.$router.resolve({ name: routeName });
         window.open(routeData.href, '_blank');
       }
     },
-    // --- 新增方法 ---
     openFeedbackModal() {
       this.isFeedbackModalVisible = true;
     },
     closeFeedbackModal() {
       this.isFeedbackModalVisible = false;
-      // 可以选择性地清空表单
       this.feedbackForm = { name: '', contact: '', organization: '', details: '' };
     },
     async submitFeedback() {
-      console.log('提交反馈:', this.feedbackForm);
-      
-      // 简单的前端验证 (可选，但推荐)
       if (!this.feedbackForm.name || !this.feedbackForm.contact || !this.feedbackForm.details) {
-          alert('请填写所有必填项（姓名、联系方式、反馈事项）。');
-          return;
+        alert('请填写所有必填项（姓名、联系方式、反馈事项）。');
+        return;
       }
-
       try {
-        // 调用后端 API 发送反馈
         await axios.post('/api/feedback', this.feedbackForm);
-        // 根据后端返回结果提示用户
-        alert('反馈提交成功！感谢您的参与。'); 
-        this.closeFeedbackModal(); // 提交成功后关闭弹窗
+        alert('反馈提交成功！感谢您的参与。');
+        this.closeFeedbackModal();
       } catch (error) {
         console.error('提交反馈失败:', error);
-        // 显示更具体的错误信息 (如果后端返回了)
-        const errorMessage = error.response?.data?.error || '反馈提交失败，请稍后再试或联系管理员。';
-        alert(errorMessage); 
+        const errorMessage = error.response?.data?.error || '反馈提交失败，请稍后再试。';
+        alert(errorMessage);
       }
     }
   }
 };
 </script>
 
-
 <style scoped>
-  .page-container {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0; /* 去掉整体的上下左右间隙 */
-    background-color: #F5F3F4; /* 浅灰色背景 */
-    color: #d9dce7;
-    overflow-x: hidden; /* 彻底移除横向滚动条 */
-  }
+.page-container {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #F5F3F4;
+  color: #d9dce7;
+  overflow-x: hidden;
+}
 
-  .header {
-    background-color: #2e3968;
-    position: relative;
-    width: 100%; /* 确保背景铺满整个屏幕 */
-    min-height: 470px; /* 设置最小高度，确保内容不被压缩 */
-    padding: 80px 30px;
-    text-align: left;
-    color: #BDA36C;
-    font-size: 36px;
-    letter-spacing: 8px;
-    box-sizing: border-box;
-  }
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  margin: -60px 50px 50px 50px;
+  flex-wrap: wrap;
+  gap: 3%; /* 使用gap来控制间距 */
+}
+/* 为了让StatusCard能正确应用宽度 */
+.status-row > .status-box {
+  width: 26%;
+}
 
-  .header .header-bg-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; /* 设置图片填充整个header */
-    object-fit: cover;
-    opacity: 0.2; /* 设置透明度，让文字更清晰 */
-  }
 
-  .header-logos {
-    position: absolute;
-    top: 30px; /* 与顶部的距离 */
-    left: 85%; /* 先移动到中心 */
-    display: flex;
-    align-items: right;
-    z-index: 5; /* 确保 Logo 在背景图和遮罩之上 */
-  }
+/* 榜单标题 */
+.table-header-container {
+  margin: 80px 50px 0 50px;
+}
+.table-header {
+  background: linear-gradient(to right, #2e3968 0%, rgba(0, 48, 73, 0) 30%);
+  border-radius: 5px;
+  color: white;
+  font-size: 24px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  padding-left: 10px;
+  margin-bottom: 20px;
+}
+.table-header i {
+  margin-right: 10px;
+  font-size: 20px;
+}
 
-  .header-logos img {
-    height: 100px; /* 控制 Logo 的高度，宽度会自适应 */
-    max-height: 200px;
-  }
-
-  .header-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 150px;
-    top: 60px;
-    height: 100%;
-  }
-
-  .header-content .left {
-    border-left: 5px solid #BDA36C;
-    padding-left: 30px;
-    margin-right: 30px;
-    line-height: 55px;
-    top: 10px;
-  }
-
-  .header-content .left h1 {
-    font-size: 76px;
-    letter-spacing: 16px;
-    margin: 0;
-    line-height: 1.3;
-    top: 20px;
-  }
-
-  /* 主界面 "管理员登录" 按钮的样式 */
-  .admin, .admin:visited, .admin:active {
-    position: absolute;
-    left: 30px;
-    top: auto;
-    bottom: 40px;
-    text-decoration: none;
-    color: #2e3968; /* 字体颜色为 header 的深蓝色 */
-    font-size: 16px;
-    padding: 6px 14px;
-    z-index: 200;
-  }
-
-  .admin-login-button {
-    background-color: white;  /* 深蓝色背景 */
-    color: #2e3968;
-    padding: 10px 20px;  /* 增大按钮的内边距 */
-    border: none;
-    border-radius: 8px;  /* 圆角效果 */
-    font-size: 18px;      /* 设置字体大小 */
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease; /* 增加过渡效果 */
-  }
-
-  .admin-login-button:hover {
-    background-color: #BDA36C;  /* 鼠标悬停时背景色变为白色 */
-    color: white;           /* 鼠标悬停时字体颜色变为深蓝色 */
-  }
+/* 表格栅格布局 */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 120px;
+  margin: 50px 50px 0 50px;
+}
 
   /* 弹窗样式 */
   .login-modal {
@@ -492,308 +340,6 @@ export default {
     text-decoration: underline;
     background-color: transparent !important; /* 确保背景色不会改变 */
   }
-
-  .status-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: -60px; /* 让 status-box 与 header 上方重叠 */
-    margin-bottom: 50px;
-    flex-wrap: wrap; /* 确保响应式布局 */
-    margin-left: 50px; /* 左侧距离 30px */
-    margin-right: 50px; /* 右侧距离 30px */
-  }
-
-  .status-box {
-    background-color: white; /* 背景为白色 */
-    width: 26%;
-    padding: 30px 20px; /* 内边距 */
-    text-align: center;
-    font-size: 32px;
-    color: #2e3968; /* 深蓝色文字 */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* 阴影效果增强 */
-    position: relative;
-    z-index: 1;
-    transition: all 0.2s ease; /* 添加平滑过渡效果 */
-    min-height: 240px;
-  }
-
-  .status-box:hover {
-    transform: scale(1.03);
-    background-color: #2e3968; /* 1. 背景变蓝 */
-    color: #f0dfc7;             /* 2. 基础文字颜色变为目标色 */
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  /* 新增：这条规则是关键，确保所有子元素的文字颜色都被覆盖 */
-  .status-box:hover * {
-    color: #f0dfc7; /* 3. 所有子元素的文字颜色也变为目标色 */
-  }
-
-
-  .status-box h3 {
-    margin: 0;
-    font-size: 20px;
-    text-align: left;
-    color: #2e3968;
-    font-weight: bold;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-  }
-
-  .status-box p span.number {
-    font-size: 36px; /* 数字字体更大 */
-    font-weight: bold; /* 数字加粗 */
-  }
-
-  .status-box p span.unit {
-    font-size: 30px; /* “家”字不加粗，字体稍小 */
-    font-weight: normal; /* “家”字不加粗 */
-  }
-
-  .status-title {
-    font-size: 30px;
-    font-weight: normal;
-    margin: 0;
-    margin-top: 40px;
-    color: #2e3968;
-  }
-
-  .status-number {
-    font-size: 48px;
-    font-weight: bold;
-    margin: 10px 0 0;
-    color: #2e3968;
-  }
-
-  .status-note {
-    font-size: 14px;
-    color: #2e3968;
-    text-align: right;
-    margin-top: 50px;
-    text-transform: none;
-    font-weight: normal;
-  }
-
-  /*点击样式*/ 
-  .status-box.clickable {
-    cursor: pointer;
-  }
-  .status-box.clickable:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  /* 新增：独立设置榜单背景和高度 */
-  .table-header-container {
-    margin: 0 50px; /* 左右留白 50px */
-    margin-top: 80px;
-  }
-
-  .table-header {
-    background: linear-gradient(to right, #2e3968 0%, rgba(0, 48, 73, 0) 30%); /* 深蓝色背景 */
-    border-radius: 5px;
-    color: white;
-    font-size: 24px;
-    height: 50px; /* 高度 50px */
-    display: flex;
-    align-items: center;
-    justify-content: left;
-    padding-left: 10px;
-    margin-bottom: 20px; /* 榜单与下方表格间的间距 */
-  }
-
-  .table-header i {
-    margin-right: 10px;
-    font-size: 20px;
-  }
-
-  .grid-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 三个表格宽度保持一致 */
-    gap: 120px;
-    margin-top: 50px; /* 表格与 status box 底部的间距 80px */
-    width: 93%; /* 修改为与 status-box 宽度一致 */
-    margin-left: 50px;
-    margin-right: 50px;
-  }
-
-  .grid-item {
-    position: relative; /* ✅ 这行你已经加了 */
-    min-height: 160px;  /* ✅ 建议添加：确保 spinner 有空间显示 */
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 16px;
-  }
-
-  .grid-container .grid-item:first-child table td {
-    text-align: center;
-  }
-
-  th {
-    color: #2e3968;
-    font-weight: bold;
-    padding: 14px;
-    text-align: center;
-    border-top: 2px solid #2e3968;
-    border-bottom: 2px solid #2e3968;
-  }
-
-  td {
-    height: 50px;
-    padding: 8px;
-    color: #333;
-    border-bottom: 1px solid #d3d3d3;
-  }
-
-  tr:last-child td {
-    border-bottom: 2px solid #2e3968;
-  }
-
-  .pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
-  }
-
-  .pagination-left,
-  .pagination-center,
-  .pagination-right {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .pagination-left {
-    justify-content: flex-start;
-  }
-
-  .pagination-right {
-    justify-content: flex-end;
-  }
-
-  .pagination button {
-    background-color: #F5F3F4;
-    color: #2e3968;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  .pagination button:disabled {
-    background-color: #ccc;
-    color: #666;
-    cursor: not-allowed;
-  }
-
-  .pagination button:hover:not(:disabled) {
-    background-color: #2e3968;
-    color: white;
-  }
-
-  .page-info {
-    font-size: 16px;
-    color: #2e3968;
-  }
-
-  .footer {
-    position: relative;
-    height: 150px;
-    overflow: hidden;
-    color: white;
-    margin-top: 60px;
-  }
-
-  .footer a {
-    color: white;
-    font-size: 18px;
-    text-decoration: none;
-    transition: border-bottom 0.2s;
-    border-bottom: 2px solid transparent;
-  }
-
-  .footer a:hover {
-    border-bottom: 2px solid white;
-  }
-
-  .footer-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
-    object-position: bottom;
-    opacity: 0.8;
-  }
-
-  .footer-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 48, 73, 0.4); /* 深蓝色透明层 */
-    z-index: 2;
-  }
-
-  .footer-content {
-    position: relative;
-    z-index: 3;
-    height: 100%;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding-right: 50px;
-    gap: 30px;
-  }
-  .table-wrapper {
-    position: relative;
-    min-height: 180px;
-  }
-
-  .footer-content {
-  position: relative;
-  z-index: 3;
-  height: 100%;
-  display: flex;
-  justify-content: flex-end; /* 整体靠右 */
-  align-items: center;
-  padding-right: 50px;
-}
-
-.footer-links {
-  text-align: left; /* 内部左对齐 */
-}
-
-.footer-links p {
-  margin: 5px 0; /* 上下间距 */
-  color: white;
-  font-size: 16px; /* 调整字体大小 */
-}
-
-.footer-links a {
-  color: white;
-  font-size: 16px; /* 调整字体大小 */
-  text-decoration: none;
-  transition: border-bottom 0.2s;
-  border-bottom: 1px solid transparent; /* 默认无下划线 */
-  display: inline-block; /* 允许设置 margin */
-  margin: 5px 0;
-  cursor: pointer; /* 显示可点击手势 */
-}
-
-.footer-links a:hover {
-  color: #f0dfc7;
-  border-bottom: 1px solid #f0dfc7;
-}
 
 /* --- 反馈弹窗样式 (基本样式，你可以根据需要调整) --- */
 .feedback-modal {
@@ -892,117 +438,27 @@ export default {
     pointer-events: none;
   }
 
-/* ===================================================================
-  ✨ 新增：响应式布局 (MEDIA QUERIES) ✨
-  当屏幕宽度小于或等于 768px 时，以下样式生效 
- ===================================================================
-*/
+
+/* 响应式布局 */
 @media (max-width: 768px) {
-
-  /* --- 头部调整 --- */
-  .header {
-    min-height: 300px; /* 减小头部最小高度 */
-    padding: 60px 15px 20px 15px; /* 减小上下左右内边距 */
-    text-align: center; /* 标题居中显示 */
-  }
-
-  .header-content {
-    padding-left: 0; /* 移除左侧的大内边距 */
-    justify-content: center; /* 内容整体居中 */
-    top: 30px; /* 调整内容位置 */
-  }
-
-  .header-content .left {
-    border-left: 4px solid #BDA36C; /* 可以稍微减小边框 */
-    padding-left: 20px; /* 减小内边距 */
-    margin-right: 0;
-  }
-  
-  .header-content .left h1 {
-    font-size: 36px; /* 大幅缩小标题字体 */
-    letter-spacing: 4px; /* 减小字间距 */
-    line-height: 1.4; /* 调整行高 */
-  }
-
-  .header-logos {
-    top: 15px;
-    left: 50%; /* 定位到中心 */
-    transform: translateX(-50%); /* 精准居中 */
-    align-items: center;
-  }
-
-  .header-logos img {
-    height: 60px; /* 缩小Logo高度 */
-  }
-
-  /* --- 状态盒子调整 --- */
   .status-row {
-    flex-direction: column; /* 将横向排列改为垂直堆叠 */
-    margin-left: 20px; /* 减小左右边距 */
+    flex-direction: column;
+    margin-left: 20px;
     margin-right: 20px;
-    margin-top: -50px; /* 调整与头部的重叠距离 */
+    margin-top: -50px;
+    gap: 0;
   }
-  
-  .status-box {
-    width: 100%; /* 每个盒子占据100%的宽度 */
-    margin-bottom: 25px; /* 增加盒子之间的垂直间距 */
-    min-height: auto; /* 高度自适应 */
-    padding: 20px;
+  .status-row > .status-box {
+    width: 100%;
+    margin-bottom: 25px;
   }
-
-  .status-box:last-child {
-    margin-bottom: 0; /* 最后一个盒子不需要下边距 */
-  }
-
-  .status-title {
-    font-size: 24px; /* 调整字体大小 */
-    margin-top: 20px;
-  }
-
-  .status-number {
-    font-size: 40px; /* 调整字体大小 */
-  }
-
-  .status-note {
-    margin-top: 30px; /* 调整边距 */
-  }
-
-  /* --- 榜单和表格调整 --- */
   .table-header-container {
-    margin: 40px 20px 0 20px; /* 减小左右边距和上边距 */
+    margin: 40px 20px 0 20px;
   }
-
   .grid-container {
-    grid-template-columns: 1fr; /* 将三列表格布局改为单列 */
-    gap: 40px; /* 减小表格之间的间距 */
-    width: auto; /* 宽度自动，由外层边距控制 */
-    margin-left: 20px; /* 减小左右边距 */
-    margin-right: 20px;
-  }
-  
-  /* --- 页脚调整 --- */
-  .footer-content {
-    justify-content: center; /* 内容居中 */
-    padding-right: 20px;
-    padding-left: 20px;
-    flex-direction: column; /* 垂直排列 */
-    gap: 15px;
-    text-align: center;
-  }
-
-  .admin {
-    position: static; /* 取消绝对定位，融入正常文档流 */
-    order: 2; /* 将管理员登录按钮放到下方 */
-  }
-
-  .footer-links {
-    order: 1; /* 将联系信息放到上方 */
-    text-align: center;
-  }
-
-  .feedback-modal-content {
-    padding: 20px; /* 弹窗内边距也可以适当减小 */
+    grid-template-columns: 1fr;
+    gap: 40px;
+    margin: 20px 20px 0 20px;
   }
 }
-
 </style>

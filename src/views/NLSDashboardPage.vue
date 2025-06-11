@@ -1,13 +1,11 @@
 <template>
   <div class="dashboard-page">
-    <!-- ✅ 整页加载动画 -->
     <LoadingSpinner :visible="isLoading" />
 
     <div class="dashboard-title-block" v-show="!isLoading">
       <h1 class="dashboard-title">非上市公司数据资产入表情况</h1>
     </div>
 
-    <!-- ✅ 筛选区 -->
     <FilterSection
       v-show="!isLoading"
       :apiPrefix="'/api/nlasset'"
@@ -16,9 +14,13 @@
       @filter-change="handleFilterChange"
     />
 
-    <!-- ✅ 主体图表和表格 -->
     <div class="dashboard-container" v-show="!isLoading">
-      <ChartRow :filters="filters" :mode="'nls'" :charts="charts" />
+      <ChartRow 
+        :filters="filters" 
+        :mode="'nls'" 
+        :charts="charts"
+        :combo-chart-data="comboChartData" 
+      />
       <DataTable
         ref="dataTable"
         :filters="filters"
@@ -48,19 +50,19 @@ export default {
   },
   data() {
     return {
-      isLoading: true, // ✅ 控制整页大 loading
+      isLoading: true,
       filters: {},
       pendingFilters: {},
       pageSize: 10,
       currentPageData: [],
       totalRows: 0,
       charts: {},
-      options: {}
+      options: {},
+      comboChartData: []
     };
   },
   methods: {
     async handleFilterChange(newFilters) {
-      // ✨ 关键日志 ✨
       console.log('【前端 NLSDashboardPage】handleFilterChange 接收到 newFilters:', JSON.stringify(newFilters, null, 2));
       this.filters = { ...newFilters };
       console.log('【前端 NLSDashboardPage】this.filters 更新为:', JSON.stringify(this.filters, null, 2));
@@ -70,24 +72,29 @@ export default {
       await this.fetchSummaryData(page);
     },
     async fetchSummaryData(page) {
-      // ✨ 关键日志 ✨
       console.log('【前端 NLSDashboardPage】fetchSummaryData 发送的 filters:', JSON.stringify(this.filters, null, 2), '请求页码:', page);
       try {
+        // 确保你请求的 API 地址 /api/nlasset/summary 是我们之前修改过的那个
         const res = await axios.post('/api/nlasset/summary', {
-          filters: this.filters, // 这里的 this.filters 是否包含了正确的日期？
+          filters: this.filters,
           page,
           pageSize: this.pageSize
         });
+        
+        // ▼▼▼ 2. 从 API 响应中提取 cumulativeComboChart 数据并存储起来 ▼▼▼
+        this.comboChartData = res.data.cumulativeComboChart || [];
+        
         this.charts = res.data.charts || {};
         this.currentPageData = res.data.table.rows || [];
         this.totalRows = res.data.table.total || 0;
         this.options = res.data.options || {};
         this.pendingFilters = { ...this.filters };
+
       } catch (err) {
         console.error('❌ 加载 summary 数据失败:', err);
       } finally {
         this.isLoading = false;
-        this.$refs.dataTable?.stopLoading?.(); // ✅ 通知子表格关闭局部 loading
+        this.$refs.dataTable?.stopLoading?.();
       }
     }
   },
@@ -112,8 +119,7 @@ export default {
 .dashboard-container {
   padding: 30px;
   background: #f9f9f9;
-  overflow-x: hidden; /* 彻底移除横向滚动条 */
+  overflow-x: hidden;
 }
-
 
 </style>

@@ -117,7 +117,31 @@ router.post('/summary', async (req, res) => {
   const offset = (page - 1) * pageSize;
   const values = []; // 用于参数化查询的值
 
+  // 注意：这里的 'non-listed' 是针对 buildWhereClause 的，请确保它适用于新表
+  // 如果新表的字段名或逻辑不同，你可能需要一个独立的 whereClause
   const whereClauseForQueries = buildWhereClause(filters, values, enableHideFlag, 'non-listed'); 
+  
+  // ▼▼▼ 新增代码开始 ▼▼▼
+  // 1. 定义新 Combo 图表的累积数据查询 SQL
+  //    请注意表名 "dataasset_non_listed_companies" 是硬编码的，因为它不同于主表 tableName
+  const cumulativeComboChartSql = `
+    WITH quarterly_data AS (
+      SELECT
+        "quarter_time",
+        COUNT(1) AS quarterly_count,
+        SUM("finance_value") / 10000 AS quarterly_value
+      FROM "dataasset_non_listed_companies"
+      ${whereClauseForQueries}
+      GROUP BY "quarter_time"
+    )
+    SELECT
+      "quarter_time",
+      SUM(quarterly_count) OVER (ORDER BY "quarter_time" ASC) AS "cumulative_count",
+      SUM(quarterly_value) OVER (ORDER BY "quarter_time" ASC) AS "cumulative_value"
+    FROM quarterly_data
+    ORDER BY "quarter_time" ASC;
+  `;
+  // ▲▲▲ 新增代码结束 ▲▲▲
 
   try {
     // 📊 图表字段 (这些查询也需要应用 status 过滤)
@@ -125,53 +149,77 @@ router.post('/summary', async (req, res) => {
       'province_area', 'company_business_type', 'company_type',
       'admin_level', 'dataasset_type', 'dataasset_register_addrtype'
     ];
-    const chartData = {};
-    await Promise.all(chartFields.map(async field => {
-      // 确保字段名在SQL中是安全的，或者使用白名单验证
-      if (!/^[a-zA-Z0-9_]+$/.test(field)) return; // 简单的字段名安全检查
+    // 将原有的 chartFields 查询转换为 promise 数组
+    const chartPromises = chartFields.map(field => {
+      if (!/^[a-zA-Z0-9_]+$/.test(field)) return Promise.resolve({ rows: [] }); // 安全检查
       const chartSql = `
         SELECT "${field}" AS name, COUNT(*) AS value
         FROM "${tableName}"
-        ${whereClauseForQueries} /* whereClause 已包含 status 过滤 */
+        ${whereClauseForQueries}
         GROUP BY "${field}"
         ORDER BY value DESC
       `;
-      const result = await db.query(chartSql, values); // values 只对应 filters 中的参数
-      chartData[field] = result.rows;
-    }));
+      return db.query(chartSql, values);
+    });
 
     // 📋 表格分页 (查询也需要应用 status 过滤)
     const countSql = `SELECT COUNT(*) FROM "${tableName}" ${whereClauseForQueries}`;
-    const countRes = await db.query(countSql, values);
-    const total = parseInt(countRes.rows[0].count, 10);
-
-    // ✅ SELECT * 会包含 id 和 status，前端 AdminPage 会用到 status
     const dataSql = `
       SELECT * FROM "${tableName}"
       ${whereClauseForQueries}
-      ORDER BY "id" ASC -- ✅ 建议为分页添加稳定的排序
+      ORDER BY "id" ASC
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}
     `;
-    const tableRes = await db.query(dataSql, [...values, pageSize, offset]);
 
-    // 🎯 静态筛选项（获取唯一值用于筛选下拉框，也应排除已删除数据）
+    // 🎯 静态筛选项
     const distinctBaseConditions = [`"status" IS DISTINCT FROM 'delete'`];
     if (enableHideFlag) {
         distinctBaseConditions.push(`"hide_flag" NOT LIKE '%是%'`);
     }
     const distinctWhereClause = `WHERE ${distinctBaseConditions.join(' AND ')}`;
+    const optionsSql1 = `SELECT DISTINCT month_time FROM "${tableName}" ${distinctWhereClause} ORDER BY month_time`;
+    const optionsSql2 = `SELECT DISTINCT province_area FROM "${tableName}" ${distinctWhereClause} ORDER BY province_area`;
 
-    const [opt1Res, opt2Res] = await Promise.all([
-      // month_time 现在直接是 YYYY-MM 格式，排序正确
-      db.query(`SELECT DISTINCT month_time FROM "${tableName}" ${distinctWhereClause} ORDER BY month_time`), 
-      db.query(`SELECT DISTINCT province_area FROM "${tableName}" ${distinctWhereClause} ORDER BY province_area`)
-    ]);
+    // ▼▼▼ 修改代码开始 ▼▼▼
+    // 2. 将所有数据库查询Promise放入一个数组中，实现完全并行
+    const allPromises = [
+      ...chartPromises,
+      db.query(countSql, values),
+      db.query(dataSql, [...values, pageSize, offset]),
+      db.query(optionsSql1),
+      db.query(optionsSql2),
+      db.query(cumulativeComboChartSql, values) // <-- 将新图表的查询加入并行队列
+    ];
+
+    const results = await Promise.all(allPromises);
+    // ▲▲▲ 修改代码结束 ▲▲▲
+
+    // 解构所有结果
+    const chartResults = results.slice(0, chartFields.length);
+    const countRes = results[chartFields.length];
+    const tableRes = results[chartFields.length + 1];
+    const opt1Res = results[chartFields.length + 2];
+    const opt2Res = results[chartFields.length + 3];
+    // ▼▼▼ 新增代码开始 ▼▼▼
+    const cumulativeComboChartRes = results[results.length - 1]; // 新图表的结果是最后一个
+    // ▲▲▲ 新增代码结束 ▲▲▲
+
+    const chartData = {};
+    chartFields.forEach((field, index) => {
+        chartData[field] = chartResults[index].rows;
+    });
+
+    const total = parseInt(countRes.rows[0].count, 10);
 
     res.json({
-      charts: chartData, // 确保 chartData 变量存在且有数据
+      // ▼▼▼ 新增代码开始 ▼▼▼
+      // 3. 将新图表的数据添加到返回的 JSON 对象中
+      cumulativeComboChart: cumulativeComboChartRes.rows,
+      // ▲▲▲ 新增代码结束 ▲▲▲
+      charts: chartData,
       table: { 
-        rows: tableRes.rows, // 确保 tableRes.rows 存在且有数据
-        total: total         // 确保 total 变量存在且有数据
+        rows: tableRes.rows,
+        total: total
       },
       options: {
         month_time: opt1Res.rows.map(r => r.month_time), 

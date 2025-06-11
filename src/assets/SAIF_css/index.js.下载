@@ -1,0 +1,36 @@
+$(".case-search").on("click", "dt", function () {
+  $(this).parent().find("dd").toggle();
+});
+
+$(".collapse").on("click", ".list-title", function () {
+  $(this).next().toggle();
+  if ($(this).hasClass("active")) {
+    $(this).removeClass("active");
+  } else {
+    $(this).addClass("active");
+  }
+});
+$(".collapse .item").find(".list").hide();
+$(".collapse .item").eq(0).find(".list-title").click();
+
+$(".thinktank-tab-wrap .tit>li").click(function () {
+  $(this).addClass("active").siblings().removeClass("active");
+  let index = $(this).index();
+  $(this).parents(".thinktank-tab-wrap").find(".con>li").eq(index).show().siblings().hide();
+});
+$(".thinktank-m-nav .hide-nav .close").click(function (e) {
+  e.stopPropagation();
+
+  $(this).parent(".hide-nav").hide();
+});
+
+$(".thinktank-m-nav .bottom .has-child").click(function () {
+  $(this).find(".hide-nav").show();
+});
+
+// 手机版国际商业案例库筛选切换
+$(".m-case-search .case-tab").on("click", "li", function () {
+  let index = $(this).index();
+  $(this).addClass("active").siblings().removeClass("active");
+  $(".m-case-search .case-search li").eq(index).addClass("active").siblings().removeClass("active");
+});

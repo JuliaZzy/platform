@@ -53,6 +53,7 @@ app.post('/api/feedback', async (req, res) => {
 // 后端 API 路由
 const loginRoutes = require('./backend/routes/login');
 const dataTableRoutes = require('./backend/routes/dataTable');
+const pdfReportRoutes = require('./backend/routes/pdfReport');
 
 const companyDataRoutes = require('./backend/routes/dashboardPage/companiesData');
 const nonListedAssetRoutes = require('./backend/routes/dashboardPage/nonListedDataAsset');
@@ -69,6 +70,8 @@ const adminTableDataRoutes = require('./backend/routes/adminPage/adminTableData'
 
 app.use('/api/login', loginRoutes);
 app.use('/api/company', companyDataRoutes);
+app.use('/api/reports', pdfReportRoutes);
+
 app.use('/api/dataTable', dataTableRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/export', exportRoutes);

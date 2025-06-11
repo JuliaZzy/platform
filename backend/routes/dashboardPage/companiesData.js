@@ -29,6 +29,7 @@ router.get('/data-asset-financing-detail', handleCompanyDetail(FINANCING_TABLE))
 router.get('/homepage-summary', async (req, res) => {
   try {
     const [
+      latestDateResult,
       listedCountRes,
       listedDataRes,
       latestMonthRes,
@@ -37,6 +38,7 @@ router.get('/homepage-summary', async (req, res) => {
       FinanceCountRes,
       FinanceDataRes
     ] = await Promise.all([
+      db.query(`SELECT MAX("报告时间") AS "latestListedDate" FROM dataasset_listed_companies_2024 WHERE "status" IS DISTINCT FROM 'delete'`),
       db.query(`SELECT COUNT(*) AS count FROM ${LISTED_TABLE} WHERE "报告时间"='2024Q4' AND "status" IS DISTINCT FROM 'delete'`),
       db.query(`SELECT "公司" AS company_name, "报告时间" FROM ${LISTED_TABLE} WHERE "报告时间"='2024Q4' AND "status" IS DISTINCT FROM 'delete' ORDER BY "数据资源入表总额（万元）" DESC`),
       db.query(`SELECT MAX(month_time) AS latest_month FROM ${NON_LISTED_TABLE} WHERE hide_flag NOT LIKE '%是%' AND "status" IS DISTINCT FROM 'delete'`),
@@ -72,13 +74,16 @@ router.get('/homepage-summary', async (req, res) => {
       `),
     ]);
 
+    const latestListedDate = latestDateResult.rows[0]?.latestListedDate || '';
     const listedCount = listedCountRes.rows?.[0] ? parseInt(listedCountRes.rows[0].count, 10) : 0;
+    const latestNonListedMonthValue = latestMonthRes.rows?.[0] ? latestMonthRes.rows[0].latest_month : null;
     const nonListedCount = nonListedCountRes.rows?.[0] ? parseInt(nonListedCountRes.rows[0].count, 10) : 0;
     const financingCount = FinanceCountRes.rows?.[0] ? parseInt(FinanceCountRes.rows[0].sum, 10) : 0;
     const financingCompanies = FinanceDataRes.rows || [];
-    const latestNonListedMonthValue = latestMonthRes.rows?.[0] ? latestMonthRes.rows[0].latest_month : null;
 
     res.json({
+      
+      latestListedDate: latestListedDate,
       listedCompanyCount: listedCount,
       listedCompanies: listedDataRes.rows || [],
       latestNonListedMonth: latestNonListedMonthValue,

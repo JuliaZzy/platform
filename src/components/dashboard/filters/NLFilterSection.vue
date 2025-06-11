@@ -158,14 +158,13 @@ export default {
     },
     confirmFilters() {
       const payload = { 
-        startDate: this.startDate, // 这里的 this.startDate 是 YYYY-MM 吗？
-        endDate: this.endDate,   // 这里的 this.endDate 是 YYYY-MM 吗？
+        startDate: this.startDate,
+        endDate: this.endDate,
         province: this.province,
         company: this.company,
         content: this.content 
       };
-      // ✨ 关键日志 ✨
-      console.log("【前端 NLFilterSection】发出 filter-change 事件，数据为:", JSON.stringify(payload, null, 2));
+
       this.$emit('filter-change', payload);
     },
     clearFilters() {
@@ -216,10 +215,9 @@ export default {
   .filter-item label {
     font-weight: bold;
     color: #2e3968;
-    white-space: nowrap; /* 防止标签文字换行 */
-    width: 110px;         /* 给标签一个固定宽度，你需要根据你最长的标签来调整这个值 */
-                          /* 例如“所属证券行业分布：”这个标签比较长 */
-    text-align: left;    /* 让文字在标签的固定宽度内靠右对齐，这样冒号就能对齐 */
+    white-space: nowrap;
+    width: 110px;
+    text-align: left;
   }
 
   select, input {

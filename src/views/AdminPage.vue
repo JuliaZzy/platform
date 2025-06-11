@@ -24,6 +24,9 @@
         <div class="menu-subitem" :class="{ active: currentTab === 'finance-other' }" @click="switchTab('finance-other')">
           其他数据类融资
         </div>
+        <div class="menu-item" :class="{ active: currentTab === 'reports' }" @click="switchTab('reports')">
+          报告管理
+        </div>
       </nav>
     </aside>
 
@@ -31,20 +34,55 @@
 
     <main class="content">
       <h1 class="content-title">{{ currentContentTitle }}</h1>
-      <p class="update-time">上次更新时间：{{ formattedLastUpdate }}</p> <div class="search-bar">
-        <button class="clear-all-btn" @click="clearAllFilters">清空全部筛选</button>
-        <label>关键词检索：</label>
-        <input v-model="searchKeyword" @input="handleSearchDebounced" placeholder="请输入关键词..." />
+      <!-- 视图一：报告管理 -->
+      <div v-if="currentTab === 'reports'" class="report-view-wrapper">
+        <div class="table-wrapper">
+          <ChartSpinner :visible="tableLoadingState.reports" :show-watermark="false" />
+          <table class="data-table report-table" v-if="!tableLoadingState.reports && reportsData.length > 0">
+            <thead>
+              <tr>
+                <th>序号</th>
+                <th>PDF名称</th>
+                <th>上传时间</th>
+                <th>文件大小</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(report, index) in reportsData" :key="report.name">
+                <td class="report-table-cell-center">{{ index + 1 }}</td>
+                <td>
+                  <a :href="getReportDownloadUrl(report.name)" target="_blank" class="report-link">
+                    {{ report.name }}
+                  </a>
+                </td>
+                <td>{{ formatToDateTimeSec(report.uploadTime) }}</td>
+                <td>{{ formatFileSize(report.size) }}</td>
+                <td class="report-table-cell-center">
+                  <button @click="deleteReport(report.name)" class="action-btn delete-btn-small">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else-if="!tableLoadingState.reports && reportsData.length === 0" class="no-data">暂无报告文件。</p>
+        </div>
+        <div class="export-controls">
+          <button class="upload-btn" @click="isReportUploadModalVisible = true">上传文件</button>
+        </div>
       </div>
 
-      <div class="table-wrapper"> 
-        <ChartSpinner 
-          :visible="tableLoadingState[currentTab]" 
-          :show-watermark="false" 
-        />
-        
-        <template v-if="!tableLoadingState[currentTab]">
-          <table class="data-table" v-if="pagedData.length > 0">
+      <!-- 视图二：其他所有数据管理表格 -->
+      <div v-else class="data-view-wrapper">
+        <p class="update-time">上次更新时间：{{ formattedLastUpdate }}</p>
+        <div class="search-bar">
+          <button class="clear-all-btn" @click="clearAllFilters">清空全部筛选</button>
+          <label>关键词检索：</label>
+          <input v-model="searchKeyword" @input="handleSearchDebounced" placeholder="请输入关键词..." />
+        </div>
+        <div class="table-wrapper">
+          <ChartSpinner :visible="tableLoadingState[currentTab]" :show-watermark="false" />
+          <template v-if="!tableLoadingState[currentTab]">
+            <table class="data-table" v-if="pagedData.length > 0">
             <thead>
               <tr>
                 <th>序号</th>
@@ -145,24 +183,47 @@
               </tr>
             </tbody>
           </table>
-          <p v-else class="no-data">暂无数据或结果为空</p>
-        </template> 
-      </div>
+            <p v-else class="no-data">暂无数据或结果为空</p>
+          </template>
+        </div>
         <PaginationControls
-        v-if="totalPages > 0 && !tableLoadingState[currentTab] && pagedData.length > 0"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :page-size="pageSize"
-        @page-changed="changePage"
-      />
-      <div class="export-controls">
-        <label class="upload-btn" v-if="currentTab !== 'finance-bank'">
-          上传数据
-          <input type="file" accept=".xlsx" @change="handleUpload" hidden ref="fileInput"/>
-        </label>
-        <button class="export-btn" @click="exportExcel">导出 Excel</button>
+          v-if="totalPages > 0 && !tableLoadingState[currentTab] && pagedData.length > 0"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :page-size="pageSize"
+          @page-changed="changePage"
+        />
+        <div class="export-controls">
+          <label class="upload-btn" v-if="currentTab !== 'finance-bank'">
+            上传数据
+            <input type="file" accept=".xlsx" @change="handleUpload" hidden ref="fileInput"/>
+          </label>
+          <button class="export-btn" @click="exportExcel">导出 Excel</button>
+        </div>
       </div>
     </main> 
+
+    <div v-if="isReportUploadModalVisible" class="upload-modal">
+      <div class="upload-modal-content">
+        <h2>上传报告文件</h2>
+        <div class="upload-area" @dragover.prevent @drop.prevent="handleReportDrop">
+          <input type="file" ref="reportFileInput" @change="handleReportFileSelect" accept=".pdf" hidden multiple />
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>将文件拖到此处，或<button class="browse-btn" @click="$refs.reportFileInput.click()">点击选择文件</button></p>
+          <p class="upload-tip">仅支持上传 PDF 文件</p>
+        </div>
+        <div v-if="selectedReportFile" class="file-preview">
+          <p>已选择文件：{{ selectedReportFile.name }}</p>
+        </div>
+        <div class="upload-modal-footer">
+          <button @click="closeReportUploadModal" class="close-btn">取消</button>
+          <button @click="uploadReport" class="confirm-btn" :disabled="!selectedReportFile || isUploadingReport">
+            <span v-if="isUploadingReport">上传中...</span>
+            <span v-else>确认上传</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div> 
 </template>
 
@@ -170,6 +231,7 @@
 import * as adminService from '@/services/adminApiService.js';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import PaginationControls from '@/components/common/PaginationControls.vue';
+import axios from 'axios';
 import { 
   formatToChineseYearMonth,
   formatToYYYYMMDD,
@@ -203,12 +265,20 @@ export default {
       searchKeyword: '',
       searchDebounceTimer: null,
       showFilterDropdown: {}, 
+      
+      // 报告管理相关数据
+      reportsData: [],
+      isReportUploadModalVisible: false,
+      selectedReportFile: null,
+      isUploadingReport: false,
+
       tableLoadingState: {
         listed: true,
         nonlisted: true,
         'finance-bank': true,
         'finance-stock': true,
         'finance-other': true,
+        reports: true,
       },
       statusDisplayMap: {
         'repeat': '重复',
@@ -217,15 +287,11 @@ export default {
         null: '正常'
       },
       columnFormattersConfig: {
-        // === 日期格式化 ===
         'register_date': formatToYYYYMMDD, 
         'updated_at': formatToDateTimeSec,
-
         'month_time': formatToChineseYearMonth, 
         '入股时间': formatToChineseYearMonth,
         '日期': formatToChineseYearMonth,
-
-        // === 数字格式化 (保留两位小数, 带千分位) ===
         '数据资源入表总额（万元）': (val) => formatNumber(val, 2),
         '市值（亿元）': (val) => formatNumber(val, 2),
         '无形资产-数据资源入表金额（万元）': (val) => formatNumber(val, 2),
@@ -236,8 +302,6 @@ export default {
         'finance_value': (val) => formatNumber(val, 2),
         '融资金额（万元）': (val) => formatNumber(val, 2), 
         '注册资本（万元）': (val) => formatNumber(val, 2),
-
-        // === 百分比格式化 (乘以100, 保留一位小数, 加%) ===
         '数据资产占总资产比例': (val) => formatPercentage(val, 1),
         '股权占比': (val) => formatPercentage(val, 1)
       },
@@ -261,23 +325,18 @@ export default {
         case 'finance-bank': return '数据资产增信银行贷款';
         case 'finance-stock': return '数据资产作价入股';
         case 'finance-other': return '其他数据类融资';
+        case 'reports': return '报告管理';
         default: return '数据明细管理';
       }
     },
-
     displayableTableHeaders() {
       return this.processedTableHeaders;
     },
-
-    formattedLastUpdate() { // 用于将 lastUpdate 格式化为 "xxxx年xx月"
+    formattedLastUpdate() {
       const lastUpdateTimeForCurrentTab = this.tableLastUpdateTimes[this.currentTab];
-      if (!lastUpdateTimeForCurrentTab) return '暂无记录'; // 或其他默认文本
-
-      const d = new Date(lastUpdateTimeForCurrentTab);
-      if (isNaN(d.getTime())) return '无效日期';
+      if (!lastUpdateTimeForCurrentTab) return '暂无记录';
       return this.formatToDateTimeSec(lastUpdateTimeForCurrentTab);
     },
-
     pagedData() {
       return this.tableData;
     },
@@ -286,12 +345,110 @@ export default {
     },
   },
   methods: {
-    formatToChineseYearMonth,
-    formatToYYYYMMDD,
-    formatNumber,
-    formatPercentage,
-    formatToDateTimeSec,
+    // =================================================================
+    //  所有的方法都必须放在这个 methods 对象内部
+    // =================================================================
 
+    // --- 健壮的格式化函数 ---
+    formatFileSize(bytes) {
+      if (bytes == null || isNaN(bytes)) return 'N/A';
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+    formatToDateTimeSec(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+    },
+
+    // --- 标签页切换的核心逻辑 ---
+    async switchTab(tab) {
+      if (this.currentTab === tab) return;
+      this.currentTab = tab;
+
+      if (tab === 'reports') {
+        this.tableData = []; 
+        this.loadReports();
+      } else {
+        this.reportsData = [];
+        this.clearAllFilters(false);
+        this.currentPage = 1;
+        this.tableData = [];
+        this.tableDataTotalRows = 0;
+        this.uniqueColumnValues = {};
+        this.tableLoadingState[this.currentTab] = true;
+        
+        try {
+          await this.loadFilterOptions();
+        } finally {
+          this.loadData();
+        }
+      }
+    },
+
+    // --- 报告管理相关方法 ---
+    async loadReports() {
+      this.tableLoadingState.reports = true;
+      try {
+        const response = await axios.get('/api/reports');
+        this.reportsData = Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        this.reportsData = [];
+        console.error('获取报告列表失败:', error);
+        alert('获取报告列表失败');
+      } finally {
+        this.tableLoadingState.reports = false;
+      }
+    },
+    getReportDownloadUrl(filename) {
+      return `/api/reports/download/${encodeURIComponent(filename)}`;
+    },
+    deleteReport(filename) {
+      if (confirm(`确定要删除报告 "${filename}" 吗？此操作无法撤销。`)) {
+        alert(`（前端演示）正在删除 ${filename} ...\n你需要实现后端的删除API。`);
+      }
+    },
+    closeReportUploadModal() {
+      this.isReportUploadModalVisible = false;
+      this.selectedReportFile = null;
+    },
+    handleReportFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) this.selectedReportFile = file;
+    },
+    handleReportDrop(event) {
+      const file = event.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') {
+        this.selectedReportFile = file;
+      } else {
+        alert('请拖入一个 PDF 文件。');
+      }
+    },
+    async uploadReport() {
+      if (!this.selectedReportFile) return;
+      this.isUploadingReport = true;
+      const formData = new FormData();
+      formData.append('report', this.selectedReportFile);
+      try {
+        await axios.post('/api/reports/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert('文件上传成功！');
+        this.closeReportUploadModal();
+        this.loadReports();
+      } catch (error) {
+        console.error('报告上传失败:', error);
+        alert('报告上传失败，请查看控制台获取详情。');
+      } finally {
+        this.isUploadingReport = false;
+      }
+    },
+    
+    // --- 原有的数据表格方法 ---
     applyCellFormatting(value, columnName) {
       const formatter = this.columnFormattersConfig[columnName];
       if (typeof formatter === 'function') {
@@ -299,19 +456,11 @@ export default {
       }
       return this.highlight(String(value !== null && value !== undefined ? value : ''), columnName);
     },
-
     isColumnFilterable(columnKey) {
-      
-      let normalizedKey = String(columnKey);
-      normalizedKey = normalizedKey.replace(/"/g, '');
-
+      let normalizedKey = String(columnKey).replace(/"/g, '');
       return Object.prototype.hasOwnProperty.call(this.uniqueColumnValues, normalizedKey) &&
-            this.uniqueColumnValues[normalizedKey] &&
-            this.uniqueColumnValues[normalizedKey].length > 0;
-    },
-
-    currentTabUsesBackendProcessing() {
-      return true;
+             this.uniqueColumnValues[normalizedKey] &&
+             this.uniqueColumnValues[normalizedKey].length > 0;
     },
     getRowClass(row) {
       if (!row || typeof row.status === 'undefined') return 'row-normal';
@@ -325,30 +474,8 @@ export default {
     toggleSidebar() {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
-    async switchTab(tab) {
-      if (this.currentTab === tab) return;
-    
-      this.currentTab = tab;
-      this.clearAllFilters(false);
-      this.currentPage = 1;
-      this.tableData = [];
-      this.tableDataTotalRows = 0;
-      this.uniqueColumnValues = {};
-    
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-        this.tableLoadingState[this.currentTab] = true;
-      }
-    
-      try {
-        await this.loadFilterOptions();
-      } finally {
-        this.loadData();
-      }
-    },
     async loadData() {
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab) && !this.tableLoadingState[this.currentTab]) {
-        this.tableLoadingState[this.currentTab] = true;
-      }
+      this.tableLoadingState[this.currentTab] = true;
       try {
         const params = { 
           page: this.currentPage, 
@@ -356,166 +483,92 @@ export default {
           filters: this.filters, 
           searchKeyword: this.searchKeyword.trim() 
         };
-        
         const response = await adminService.loadAdminTableData(this.currentTab, params);
         
         this.tableData = response.data || [];
         this.tableDataTotalRows = response.total || 0;
-
-        // 更新特定tab的最后更新时间
         this.$set(this.tableLastUpdateTimes, this.currentTab, response.tableLastUpdate);
 
-        // 1. 获取原始表头 (这部分不变)
-        this.tableHeaders = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
+        let headers = this.tableData.length > 0 ? Object.keys(this.tableData[0]) : [];
+        const idIndex = headers.indexOf('id');
+        if (idIndex > -1) headers.splice(idIndex, 1);
 
-        // 2. 【新增】处理和排序表头以生成 processedTableHeaders
-        let newProcessedHeaders = [...this.tableHeaders]; // 创建副本
-
-        // *** 新增：处理 'updated_at' 列，将其移到末尾 ***
-        const updatedAtIndex = newProcessedHeaders.indexOf('updated_at');
+        const updatedAtIndex = headers.indexOf('updated_at');
         if (updatedAtIndex > -1) {
-          // 从当前位置移除 'updated_at'
-          const updatedAtHeader = newProcessedHeaders.splice(updatedAtIndex, 1)[0];
-          // 将它添加到数组的末尾
-          newProcessedHeaders.push(updatedAtHeader);
+          headers.push(headers.splice(updatedAtIndex, 1)[0]);
         }
 
-        // 2a. 移除 'id' 列 (因为它不直接显示在主要数据区)
-        const idIndex = newProcessedHeaders.indexOf('id');
-        if (idIndex > -1) {
-          newProcessedHeaders.splice(idIndex, 1);
-        }
-
-        // 2b. 特殊处理 'finance-bank' tab：它不应该有 'status' 列
-        if (this.currentTab === 'finance-bank') {
-          const statusIdxFinanceBank = newProcessedHeaders.indexOf('status');
-          if (statusIdxFinanceBank > -1) {
-            newProcessedHeaders.splice(statusIdxFinanceBank, 1);
-          }
-        } else {
-          // 2c. 对于其他 tab，将 'status' 列（如果存在）移动到最前面
-          const statusIndexGeneral = newProcessedHeaders.indexOf('status');
-          if (statusIndexGeneral > -1) {
-            const statusHeader = newProcessedHeaders.splice(statusIndexGeneral, 1)[0]; // 从原位置取出 'status'
-            newProcessedHeaders.unshift(statusHeader); // 将 'status' 插入到数组的开头
-          }
+        const statusIndex = headers.indexOf('status');
+        if (this.currentTab !== 'finance-bank' && statusIndex > -1) {
+          headers.unshift(headers.splice(statusIndex, 1)[0]);
+        } else if (this.currentTab === 'finance-bank' && statusIndex > -1) {
+           headers.splice(statusIndex, 1);
         }
         
-        this.processedTableHeaders = newProcessedHeaders; // 更新排序后的表头
-      
+        this.processedTableHeaders = headers;
       } catch (error) {
-        const errorMessage = error.message || '数据加载失败！';
-        if (this.$message && typeof this.$message.error === 'function') {
-            this.$message.error(errorMessage);
-        } else {
-            alert(errorMessage);
-        }
+        alert(error.message || '数据加载失败！');
         this.tableData = []; 
-        this.tableHeaders = []; 
         this.tableDataTotalRows = 0;
       } finally {
-        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-          this.tableLoadingState[this.currentTab] = false;
-        }
+        this.tableLoadingState[this.currentTab] = false;
       }
     },
-
     async updateRowStatus(row, newStatus) {
-      if (!row || typeof row.id === 'undefined') {
-        this.$message ? this.$message.error('行数据无效（缺少ID），无法更新状态。') : alert('行数据无效（缺少ID），无法更新状态。');
+      const tableNameForApi = this.tableNameMap[this.currentTab];
+      if (!tableNameForApi || !row || typeof row.id === 'undefined') {
+        alert('无法更新状态：缺少必要信息。');
         return;
       }
-      const rowId = row.id;
-
-      const tableNameForApi = this.tableNameMap[this.currentTab]; // 使用映射
-      if (!tableNameForApi) {
-        this.$message ? this.$message.error('当前数据类型未知或不支持状态更新。') : alert('当前数据类型未知或不支持状态更新。');
-        return;
-      }
-
       try {
-        await adminService.updateRowStatusInDb(tableNameForApi, rowId, newStatus);
-        this.$message ? this.$message.success('状态更新成功！') : alert('状态更新成功！');
+        await adminService.updateRowStatusInDb(tableNameForApi, row.id, newStatus);
+        alert('状态更新成功！');
         await this.loadData(); 
       } catch (error) {
-        this.$message ? this.$message.error(error.message) : alert(error.message);
+        alert(error.message);
       }
     },
-
     async handleUpload(event) {
       const file = event.target.files[0];
-      if (!this.$refs.fileInput) return; 
-      if (!file) {
-        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
-        return;
-      }
+      if (!this.$refs.fileInput || !file) return;
       const formData = new FormData();
       formData.append('file', file);
-
       const tableName = this.tableNameMap[this.currentTab];
       if (!tableName || this.currentTab === 'finance-bank') {
-        this.$message ? this.$message.error('当前数据类型不支持上传。') : alert('当前数据类型不支持上传。');
+        alert('当前数据类型不支持上传。');
         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         return;
       }
-      
-      if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-        this.tableLoadingState[this.currentTab] = true;
-      }
+      this.tableLoadingState[this.currentTab] = true;
       try {
         const response = await adminService.uploadExcelData(tableName, formData);
-        this.$message ? this.$message.success(response.message || '上传处理完成！') : alert(response.message || '上传处理完成！');
-
+        alert(response.message || '上传处理完成！');
         if (this.filterOptionsCache[this.currentTab]) {
           delete this.filterOptionsCache[this.currentTab];
-          console.log(`[AdminPage] Cleared filter options cache for tab: ${this.currentTab} after upload.`);
         }
-
         this.currentPage = 1; 
-
-        await this.loadFilterOptions(); // <-- 先加载筛选器选项
-        await this.loadData();         // <-- 后加载表格数据
-
+        await this.loadFilterOptions();
+        await this.loadData();
       } catch (error) {
-        this.$message ? this.$message.error(error.message) : alert(error.message);
+        alert(error.message);
       } finally {
-        if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-          this.tableLoadingState[this.currentTab] = false;
-        }
-        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+        this.tableLoadingState[this.currentTab] = false;
+        if (this.refs.fileInput) this.$refs.fileInput.value = '';
       }
     },
     async loadFilterOptions() {
-      if (!this.currentTab) {
-        console.warn("[AdminPage] Cannot load filter options: currentTab is not set.");
-        return;
-      }
-      // 可以加一个简单的标志位，防止重复加载筛选选项，除非tab切换
-      // if (this.areFilterOptionsLoadedForCurrentTab) return;
+      if (!this.currentTab || this.currentTab === 'reports') return;
       if (this.filterOptionsCache[this.currentTab]) {
         this.uniqueColumnValues = this.filterOptionsCache[this.currentTab];
-        console.log(`[AdminPage] Using cached filter options for tab: ${this.currentTab}`);
         return; 
       }
-  
-      console.log(`[AdminPage] Loading filter options for tab: ${this.currentTab} from API.`);
       try {
         const distinctValuesData = await adminService.loadDistinctColumnValues(this.currentTab);
-        // distinctValuesData 结构是 { "列名1": ["值A", "值B"], ... }
-        // 这里的键名 "列名1" 必须与你前端 this.displayableTableHeaders 中的项匹配，
-        // 或者与你 this.filters 对象中实际使用的键 (colKey) 匹配。
         this.uniqueColumnValues = distinctValuesData || {};
         this.filterOptionsCache[this.currentTab] = this.uniqueColumnValues;
-        // this.areFilterOptionsLoadedForCurrentTab = true; // 设置标志位
-        console.log("[AdminPage] Filter options loaded:", this.uniqueColumnValues);
       } catch (error) {
-        const errorMessage = error.message || '筛选选项加载失败！';
-        if (this.$message && typeof this.$message.error === 'function') {
-            this.$message.error(errorMessage);
-        } else {
-            alert(errorMessage);
-        }
-        this.uniqueColumnValues = {}; // 出错时清空
+        alert(error.message || '筛选选项加载失败！');
+        this.uniqueColumnValues = {};
       }
     },
     clearAllFilters(shouldLoadData = true) {
@@ -524,9 +577,7 @@ export default {
       this.filterSearch = {};
       this.searchKeyword = '';
       this.currentPage = 1;
-      if (shouldLoadData) {
-        this.loadData();
-      }
+      if (shouldLoadData) this.loadData();
     },
     toggleFilterDropdown(col) {
       const SPREAD_WIDTH = 220; 
@@ -626,11 +677,11 @@ export default {
     }
   },
   async mounted() {
-    if (Object.prototype.hasOwnProperty.call(this.tableLoadingState, this.currentTab)) {
-      this.tableLoadingState[this.currentTab] = true;
-    }
-    await this.loadFilterOptions(); // 先加载筛选选项
-    this.loadData();                // 再加载数据
+    // 页面首次加载时，只加载默认的 'listed' 标签页数据
+    this.tableLoadingState.listed = true;
+    await this.loadFilterOptions();
+    await this.loadData(); // await 确保在添加事件监听前数据加载已启动
+    
     document.addEventListener('mousedown', this.handleClickOutside);
   },
   beforeDestroy() {
@@ -642,7 +693,6 @@ export default {
 
 
 <style scoped>
-  /* === 页面整体布局 === */
   .admin-container {
     display: flex;
     height: 100vh;
@@ -723,12 +773,13 @@ export default {
     transition: margin-left 0.3s ease;
   }
   .content-title {
+    color: #2e3968;
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 8px;
   }
   .update-time {
-    color: #888;
+    color: #2e3968;
     font-size: 14px;
     margin-bottom: 24px;
   }
@@ -782,6 +833,7 @@ export default {
     border: 1px solid #ccc;
     padding: 8px 12px;
     text-align: left;
+    color: #2e3968;
     vertical-align: middle;
     min-width: 120px;
     word-break: break-word;
@@ -1003,7 +1055,7 @@ export default {
 
   /* === 无数据提示 === */
   .no-data {
-    color: #888;
+    color: #2e3968;
     margin-top: 20px;
     text-align: center; /* ✅ 居中显示 */
     padding: 20px;      /* ✅ 增加一点内边距 */
@@ -1031,6 +1083,140 @@ export default {
     background-color: white;
     color: #2e3968;
     font-weight: bold;
+  }
+/* ================= 新增/修改：报告管理表格样式 ================= */
+.report-table th,
+.report-table td {
+  text-align: left;
+  padding: 12px 15px;
+  vertical-align: middle; /* 确保所有单元格垂直居中 */
+}
+
+/* 针对需要居中的单元格（序号和操作列）的特殊样式 */
+.report-table .report-table-cell-center {
+  text-align: center;
+}
+
+/* 设置序号列和操作列的宽度 */
+.report-table th:first-child,
+.report-table td:first-child { /* 序号列 */
+  width: 60px;
+  text-align: center;
+}
+
+.report-table th:nth-child(2),
+.report-table td:nth-child(2),
+.report-table th:nth-child(3),
+.report-table td:nth-child(3),
+.report-table th:nth-child(4),
+.report-table td:nth-child(4) { /* 序号列 */
+  width: auto;
+  text-align: center;
+}
+
+.report-table th:last-child,
+.report-table td:last-child { /* 操作列 */
+  width: 100px;
+  text-align: center;
+}
+
+
+.report-link {
+  color: #2e3968;
+  text-decoration: none;
+  font-weight: bold;
+}
+.report-link:hover {
+  text-decoration: underline;
+  color: #1e4462;
+}
+
+  .upload-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001; /* 比其他弹窗层级高 */
+  }
+  .upload-modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+  .upload-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2e3968;
+  }
+  .upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    color: #2e3968;
+    transition: border-color 0.3s, background-color 0.3s;
+  }
+  .upload-area:hover {
+    border-color: #2e3968;
+    background-color: #f9f9f9;
+  }
+  .upload-area i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 15px;
+  }
+  .browse-btn {
+    background: none;
+    border: none;
+    color: #2e3968;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  .upload-tip {
+    font-size: 12px;
+    color: #999;
+    margin-top: 10px;
+  }
+  .file-preview {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .upload-modal-footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .upload-modal-footer .close-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .upload-modal-footer .confirm-btn {
+    background-color: #2e3968;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .upload-modal-footer .confirm-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
   }
 
 </style>

@@ -9,6 +9,15 @@
           y-axis-bar-name="入表企业数量（家）"
           :lineSeries="comboData.lineSeries"
           y-axis-line-name="入表企业金额（亿）"
+
+          :y-axis-bar-max="120"
+          :y-axis-bar-interval="20"
+          :y-axis-line-max="24"
+          :y-axis-line-interval="4"
+
+          chart-annotation="注：由于企业融资时间往往滞后于入表时间，其融资额均指相关企业截至2025年一季度的总融资额，而非截至数据资产入表披露日期的融资额。"
+
+          :chart-height="500" 
         />
       </div>
     </div>
@@ -289,9 +298,6 @@ export default {
   background: #fff;
   padding: 20px;
   border-radius: 8px;
-}
-
-.subject-chart-container {
   /* 示例1：给每个图表一个固定的宽度，比如 600px */
   /* 这种方式在各种屏幕上大小都一样，很稳定 */
   width: 640px; 
