@@ -407,9 +407,19 @@ export default {
     getReportDownloadUrl(filename) {
       return `/api/reports/download/${encodeURIComponent(filename)}`;
     },
-    deleteReport(filename) {
+    async deleteReport(filename) {
       if (confirm(`确定要删除报告 "${filename}" 吗？此操作无法撤销。`)) {
-        alert(`（前端演示）正在删除 ${filename} ...\n你需要实现后端的删除API。`);
+        try {
+          // 调用后端的 DELETE API
+          await axios.delete(`/api/reports/${encodeURIComponent(filename)}`);
+          alert('报告删除成功！');
+          // 重新加载列表以显示最新结果
+          this.loadReports();
+        } catch (error) {
+          console.error('删除报告失败:', error);
+          const errorMsg = error.response?.data?.message || '删除失败，请查看控制台。';
+          alert(errorMsg);
+        }
       }
     },
     closeReportUploadModal() {

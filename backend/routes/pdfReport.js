@@ -67,6 +67,33 @@ router.get('/', (req, res) => {
   }
 });
 
+/**
+ * @route   DELETE /api/reports/:filename
+ * @desc    删除指定的 PDF 文件
+ */
+router.delete('/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const decodedFilename = decodeURIComponent(filename);
+    const filePath = path.join(UPLOADS_DIR, decodedFilename);
+    
+    // 安全检查：确保文件路径在允许的目录内
+    if (filePath.indexOf(UPLOADS_DIR) !== 0) {
+      return res.status(400).send('Invalid file path.');
+    }
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // 同步删除文件
+      res.status(200).json({ message: `文件 '${decodedFilename}' 已被成功删除。` });
+    } else {
+      res.status(404).json({ message: '文件未找到。' });
+    }
+  } catch (err) {
+    console.error('删除文件时出错:', err);
+    res.status(500).send('删除文件时服务器出错。');
+  }
+});
+
 
 /**
  * @route   GET /api/reports/download/:filename
