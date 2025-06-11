@@ -1,6 +1,8 @@
 <template>
   <div class="new-footer">
+    
     <div class="content content_960">
+      <img class="footer-bg-icon" src="@/assets/SAIF_images/footer-icon.png" alt="">
       <div class="top">
         <div class="top-top">
           <div class="top-left">
@@ -11,42 +13,42 @@
           <ul class="clearfix footer_inner">
             <li>
               <a href="https://www.saif.sjtu.edu.cn/cdc/introduction">
-                <img src="@/assets/SAIF_images/zyfz.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/zyfz.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/zyfz1.png" alt="">
                 就业中心
               </a>
             </li>
             <li>
               <a href="https://www.saif.sjtu.edu.cn/iao/program-introduction">
-                <img src="@/assets/SAIF_images/gjjl.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/gjjl.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/gjjl1.png" alt="">
                 国际交流
               </a>
             </li>
             <li>
               <a href="https://www.saif.sjtu.edu.cn/academic-affairs">
-                <img src="@/assets/SAIF_images/jwgl.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/jwgl.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/jwgl1.png" alt="">
                 教务管理
               </a>
             </li>
             <li>
               <a href="https://www.saif.sjtu.edu.cn/downloads">
-                <img src="@/assets/SAIF_images/zlxz.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/zlxz.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/zlxz1.png" alt="">
                 资料下载
               </a>
             </li>
             <li>
               <a href="https://www.saif.sjtu.edu.cn/contact-us">
-                <img src="@/assets/SAIF_images/lxwm.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/lxwm.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/lxwm1.png" alt="">
                 联系我们
               </a>
             </li>
             <li>
               <a href="https://www.saif.sjtu.edu.cn/contact-us/maps">
-                <img src="@/assets/SAIF_images/wzdt.png">
+                <img class="footer_inner_default" src="@/assets/SAIF_images/wzdt.png">
                 <img class="footer_inner_hover" src="@/assets/SAIF_images/wzdt1.png" alt="">
                 网站地图
               </a>
@@ -56,9 +58,9 @@
         <div class="top-bottom">
           <ul class="footer-tab">
             <li v-for="(tab, index) in tabs"
-                :key="tab"
-                :class="{ active: activeTabIndex === index }"
-                @mouseover="activeTabIndex = index">
+              :key="tab"
+              :class="{ active: activeTabIndex === index }"
+              @mouseover="activeTabIndex = index">
               {{ tab }}
             </li>
           </ul>
@@ -85,6 +87,7 @@
         </div>
       </div>
       <div class="bottom">
+        <!-- 2. 将建筑素描图从这里移除 -->
         <p class="l">©上海交通大学 上海高级金融学院 版权所有
           <a href="https://beian.miit.gov.cn/" target="_blank" style="text-decoration:underline;">沪ICP备05052060号-1</a>
         </p>
@@ -96,17 +99,64 @@
 
 <script>
 export default {
-  name: 'SAIFFooter', // 组件命名为 SAIFFooter
+  name: 'SAIFFooter',
   data() {
     return {
-      activeTabIndex: 0, // 用来追踪当前鼠标悬停的标签索引，默认为0
-      tabs: ['上海', '北京', '深圳'] // 将标签页文本数据化，方便管理
+      activeTabIndex: 0,
+      tabs: ['上海', '北京', '深圳']
     };
   }
 };
 </script>
 
+<!-- 这是您原有的、可以正常工作的样式，保持不变 -->
 <style>
 @import '@/assets/SAIF_css/global.css';
 @import '@/assets/SAIF_css/index.css';
+</style>
+
+
+<style scoped>
+.new-footer {
+  position: relative;
+  overflow: hidden;
+}
+
+.content {overflow: hidden}
+
+.footer-bg-icon {
+  position: absolute;
+  bottom: 62px;
+  height: 75%;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.footer_inner a {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.footer_inner img {
+  height: 16px;
+  width: auto;
+  margin-right: 5px;
+}
+
+.bottom {
+    display: flex;
+    align-items: center;
+}
+
+.bottom .l {
+    margin: 0;
+    font-size: 14px;
+}
 </style>
