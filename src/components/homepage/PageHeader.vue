@@ -3,8 +3,9 @@
     <div class="header-logos">
       <img src="@/assets/logo/实验室.png" alt="Lab Logo" />
     </div>
-    <img class="header-bg-image" src="@/assets/header_image.jpg" alt="Header Image" />
+    <img class="header-bg-image" src="@/assets/header_image.png" alt="Header Image" />
     <div class="header-content">
+      <!-- 这个 .left 容器现在是蓝色的标题背景盒子 -->
       <div class="left">
         <h1>中国企业数据资产<br />入表名录</h1>
       </div>
@@ -19,90 +20,90 @@ export default {
 </script>
 
 <style scoped>
-/* 从 HomePage.vue 剪切所有与 .header 相关的样式到这里 */
+/* 整体 Header 容器样式 */
 .header {
-  background-color: #2e3968;
   position: relative;
   width: 100%;
-  min-height: 470px;
-  padding: 80px 30px;
   text-align: left;
-  color: #BDA36C;
   font-size: 36px;
   letter-spacing: 8px;
   box-sizing: border-box;
 }
 
+/* 背景图片样式 */
 .header .header-bg-image {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: cover;
-  opacity: 0.2;
+  z-index: 1;
 }
 
 .header-logos {
   position: absolute;
-  top: 30px;
-  left: 85%;
+  top: 20px;
+  left: 76%;
   display: flex;
-  align-items: right;
+  justify-content: flex-end;
   z-index: 5;
 }
 
 .header-logos img {
-  height: 100px;
+  height: 90px;
   max-height: 200px;
+  margin-top: 0;
 }
 
+/* 标题内容的容器，用于定位 */
 .header-content {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-left: 150px;
-  top: 60px;
-  height: 100%;
+  left: 15%;
+  min-height: 310px;
+  /* 【修改】增加上内边距，使标题整体下移 */
+  padding-top: 50px; 
+  box-sizing: border-box; /* 确保 padding 不会影响容器总高度 */
 }
 
 .header-content .left {
-  border-left: 5px solid #BDA36C;
-  padding-left: 30px;
-  margin-right: 30px;
-  line-height: 55px;
-  top: 10px;
+  background-color: rgba(74, 90, 156, 0.7);
+  padding: 30px 50px;
 }
 
 .header-content .left h1 {
-  font-size: 76px;
-  letter-spacing: 16px;
+  color: #FFFFFF;
+  font-size: 42px;
+  letter-spacing: 12px;
   margin: 0;
-  line-height: 1.3;
-  top: 20px;
+  line-height: 1.5;
 }
 
-/* 响应式样式也一并移入 */
+
+/* 响应式样式同步修改 */
 @media (max-width: 768px) {
   .header {
     min-height: 300px;
-    padding: 60px 15px 20px 15px;
+    padding: 20px;
     text-align: center;
   }
   .header-content {
     padding-left: 0;
     justify-content: center;
-    top: 30px;
+    align-items: center;
+    min-height: 300px;
+    /* 在移动端重置下移效果，或设置一个更小的值 */
+    padding-top: 20px; 
   }
   .header-content .left {
-    border-left: 4px solid #BDA36C;
-    padding-left: 20px;
-    margin-right: 0;
+    padding: 20px;
   }
   .header-content .left h1 {
-    font-size: 36px;
+    font-size: 28px;
     letter-spacing: 4px;
     line-height: 1.4;
   }
@@ -110,10 +111,10 @@ export default {
     top: 15px;
     left: 50%;
     transform: translateX(-50%);
-    align-items: center;
   }
   .header-logos img {
-    height: 60px;
+    height: 40px;
+    margin-top: 0;
   }
 }
 </style>

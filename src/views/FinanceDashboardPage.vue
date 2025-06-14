@@ -62,8 +62,6 @@
       </div>
     </div>
 
-    <hr class="section-divider">
-
     <div class="table-section">
       <div class="table-header">
         <h3 class="section-title">数据资产作价入股</h3>
@@ -110,8 +108,6 @@
           </el-button>
       </div>
     </div>
-
-    <hr class="section-divider">
 
     <div class="table-section">
       <div class="table-header">
@@ -391,7 +387,6 @@ export default {
 .dashboard-title-block {
   margin: 20px 0 20px; /* Adjusted from original to remove side margins if finance-page handles them */
   padding: 30px;
-  background: #f9f9f9;
   overflow-x: hidden; /* Prevents horizontal scroll */
 }
 
@@ -405,7 +400,7 @@ export default {
 /* Dashboard & Section Titles                    */
 /* ============================================= */
 .dashboard-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: bold;
   color: #2e3968;
   margin: 0;
@@ -459,7 +454,7 @@ export default {
   border: 1px solid #e0e0e0; /* Default left/right border */
   font-weight: bold;
   padding: 12px 15px;
-  text-align: center; /* Corrected from 'centre' */
+  text-align: center;
   border-top: 2px solid #2e3968;
   border-bottom: 2px solid #2e3968;
   white-space: nowrap;
@@ -565,10 +560,10 @@ export default {
   padding: 8px 16px; /* Standard padding */
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s; /* Explicit transition */
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.page-button:hover:not(:disabled) { /* Apply hover only if not disabled */
+.page-button:hover:not(:disabled) {
   background-color: #f0f0f0;
   color: #2e3968;
 }
@@ -583,4 +578,47 @@ export default {
   font-weight: bold;
   color: #2e3968;
 }
+/* --- 响应式布局 --- */
+@media (max-width: 1200px) {
+  .dashboard-content {
+    width: 85%;
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-content {
+    width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .finance-page {
+    padding: 10px 0;
+  }
+  .dashboard-content {
+    width: 95%;
+  }
+  .dashboard-title {
+    font-size: 22px;
+  }
+  .section-title {
+    font-size: 18px;
+  }
+  .table-section {
+    padding: 15px;
+  }
+  .data-table {
+    font-size: 13px;
+  }
+  .data-table th, .data-table td {
+    padding: 8px 10px;
+  }
+  .table-footer-controls {
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 15px;
+  }
+}
+
 </style>
+

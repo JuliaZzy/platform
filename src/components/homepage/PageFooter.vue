@@ -1,16 +1,12 @@
 <template>
-  <div class="footer">
-    <div class="footer-overlay"></div>
-    <img class="footer-bg" src="@/assets/footer_image.jpg" alt="Footer Image" />
-    <div class="admin">
-      <button class="admin-login-button" @click="$emit('open-login')">管理员登录</button>
-    </div>
-    <div class="footer-content">
-      <div class="footer-links">
-        <p>联系我们：dfcc@saif.sjtu.edu.cn</p>
-        <a href="#" @click.prevent="$emit('open-feedback')">反馈意见/申报</a>
-      </div>
-    </div>
+  <div class="footer-container">
+    <nav class="footer-nav">
+      <a href="#" @click.prevent="$emit('open-login')">管理员登录</a>
+      <span class="separator">|</span>
+      <span class="contact-info">联系我们：dfcc@saif.sjtu.edu.cn</span>
+      <span class="separator">|</span>
+      <a href="#" @click.prevent="$emit('open-feedback')">反馈意见/申报</a>
+    </nav>
   </div>
 </template>
 
@@ -21,114 +17,54 @@ export default {
 </script>
 
 <style scoped>
-/* 从 HomePage.vue 剪切所有与 .footer 和 .admin 相关的样式 */
-.footer {
-  position: relative;
-  height: 150px;
-  overflow: hidden;
-  color: white;
-  margin-top: 60px;
+/* 1. 外层容器样式 */
+.footer-container {
+  /* 背景透明，只提供上下边距 */
+  padding: 40px 20px;
+  background-color: transparent;
 }
-.footer a {
-  color: white;
-  font-size: 18px;
-  text-decoration: none;
-  transition: border-bottom 0.2s;
-  border-bottom: 2px solid transparent;
-}
-.footer a:hover {
-  color: #f0dfc7;
-  border-bottom: 1px solid #f0dfc7;
-}
-.footer-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-  object-position: bottom;
-  opacity: 0.8;
-}
-.footer-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 48, 73, 0.4);
-  z-index: 2;
-}
-.footer-content {
-  position: relative;
-  z-index: 3;
-  height: 100%;
+
+/* 2. 导航链接的容器 */
+.footer-nav {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; /* 水平居中 */
   align-items: center;
-  padding-right: 50px;
-  gap: 30px;
+  flex-wrap: wrap; /* 在小屏幕上允许换行 */
+  gap: 10px 20px; /* 控制行间距和列间距 */
 }
-.footer-links {
-  text-align: left;
-}
-.footer-links p {
-  margin: 5px 0;
-  color: white;
-  font-size: 16px;
-}
-.footer-links a {
-  color: white;
-  font-size: 16px;
+
+/* 3. 链接和联系信息的通用样式 */
+.footer-nav a,
+.footer-nav .contact-info {
+  color: #555; /* 深灰色文字 */
+  font-size: 14px;
   text-decoration: none;
-  transition: border-bottom 0.2s;
-  border-bottom: 1px solid transparent;
-  display: inline-block;
-  margin: 5px 0;
-  cursor: pointer;
 }
-.admin, .admin:visited, .admin:active {
-  position: absolute;
-  left: 30px;
-  top: auto;
-  bottom: 40px;
-  text-decoration: none;
-  color: #2e3968;
-  font-size: 16px;
-  padding: 6px 14px;
-  z-index: 200;
+
+/* 4. 可点击链接的悬浮效果 */
+.footer-nav a {
+  transition: color 0.2s ease;
 }
-.admin-login-button {
-  background-color: white;
-  color: #2e3968;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+
+.footer-nav a:hover {
+  color: #171d8f; /* SAIF 蓝色 */
+  text-decoration: underline;
 }
-.admin-login-button:hover {
-  background-color: #BDA36C;
-  color: white;
+
+/* 5. 分隔符样式 */
+.separator {
+  color: #ccc; /* 浅灰色分隔符 */
+  font-size: 14px;
 }
+
+/* 响应式布局：在小屏幕上，隐藏分隔符，让每个项目占一行 */
 @media (max-width: 768px) {
-  .footer-content {
-    justify-content: center;
-    padding-right: 20px;
-    padding-left: 20px;
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
+  .footer-nav {
+    flex-direction: column; /* 垂直排列 */
+    gap: 15px; /* 调整垂直间距 */
   }
-  .admin {
-    position: static;
-    order: 2;
-  }
-  .footer-links {
-    order: 1;
-    text-align: center;
+  .separator {
+    display: none; /* 隐藏分隔符 */
   }
 }
 </style>

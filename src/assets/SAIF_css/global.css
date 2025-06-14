@@ -201,7 +201,6 @@ h5 {
 .new-footer .top {
     padding-top: 50px;
     padding-bottom: 30px;
-    /* 背景图已被注释，因为您已删除图片文件，下同 */
     /* background: url(../images/newFooter/footer1.png); */
     background-repeat: no-repeat;
     background-position: left bottom;
@@ -257,19 +256,19 @@ h5 {
 }
 
 .new-footer .footer-tab-change li:nth-child(1) {
-    /* background: url(../images/newFooter/footer4.png); */
+    background: url(../SAIF_images/footer4.png);
     background-repeat: no-repeat;
     background-position: right 60px center;
 }
 
 .new-footer .footer-tab-change li:nth-child(2) {
-    /* background: url(../images/newFooter/footer3.png); */
+    background: url(../SAIF_images/footer3.png);
     background-repeat: no-repeat;
     background-position: right 60px center;
 }
 
 .new-footer .footer-tab-change li:nth-child(3) {
-    /* background: url(../images/newFooter/footer2.png); */
+    background: url(../SAIF_images/footer2.png);
     background-repeat: no-repeat;
     background-position: right 60px center;
 }

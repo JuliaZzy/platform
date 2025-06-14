@@ -714,7 +714,7 @@ export default {
   .sidebar {
     width: 240px;
     height: 100vh;
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
     display: flex;
     flex-direction: column;
@@ -729,7 +729,7 @@ export default {
     left: 10px;
     top: 10px;
     z-index: 1000;
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
     border: none;
     padding: 6px 10px;
@@ -770,7 +770,7 @@ export default {
   }
   .menu-item.active {
     background-color: white;
-    color: #2e3968;
+    color: #172787;
     font-weight: bold;
   }
 
@@ -783,13 +783,13 @@ export default {
     transition: margin-left 0.3s ease;
   }
   .content-title {
-    color: #2e3968;
+    color: #172787;
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 8px;
   }
   .update-time {
-    color: #2e3968;
+    color: #172787;
     font-size: 14px;
     margin-bottom: 24px;
   }
@@ -811,7 +811,7 @@ export default {
   }
   .clear-all-btn {
     background-color: #f0f0f0;
-    color: #2e3968;
+    color: #172787;
     border: 1px solid #ccc;
     padding: 6px 12px;
     border-radius: 4px;
@@ -820,9 +820,9 @@ export default {
     margin-right: 12px;
   }
   .clear-all-btn:hover {
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
-    border-color: #2e3968;
+    border-color: #172787;
   }
 
   /* === 表格 === */
@@ -843,7 +843,7 @@ export default {
     border: 1px solid #ccc;
     padding: 8px 12px;
     text-align: left;
-    color: #2e3968;
+    color: #172787;
     vertical-align: middle;
     min-width: 120px;
     word-break: break-word;
@@ -883,7 +883,7 @@ export default {
     margin-left: 6px;
     cursor: pointer;
     font-size: 13px;
-    color: #2e3968;
+    color: #172787;
   }
   .filter-dropdown {
     position: absolute;
@@ -943,7 +943,7 @@ export default {
     font-size: 13px;
   }
   .filter-footer button:hover {
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
   }
 
@@ -1040,7 +1040,7 @@ export default {
   }
   .export-btn,
   .upload-btn {
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -1051,11 +1051,11 @@ export default {
   .export-btn:hover,
   .upload-btn:hover {
     background-color: white;
-    color: #2e3968;
-    border: 1px solid #2e3968;
+    color: #172787;
+    border: 1px solid #172787;
   }
   .upload-btn {
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -1065,7 +1065,7 @@ export default {
 
   /* === 无数据提示 === */
   .no-data {
-    color: #2e3968;
+    color: #172787;
     margin-top: 20px;
     text-align: center; /* ✅ 居中显示 */
     padding: 20px;      /* ✅ 增加一点内边距 */
@@ -1091,7 +1091,7 @@ export default {
   }
   .menu-subitem.active {
     background-color: white;
-    color: #2e3968;
+    color: #172787;
     font-weight: bold;
   }
 /* ================= 新增/修改：报告管理表格样式 ================= */
@@ -1132,7 +1132,7 @@ export default {
 
 
 .report-link {
-  color: #2e3968;
+  color: #172787;
   text-decoration: none;
   font-weight: bold;
 }
@@ -1164,18 +1164,18 @@ export default {
   .upload-modal-content h2 {
     margin-top: 0;
     margin-bottom: 20px;
-    color: #2e3968;
+    color: #172787;
   }
   .upload-area {
     border: 2px dashed #ccc;
     border-radius: 8px;
     padding: 40px;
     text-align: center;
-    color: #2e3968;
+    color: #172787;
     transition: border-color 0.3s, background-color 0.3s;
   }
   .upload-area:hover {
-    border-color: #2e3968;
+    border-color: #172787;
     background-color: #f9f9f9;
   }
   .upload-area i {
@@ -1186,7 +1186,7 @@ export default {
   .browse-btn {
     background: none;
     border: none;
-    color: #2e3968;
+    color: #172787;
     text-decoration: underline;
     cursor: pointer;
     font-size: 1em;
@@ -1217,7 +1217,7 @@ export default {
     cursor: pointer;
   }
   .upload-modal-footer .confirm-btn {
-    background-color: #2e3968;
+    background-color: #172787;
     color: white;
     border: none;
     padding: 8px 16px;

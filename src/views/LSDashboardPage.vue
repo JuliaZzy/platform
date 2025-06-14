@@ -233,12 +233,15 @@ export default {
 
 
 <style scoped>
+
   .dashboard-title-block {
-    margin: 30px 30px 10px;
+    margin: 20px 0 20px; /* Adjusted from original to remove side margins if finance-page handles them */
+    padding: 30px;
+    overflow-x: hidden; /* Prevents horizontal scroll */
   }
 
   .dashboard-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     color: #2e3968;
     margin: 0;
@@ -278,5 +281,33 @@ export default {
     max-height: 500px; 
     overflow: hidden; 
   }
+
+  /* --- 【修改】响应式布局 --- */
+@media (max-width: 1200px) {
+  .dashboard-content {
+    width: 85%;
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-content {
+    width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 10px 0;
+  }
+  .dashboard-content {
+    width: 95%; /* 在手机上几乎占满 */
+  }
+  .dashboard-title {
+    font-size: 22px;
+  }
+  .dashboard-container {
+    padding: 15px;
+  }
+}
 
 </style>

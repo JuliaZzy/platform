@@ -3,15 +3,12 @@
     <div class="table-wrapper">
       <ChartSpinner :visible="isLoading" />
       <table>
-        <thead>
-          <tr><th colspan="2">{{ title }}</th></tr>
-        </thead>
         <tbody>
           <tr v-for="(item, index) in pagedItems" :key="index">
             <td v-text="item[itemKey]"></td>
           </tr>
           <tr v-if="totalPages > 1">
-            <td colspan="2">
+            <td>
               <div class="pagination">
                 <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
                 <span>{{ currentPage }} / {{ totalPages }}</span>
@@ -32,7 +29,7 @@ export default {
   name: 'InfoTable',
   components: { ChartSpinner },
   props: {
-    title: { type: String, required: true },
+    // 【修改】移除了 title prop
     items: { type: Array, required: true },
     isLoading: { type: Boolean, default: false },
     itemKey: { type: String, required: true }
@@ -68,7 +65,6 @@ export default {
 </script>
 
 <style scoped>
-/* 从 HomePage.vue 剪切所有与表格相关的样式 */
 .grid-item {
   position: relative;
   min-height: 160px;
@@ -80,26 +76,25 @@ export default {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 16px;
+  font-size: 15px;
 }
-th {
-  color: #2e3968;
-  font-weight: bold;
-  padding: 14px;
-  text-align: center;
-  border-top: 2px solid #2e3968;
-  border-bottom: 2px solid #2e3968;
-}
+
 td {
   height: 50px;
-  padding: 8px;
+  padding: 8px 14px;
   color: #333;
   border-bottom: 1px solid #d3d3d3;
-  text-align: center; /* 统一居中 */
-  vertical-align: middle; /* 统一垂直居中 */
+  text-align: center;
+  vertical-align: middle;
 }
+
+/* 【新增】为第一行数据添加上边框 */
+tbody tr:first-child td {
+  border-top: 2px solid #172787;
+}
+
 tr:last-child td {
-  border-bottom: 2px solid #2e3968;
+  border-bottom: 2px solid #172787;
 }
 .pagination {
   display: flex;
@@ -109,7 +104,7 @@ tr:last-child td {
 }
 .pagination button {
   background-color: #F5F3F4;
-  color: #2e3968;
+  color: #172787;
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
@@ -122,7 +117,24 @@ tr:last-child td {
   cursor: not-allowed;
 }
 .pagination button:hover:not(:disabled) {
-  background-color: #2e3968;
+  background-color: #172787;
   color: white;
+}
+
+/* 【新增】响应式布局 */
+@media (max-width: 768px) {
+  table {
+    font-size: 14px; /* 减小字体 */
+  }
+  td {
+    height: 45px;
+    padding: 6px 10px; /* 减小内边距 */
+  }
+  .pagination button {
+    padding: 6px 12px; /* 减小按钮尺寸 */
+  }
+  .pagination span {
+    font-size: 14px;
+  }
 }
 </style>

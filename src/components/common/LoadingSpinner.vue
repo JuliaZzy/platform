@@ -50,7 +50,7 @@
   .spinner-dot {
     width: 8px;
     height: 8px;
-    background-color: #2e3968;
+    background-color: #172787;
     border-radius: 50%;
     position: absolute;
     top: 50%;

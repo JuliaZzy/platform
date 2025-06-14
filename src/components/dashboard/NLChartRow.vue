@@ -15,6 +15,7 @@
           :y-axis-line-max="18"
           :y-axis-line-interval="3"
 
+          chart-annotation="注：由于企业融资时间往往滞后于入表时间，其融资额均指相关企业截至2025年一季度的总融资额，而非截至数据资产入表披露日期的融资额。"
           :chart-height="500" 
         />
       </div>

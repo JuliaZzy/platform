@@ -24,10 +24,10 @@ export default {
 .status-box {
   background-color: white;
   width: 100%; /* 在父容器控制宽度，这里设为100%即可 */
-  padding: 30px 20px;
+  padding: 20px 10px;
   text-align: center;
   font-size: 32px;
-  color: #2e3968;
+  color: #172787;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 1;
@@ -40,7 +40,7 @@ export default {
 
 .status-box:hover {
   transform: scale(1.03);
-  background-color: #2e3968;
+  background-color: #172787;
   color: #f0dfc7;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
@@ -51,7 +51,7 @@ export default {
   margin: 0;
   font-size: 20px;
   text-align: left;
-  color: #2e3968;
+  color: #172787;
   font-weight: bold;
   margin-bottom: 10px;
   text-transform: uppercase;
@@ -61,17 +61,17 @@ export default {
   font-weight: normal;
   margin: 0;
   margin-top: 20px;
-  color: #2e3968;
+  color: #172787;
 }
 .status-number {
   font-size: 48px;
   font-weight: bold;
   margin: 10px 0 0;
-  color: #2e3968;
+  color: #C6A86F;
 }
 .status-note {
   font-size: 14px;
-  color: #2e3968;
+  color: #172787;
   text-align: right;
   margin-top: 30px;
   text-transform: none;
@@ -91,13 +91,22 @@ export default {
     min-height: auto;
     padding: 20px;
   }
+  
+  /* 【优化】在移动设备上禁用悬浮放大的效果，提升触摸体验 */
+  .status-box:hover,
+  .status-box.clickable:hover {
+    transform: none;
+  }
+  
   .status-title {
     font-size: 24px;
     margin-top: 20px;
   }
+
   .status-number {
     font-size: 40px;
   }
+
   .status-note {
     margin-top: 30px;
   }
