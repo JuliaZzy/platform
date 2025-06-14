@@ -436,11 +436,12 @@ export default {
   }
   .status-row {
     flex-direction: column;
-    margin-top: -50px;
-    gap: 0;
+    margin-top: 20px;
+    gap: 10px;
+    align-items: center;
   }
   .status-row > :deep(.status-box) {
-    width: 100%;
+    width: 95%;
     margin-bottom: 25px;
   }
   .grid-container {

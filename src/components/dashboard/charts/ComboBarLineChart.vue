@@ -75,13 +75,11 @@ export default defineComponent({
       default: '' // 默认值为空字符串
     },
 
-    // ▼▼▼ 新增代码开始 ▼▼▼
     // 用于控制图表组件的整体高度
     chartHeight: {
       type: Number,
       default: 440 // 默认高度为 440px
     }
-    // ▲▲▲ 新增代码结束 ▲▲▲
   },
   setup(props) {
     const chartOption = ref({});
@@ -96,7 +94,6 @@ export default defineComponent({
           formatter: '{c}',
           fontSize: 12,       // 标签字体大小
           color: '#005f73',   // 标签字体颜色，深灰色
-          // distance: 5,     // 可选：标签与图形的距离
         };
 
         const bar = (props.barSeries || []).map((s, idx) => ({
@@ -107,33 +104,31 @@ export default defineComponent({
           itemStyle: {
             color: chartColors[idx % chartColors.length]
           },
-          label: barLabelOption // ▼▼▼ 为每个bar系列应用label配置 ▼▼▼
+          label: barLabelOption
         }));
 
         const customLineColor = '#ee9b00';
         const actualLineSeriesName = props.lineSeries?.name || '折线';
 
         const lineLabelOption = {
-          show: true,         // 是否显示标签
-          position: 'right',    // 标签的位置，'top'表示在柱子顶部
+          show: true,
+          position: 'right', 
           offset: [3, -25],
           distance: 8,
           formatter: function (params) {
-            // 检查 null/undefined 或无法转换为数字的情况
             if (params.value == null || isNaN(parseFloat(params.value))) { 
-              return ''; // 返回空字符串
+              return '';
             }
             // 转换为数字并格式化
             const value = parseFloat(params.value);
-            return value.toFixed(2); // 保留两位小数
-          }, // <--- 在这里加上逗号 ,
-          fontSize: 12,       // 标签字体大小
-          color: '#ee9b00',   // 标签字体颜色，深灰色
-          // distance: 5,     // 可选：标签与图形的距离
+            return value.toFixed(2);
+          },
+          fontSize: 12,
+          color: '#ee9b00',
         };
 
         const line = {
-          name: actualLineSeriesName, // 使用这个名称
+          name: actualLineSeriesName,
           type: 'line',
           data: props.lineSeries?.data || [],
           yAxisIndex: 1,

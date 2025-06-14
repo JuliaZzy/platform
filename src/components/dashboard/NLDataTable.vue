@@ -201,13 +201,18 @@ export default {
   }
 
   .table-wrapper {
-    overflow-x: auto;
+    overflow-x: auto; /* 这是实现横向滚动的关键 */
+    width: 100%;
   }
+
+  /* 2. 让表格拥有一个最小宽度，当屏幕比这个宽度窄时，就会出现滚动条 */
   .data-table {
     width: 100%;
+    min-width: 1000px; /* 您可以根据内容的多少调整这个值 */
     border-collapse: collapse;
     font-size: 14px;
   }
+  
   .data-table th {
     color: #2e3968;
     border: 1px solid #ccc;
@@ -224,10 +229,7 @@ export default {
   }
 
   .data-table tbody tr:hover {
-    background-color: #f1f1f1; /* 这是一个常用的浅灰色，与您 FinanceDashboardPage 中的一致 */
-    /* 您也可以选择其他浅灰色，例如: */
-    /* background-color: #f5f5f5; */
-    /* background-color: #e9e9e9; */
+    background-color: #f1f1f1;
   }
 
   .data-table th:nth-child(1),
@@ -242,20 +244,6 @@ export default {
   .data-table th:nth-child(4),.data-table th:nth-child(4) { width: 180px; }
   .data-table th:nth-child(5),.data-table th:nth-child(5) { width: 220px; }
   .data-table th:nth-child(6),.data-table th:nth-child(6) { width: 130px; text-align: center;}
-  /*.data-table th:nth-child(7),.data-table th:nth-child(7) { 
-    width: 80px; 
-    text-align: center;
-  }
-  .data-table td:nth-child(8)，.data-table th:nth-child(8),
-  .data-table td:nth-child(9), .data-table th:nth-child(9) {
-    width: 30px;
-    min-width: 20px;
-    text-align: right;
-  }
-  .data-table td:nth-child(10), .data-table th:nth-child(10) {
-    width: 200px;
-    min-width: 200px;
-  } */
 
   .data-table td.number-cell {
     text-align: right;

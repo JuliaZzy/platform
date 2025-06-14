@@ -95,8 +95,6 @@ export default {
       }
 
       // 步骤 1: 提取唯一且保持后端排序的X轴分类 (Categories)
-      // 这是整个排序正确的关键。因为 flatData 已经由后端排好序，
-      // 我们按顺序提取不重复的 categoryName，就得到了最终的X轴顺序。
       const categories = [];
       const seenCategories = new Set();
       flatData.forEach(item => {
@@ -251,56 +249,44 @@ export default {
 </script>
 
 <style scoped>
+/* 1. 整体网格布局 */
 .chart-grid {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* 2. 每一行的布局 */
 .chart-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-wrap: wrap; /* 允许在小屏幕上自动换行 */
+  gap: 24px;
 }
 
+/* 3. 通用的图表容器样式 */
+.chart-full,
+.subject-chart-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 4. 占满整行的图表 */
 .chart-full {
   flex: 1 1 100%;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
 }
 
-.chart-half {
-  flex: 1 1 40%;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-/* LChartRow.vue <style scoped> */
-.chart-row {
-  display: flex;           /* 启用 Flexbox 布局，让内部元素可以横向排列 */
-  justify-content: center; /* 核心：让所有子项作为一个整体，在水平方向上居中 */
-  align-items: flex-start; /* 推荐：确保图表们的顶部对齐，防止因高度不同而错乱 */
-  gap: 30px;               /* 推荐：在图表之间创建一个30像素的固定间距，比 margin 更稳定 */
-  width: 100%;             /* 确保父容器占满整行宽度 */
-  flex-wrap: wrap;         /* 允许在小屏幕上自动换行，增强网页的响应式能力 */
-}
-
+/* 5. 并排的图表 (桌面端各占约一半) */
 .subject-chart-container {
-  /* 核心：让每个图表容器弹性增长，占据相等的空间 */
-  flex: 1;
-  /* 建议：设置一个最小宽度，防止在非常窄的屏幕上被过度挤压 */
-  min-width: 500px; 
-  /* --- 以下是你的通用样式，保持不变 --- */
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  /* 示例1：给每个图表一个固定的宽度，比如 600px */
-  /* 这种方式在各种屏幕上大小都一样，很稳定 */
-  width: 640px; 
-  
-  /* 示例2：或者一个灵活的最大宽度，让它自适应，但又不超过一定范围 */
-  max-width: 48%;
+  flex: 1 1 45%; /* 允许增长，基础宽度45%，为gap留出空间 */
+  min-width: 300px; /* 设置一个合理的最小宽度，防止在超窄屏上被过度挤压 */
+}
+
+/* 6. 响应式布局：当屏幕宽度小于992px时，让并排的图表也开始堆叠 */
+@media (max-width: 992px) {
+  .subject-chart-container {
+    flex-basis: 100%; /* 让每个图表都占满整行，实现堆叠 */
+  }
 }
 </style>

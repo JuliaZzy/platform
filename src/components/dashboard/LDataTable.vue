@@ -172,14 +172,21 @@ export default {
     color: #2e3968;
   }
 
+/* 1. 确保包裹容器可以处理溢出 */
   .table-wrapper {
-    overflow-x: auto;
+    overflow-x: auto; /* 这是实现横向滚动的关键 */
+    width: 100%;
   }
+
+  /* 2. 让表格拥有一个最小宽度，当屏幕比这个宽度窄时，就会出现滚动条 */
   .data-table {
     width: 100%;
+    min-width: 1200px; /* 设置一个合理的最小宽度 */
     border-collapse: collapse;
     font-size: 14px;
   }
+  /* --- 核心修改结束 --- */
+
   .data-table th {
     color: #2e3968;
     border: 1px solid #ccc;

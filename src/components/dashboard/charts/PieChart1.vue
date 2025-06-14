@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-wrapper" style="position: relative;">
+  <div class="chart-wrapper">
     <div class="chart-title">企业数量按企业性质分布</div>
     <ChartSpinner :visible="loading" />
     <v-chart
@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import { defineComponent, watch, ref, onMounted, nextTick } from 'vue';
+import { defineComponent, watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -52,36 +52,27 @@ export default defineComponent({
     const loading = ref(false);
     const pieChartRef = ref(null);
     let chartInstance = null;
-
-    console.log('[PieChart1] setup: Component setup initiated.');
+    let parentPieData = [];
+    let childPieData = [];
 
     const updateConnectingLines = () => {
-      // ... (此函数内部逻辑保持不变，但依赖 chartInstance 被正确设置)
-      console.log('[PieChart1] updateConnectingLines: Attempting to update lines.');
-      if (!chartInstance) {
-        console.warn('[PieChart1] updateConnectingLines: chartInstance is NULL. Cannot update lines.');
-        return;
-      }
-      if (!chartOption.value.series || chartOption.value.series.length < 2) {
-        console.warn('[PieChart1] updateConnectingLines: Series data not ready. Cannot update lines.');
-        return;
-      }
+      // 在函数开头就判断当前是否为移动端
+      const isMobile = window.innerWidth <= 768;
+
+      if (!chartInstance) { return; }
+      if (!chartOption.value.series || chartOption.value.series.length < 2) { return; }
       const W = chartInstance.getWidth();
       const H = chartInstance.getHeight();
-      console.log(`[PieChart1] updateConnectingLines: Chart dimensions W: ${W}, H: ${H}`);
-      if (!W || !H || W <= 0 || H <= 0) {
-        console.warn('[PieChart1] updateConnectingLines: Chart dimensions invalid. Cannot update lines.');
-        return;
-      }
+      if (!W || !H || W <= 0 || H <= 0) { return; }
+      
       try {
         const pie1Cfg = chartOption.value.series[0];
         const p1c_x_pct = parseFloat(pie1Cfg.center[0]) / 100;
         const p1c_y_pct = parseFloat(pie1Cfg.center[1]) / 100;
         const p1r_str = pie1Cfg.radius;
-        let p1RadiusPixels;
-        if (typeof p1r_str === 'string' && p1r_str.endsWith('%')) {
-          p1RadiusPixels = (parseFloat(p1r_str) / 100) * (Math.min(W, H) / 2);
-        } else { p1RadiusPixels = parseFloat(p1r_str); }
+        let p1RadiusPixels = (typeof p1r_str === 'string' && p1r_str.endsWith('%')) 
+          ? (parseFloat(p1r_str) / 100) * (Math.min(W, H) / 2) 
+          : parseFloat(p1r_str);
         const p1_center_x = p1c_x_pct * W;
         const p1_center_y = p1c_y_pct * H;
 
@@ -89,77 +80,84 @@ export default defineComponent({
         const p2c_x_pct = parseFloat(pie2Cfg.center[0]) / 100;
         const p2c_y_pct = parseFloat(pie2Cfg.center[1]) / 100;
         const p2r_str = pie2Cfg.radius;
-        let p2RadiusPixels;
-        if (typeof p2r_str === 'string' && p2r_str.endsWith('%')) {
-          p2RadiusPixels = (parseFloat(p2r_str) / 100) * (Math.min(W, H) / 2);
-        } else { p2RadiusPixels = parseFloat(p2r_str); }
+        let p2RadiusPixels = (typeof p2r_str === 'string' && p2r_str.endsWith('%')) 
+          ? (parseFloat(p2r_str) / 100) * (Math.min(W, H) / 2) 
+          : parseFloat(p2r_str);
         const p2_center_x = p2c_x_pct * W;
         const p2_center_y = p2c_y_pct * H;
 
-        const x1_top_vertex = p1_center_x;
-        const y1_top_vertex = p1_center_y - p1RadiusPixels;
-        const x2_top_vertex = p2_center_x;
-        const y2_top_vertex = p2_center_y - p2RadiusPixels;
+        let line1_shape, line2_shape;
 
-        const x1_bottom_vertex = p1_center_x;
-        const y1_bottom_vertex = p1_center_y + p1RadiusPixels;
-        const x2_bottom_vertex = p2_center_x;
-        const y2_bottom_vertex = p2_center_y + p2RadiusPixels;
+        if (isMobile) {
+          // 在手机端（垂直布局），连接饼图的左右顶点
+          line1_shape = { x1: p1_center_x - p1RadiusPixels, y1: p1_center_y, x2: p2_center_x - p2RadiusPixels, y2: p2_center_y };
+          line2_shape = { x1: p1_center_x + p1RadiusPixels, y1: p1_center_y, x2: p2_center_x + p2RadiusPixels, y2: p2_center_y };
+        } else {
+          // 在桌面端（水平布局），连接饼图的上下顶点
+          line1_shape = { x1: p1_center_x, y1: p1_center_y - p1RadiusPixels, x2: p2_center_x, y2: p2_center_y - p2RadiusPixels };
+          line2_shape = { x1: p1_center_x, y1: p1_center_y + p1RadiusPixels, x2: p2_center_x, y2: p2_center_y + p2RadiusPixels };
+        }
         
-        console.log('[PieChart1] updateConnectingLines: Calculated Line1 Coords:', `x1:${x1_top_vertex}, y1:${y1_top_vertex}, x2:${x2_top_vertex}, y2:${y2_top_vertex}`);
-        console.log('[PieChart1] updateConnectingLines: Calculated Line2 Coords:', `x1:${x1_bottom_vertex}, y1:${y1_bottom_vertex}, x2:${x2_bottom_vertex}, y2:${y2_bottom_vertex}`);
-
         chartInstance.setOption({
           graphic: [
-            { id: 'line1', shape: { x1: x1_top_vertex, y1: y1_top_vertex, x2: x2_top_vertex, y2: y2_top_vertex } },
-            { id: 'line2', shape: { x1: x1_bottom_vertex, y1: y1_bottom_vertex, x2: x2_bottom_vertex, y2: y2_bottom_vertex } }
+            { id: 'line1', shape: line1_shape },
+            { id: 'line2', shape: line2_shape }
           ]
         });
-        console.log('[PieChart1] updateConnectingLines: chart.setOption CALLED for graphic update.');
       } catch (error) {
-        console.error('[PieChart1] updateConnectingLines: Error during calculation or setOption:', error);
+        console.error('[PieChart1] Error in updateConnectingLines:', error);
       }
     };
+    
+    const reapplyChartOptions = () => {
+        const isMobile = window.innerWidth <= 768;
 
-    const initChartInstanceAndListeners = async () => {
-      if (chartInstance) {
-        return;
-      }
-      await nextTick(); 
-      if (pieChartRef.value) {
-        // ✅ 修改获取实例的方式：尝试 .chart 属性
-        const inst = pieChartRef.value.chart; 
-        console.log('[PieChart1] initChartInstanceAndListeners: Attempting to get instance via pieChartRef.value.chart. Value:', inst);
+        const pie1_center = isMobile ? ['50%', '30%'] : ['35%', '50%'];
+        const pie1_radius = isMobile ? '35%' : '45%';
+        const pie2_center = isMobile ? ['50%', '70%'] : ['65%', '50%'];
+        const pie2_radius = isMobile ? '25%' : '35%';
 
-        if (inst && typeof inst.getWidth === 'function') { // 检查 inst 是否是一个有效的 ECharts 实例
-          console.log('[PieChart1] initChartInstanceAndListeners: Successfully got chart instance via ref using .chart property!');
-          chartInstance = inst;
-          chartInstance.on('finished', () => {
-            console.log('[PieChart1] Event Listener: ECharts "finished" event. Calling updateConnectingLines.');
-            updateConnectingLines();
-          });
-          chartInstance.on('resize', () => {
-            console.log('[PieChart1] Event Listener: ECharts "resize" event. Calling updateConnectingLines.');
-            updateConnectingLines();
-          });
-          if (chartInstance.getWidth() > 0 && chartInstance.getHeight() > 0) {
-             console.log('[PieChart1] initChartInstanceAndListeners: Initial call to updateConnectingLines after getting instance.');
-             updateConnectingLines();
-          } else {
-             console.warn('[PieChart1] initChartInstanceAndListeners: Chart dimensions are zero on first instance retrieval. Relying on "finished" event.');
-          }
-        } else {
-          console.error('[PieChart1] initChartInstanceAndListeners: Failed to get a valid ECharts instance. pieChartRef.value.chart is:', pieChartRef.value.chart);
-        }
-      } else {
-        console.error('[PieChart1] initChartInstanceAndListeners: pieChartRef.value is null or undefined.');
-      }
+        chartOption.value = {
+          color: chartColors,
+          tooltip: { trigger: 'item' },
+          legend: { show: false },
+          series: [
+            { 
+              name: '企业类型', 
+              type: 'pie', 
+              radius: pie1_radius, 
+              center: pie1_center, 
+              label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, 
+              // 【修改】动态设置起始角度
+              startAngle: isMobile ? 60 : 145, // 手机端旋转90度 (145+90)
+              labelLine: { show: true }, 
+              data: parentPieData, 
+              z: 101 
+            },
+            { 
+              name: '行政级别', 
+              type: 'pie', 
+              radius: pie2_radius, 
+              center: pie2_center, 
+              label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, 
+              // 【修改】动态设置起始角度
+              startAngle: isMobile ? 0 : 90, // 手机端旋转90度 (90+90)
+              labelLine: { show: true }, 
+              data: childPieData, 
+              z: 101 
+            }
+          ],
+          graphic: [
+            { id: 'line1', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 },
+            { id: 'line2', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 }
+          ]
+        };
+        nextTick(() => updateConnectingLines());
     };
 
     const buildChart = async () => {
-      console.log('[PieChart1] buildChart: Function called.');
       loading.value = true;
-      const parentData = props.chartData || [];
+      parentPieData = props.chartData || [];
       const targetCompanyType = '地方国企';
       const apiPath = props.mode === 'ls' ? '/api/lasset/summary' : '/api/nlasset/summary';
 
@@ -168,60 +166,53 @@ export default defineComponent({
           filters: { ...props.filters, company_type: targetCompanyType },
           page: 1, pageSize: 1
         });
-        const childData = res.data.charts?.admin_level || [];
-        // ... (chartOption.value 设置部分保持不变) ...
-        chartOption.value = {
-          color: chartColors,
-          tooltip: { trigger: 'item' },
-          legend: { show: false },
-          series: [
-            { name: '企业类型', type: 'pie', radius: '50%', center: ['35%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, startAngle: 145, labelLine: { show: true }, data: parentData, z: 101 },
-            { name: '行政级别', type: 'pie', radius: '40%', center: ['65%', '35%'], label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, labelLine: { show: true }, data: childData, z: 101 }
-          ],
-          graphic: [
-            { id: 'line1', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 },
-            { id: 'line2', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 }
-          ]
-        };
-        console.log('[PieChart1] buildChart: chartOption updated.');
-        
+        childPieData = res.data.charts?.admin_level || [];
+        reapplyChartOptions();
         await nextTick(); 
-        console.log('[PieChart1] buildChart: nextTick finished.');
-        await initChartInstanceAndListeners();
-
+        if (!chartInstance) {
+          await initChartInstanceAndListeners();
+        }
       } catch (err) {
-        console.error('❌ [PieChart1] buildChart: 加载 PieChart1 数据失败:', err);
+        console.error('❌ [PieChart1] buildChart: 加载数据失败:', err);
       } finally {
         loading.value = false;
       }
     };
     
+    const handleResize = () => {
+        reapplyChartOptions();
+    };
+
+    onMounted(() => {
+        window.addEventListener('resize', handleResize);
+        buildChart();
+    });
+
+    onUnmounted(() => {
+        window.removeEventListener('resize', handleResize);
+    });
+    
     const onChartReady = (instance) => { 
-      console.log('[PieChart1] onChartReady (event handler): Called. Instance:', instance ? 'Exists' : 'Null');
-      // 这个回调现在作为备用，或者如果它确实触发了，就用它
       if (instance && !chartInstance) {
-        console.log('[PieChart1] onChartReady: Setting chartInstance via @ready event (likely primary method failed).');
         chartInstance = instance;
-        instance.on('finished', updateConnectingLines);
-        instance.on('resize', updateConnectingLines);
-        if (chartInstance.getWidth() > 0 && chartInstance.getHeight() > 0) {
-           updateConnectingLines();
+        chartInstance.on('finished', updateConnectingLines);
+      }
+    };
+    
+    const initChartInstanceAndListeners = async () => {
+      if (chartInstance) { return; }
+      await nextTick(); 
+      if (pieChartRef.value) {
+        const inst = pieChartRef.value.chart; 
+        if (inst && typeof inst.getWidth === 'function') {
+          chartInstance = inst;
+          chartInstance.on('finished', () => { updateConnectingLines(); });
         }
       }
     };
 
-    onMounted(async () => {
-      console.log('[PieChart1] onMounted: Hook called.');
-      await buildChart();
-      if (!chartInstance) {
-        console.log('[PieChart1] onMounted: chartInstance still null after buildChart. Attempting initChartInstanceAndListeners again (could be redundant if buildChart already succeeded).');
-        await initChartInstanceAndListeners();
-      }
-    });
-
-    watch(() => [props.chartData, props.filters], async () => {
-      console.log('[PieChart1] watch: Props changed, calling buildChart.');
-      await buildChart();
+    watch(() => [props.chartData, props.filters], () => {
+      buildChart();
     }, { deep: true });
 
     return {
@@ -231,13 +222,13 @@ export default defineComponent({
 });
 </script>
 
-
 <style scoped>
 .chart-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 0;
+  width: 100%;
 }
 .chart-title {
   font-size: 18px;

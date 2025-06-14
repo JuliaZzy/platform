@@ -92,12 +92,16 @@ export default {
     text-align: center;
   }
   .header-content {
-    padding-left: 0;
+    /* 重置桌面端的定位和边距 */
+    left: 0;
+    width: 100%;
+    padding: 20px 0 0 0; /* 只保留上边距 */
+
+    /* 这两行是居中的关键 */
     justify-content: center;
     align-items: center;
+    
     min-height: 300px;
-    /* 在移动端重置下移效果，或设置一个更小的值 */
-    padding-top: 20px; 
   }
   .header-content .left {
     padding: 20px;

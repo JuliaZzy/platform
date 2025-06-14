@@ -9,12 +9,10 @@
           y-axis-bar-name="入表企业数量（家）"
           :lineSeries="formattedComboData.lineSeries"
           y-axis-line-name="入表企业已融资金额（亿）"
-
           :y-axis-bar-max="360"
           :y-axis-bar-interval="60"
           :y-axis-line-max="18"
           :y-axis-line-interval="3"
-
           chart-annotation="注：由于企业融资时间往往滞后于入表时间，其融资额均指相关企业截至2025年一季度的总融资额，而非截至数据资产入表披露日期的融资额。"
           :chart-height="500" 
         />
@@ -32,7 +30,7 @@
       </div>
     </div>
 
-    <div class.chart-row v-if="charts[barChart2Field]?.length">
+    <div class="chart-row" v-if="charts[barChart2Field]?.length">
       <div class="chart-full">
         <BarChart2 :chart-data="charts[barChart2Field]" />
       </div>
@@ -50,7 +48,6 @@
 </template>
 
 <script>
-// ▼▼▼ 1. 导入 ComboBarLineChart 组件 ▼▼▼
 import ComboBarLineChart from '@/components/dashboard/charts/ComboBarLineChart.vue';
 import BarChart1 from '@/components/dashboard/charts/BarChart1.vue';
 import PieChart1 from '@/components/dashboard/charts/PieChart1.vue';
@@ -59,9 +56,8 @@ import PieChart2 from '@/components/dashboard/charts/PieChart2.vue';
 import PieChart3 from '@/components/dashboard/charts/PieChart3.vue';
 
 export default {
-  name: 'NLChartRow', //  建议将 ChartRow 改为更具描述性的 NLChartRow
+  name: 'NLChartRow',
   components: {
-    // ▼▼▼ 2. 注册 ComboBarLineChart 组件 ▼▼▼
     ComboBarLineChart,
     BarChart1,
     PieChart1,
@@ -77,26 +73,28 @@ export default {
       required: true,
       validator: val => ['nls', 'ls'].includes(val)
     },
-    // ▼▼▼ 3. 新增 prop，用于接收来自父组件的累积图表数据 ▼▼▼
     comboChartData: {
-        type: Array,
-        default: () => [] // 提供默认值以增加组件健壮性
+      type: Array,
+      default: () => []
     }
   },
   computed: {
     barChart2Field() {
       return this.mode === 'ls' ? 'business_type' : 'company_business_type';
     },
-    // ▼▼▼ 4. 新增计算属性，将传入的原始数据格式化为 ComboBarLineChart 所需的格式 ▼▼▼
     formattedComboData() {
       const rawData = this.comboChartData || [];
       if (!rawData.length) {
         return { categories: [], barSeries: [], lineSeries: {} };
       }
-      
-      const categories = rawData.map(item => item.quarter_time);
-      const barData = rawData.map(item => parseFloat(item.cumulative_count) || 0);
-      const lineData = rawData.map(item => parseFloat(item.cumulative_value) || 0);
+
+      const exclusionQuarter = '2023Q4';
+      // 1. 先从原始数据中过滤掉 '2023Q4'
+      const filteredData = rawData.filter(item => item.quarter_time !== exclusionQuarter);
+
+      const categories = filteredData.map(item => item.quarter_time);
+      const barData = filteredData.map(item => parseFloat(item.cumulative_count) || 0);
+      const lineData = filteredData.map(item => parseFloat(item.cumulative_value) || 0);
 
       return {
         categories,
@@ -126,6 +124,7 @@ export default {
   background: #fff;
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .pie-1 {
@@ -134,29 +133,42 @@ export default {
   border-radius: 8px;
 }
 
-/* ✅ 定位图表行 */
+/* 1. 将饼图容器改为 Flexbox 布局 */
 .fixed-pie-row {
-  position: relative;
-  height: 400px; /* 与图表高度保持一致 */
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ✅ PieChart2 定位在页面宽度的 30% */
-.pie-30,
-.pie-70 {
-  position: absolute;
-  width: 600px;
-  height: 360px;
-  padding: 10px;
-  transform: translateX(-50%);
-}
-
+/* 2. 为两个饼图设置灵活的基础宽度 */
 .pie-30 {
-  left: 30%;
-  top: 0;
+  flex: 1 1 30%; 
+  min-width: 250px;
 }
 
 .pie-70 {
-  left: 70%;
-  top: 0;
+  flex: 1 1 65%; 
+  min-width: 250px;
+}
+
+/* 3. 响应式布局：在手机端，改为垂直堆叠 */
+@media (max-width: 768px) {
+  .fixed-pie-row {
+    flex-direction: column;
+  }
+
+  .pie-30,
+  .pie-70 {
+    flex-basis: 100%;
+  }
+  .pie-30 {
+    order: 1;
+  }
+  .pie-70 {
+    order: 2;
+  }
 }
 </style>
+

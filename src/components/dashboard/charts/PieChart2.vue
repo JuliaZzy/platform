@@ -75,8 +75,10 @@ export default defineComponent({
 .chart-wrapper {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 500px; /* 控制整体高度 */
+  width: 90%;
+  height: 500px;
+  align-items: center;
+  justify-content: center; /* 新增：水平居中饼图组 */
 }
 .chart-title {
   font-size: 18px;
