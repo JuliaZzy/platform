@@ -29,7 +29,6 @@ export default {
   name: 'InfoTable',
   components: { ChartSpinner },
   props: {
-    // 【修改】移除了 title prop
     items: { type: Array, required: true },
     isLoading: { type: Boolean, default: false },
     itemKey: { type: String, required: true }
@@ -68,19 +67,30 @@ export default {
 .grid-item {
   position: relative;
   min-height: 160px;
+  display: flex; /* 关键：使其子元素 .table-wrapper 可以填充高度 */
+  flex-direction: column; /* 垂直排列 */
+  flex: 1; /* 可选：让每个表格平分宽度 */
 }
+
+/* 【修改】使 .table-wrapper 填充 .grid-item 的高度 */
 .table-wrapper {
   position: relative;
   min-height: 180px;
+  flex-grow: 1; /* 关键：允许此元素拉伸以填充可用空间 */
+  display: flex; /* 关键：为内部的 table 和 pagination 提供布局控制 */
+  flex-direction: column;
 }
+
+/* 【修改】使 table 元素填充 .table-wrapper 的高度 */
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
+  flex-grow: 1; /* 关键：让 table 占据所有可用垂直空间 */
 }
 
 td {
-  height: 50px;
+  height: 60px;
   padding: 8px 14px;
   color: #333;
   border-bottom: 1px solid #d3d3d3;

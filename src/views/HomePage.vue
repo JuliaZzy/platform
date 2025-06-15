@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <!-- 【修改】新增主内容容器，实现70%居中布局 -->
+      <!-- 70%居中 -->
       <div class="main-content">
         <!-- 1. 数据概览区域 -->
         <h2 class="section-title">数据资产入表情况概览</h2>
@@ -71,7 +71,7 @@
         <PdfReport />
 
         <!-- 3. 榜单区域 -->
-        <h2 class="section-title">融资榜单</h2>
+        <h2 class="section-title">企业名单</h2>
         <div class="grid-container">
           <InfoTable
             :items="listedCompanies"

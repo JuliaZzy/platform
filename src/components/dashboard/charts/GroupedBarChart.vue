@@ -12,6 +12,8 @@
 
 <script>
 import { defineComponent, ref, watch, nextTick } from 'vue';
+// 1. 导入我们创建的 Composable
+import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
@@ -23,28 +25,17 @@ export default defineComponent({
     ChartSpinner
   },
   props: {
-    chartTitle: {
-      type: String,
-      default: 'Grouped Bar Chart'
-    },
-    chartData: {
-      type: Array,
-      default: () => []
-    },
-    rowKey: {
-      type: String,
-      default: '类别'
-    },
-    valKey: {
-      type: String,
-      default: 'value'
-    },
-    yAxisName: {
-      type: String,
-      default: '入表企业数量（家）'
-    }
+    // All your props remain the same...
+    chartTitle: { type: String, default: 'Grouped Bar Chart' },
+    chartData: { type: Array, default: () => [] },
+    rowKey: { type: String, default: '类别' },
+    valKey: { type: String, default: 'value' },
+    yAxisName: { type: String, default: '入表企业数量（家）' }
   },
   setup(props) {
+    // 2. 调用 Composable 获取响应式状态
+    const { isMobile } = useResponsiveCharts();
+
     const chartOption = ref({});
     const loading = ref(false);
     const vueChartRef = ref(null);
@@ -61,7 +52,11 @@ export default defineComponent({
           return;
         }
 
-        const isMobile = window.innerWidth <= 768;
+        // 3. 【已删除】移除了这行非响应式的代码
+        // const isMobile = window.innerWidth <= 768;
+        
+        // All the logic below here that uses `isMobile` will now
+        // correctly use the reactive `isMobile.value`.
         const problematicTitles = [
           'A股数据资源入表公司分科目分布情况',
           'A股数据资源入表公司分实控人分布情况',
@@ -75,7 +70,6 @@ export default defineComponent({
           const activeColors = chartColors.slice(0, numSeries);
           colorPaletteForChart = [...activeColors].reverse();
         }
-
         const barLabelOption = {
           show: true,
           position: 'top',
@@ -138,29 +132,28 @@ export default defineComponent({
             }
           },
           legend: {
-            // --- 【修改】动态调整图例的顶部边距 ---
-            top: isMobile ? 35 : 10,
-            type: 'scroll' // 如果图例过多，允许滚动
+            top: isMobile.value ? 35 : 10,
+            type: 'scroll'
           },
           grid: {
-            top: isMobile ? 80 : 60,
+            // 【修正】必须使用 .value
+            top: isMobile.value ? 80 : 60,
             left: '10%',
             right: '4%',
-            // 为有问题的图表提供更大的底部空间 (35%)，其他图表保持原来的空间 (20%)
-            bottom: isMobile ? (isProblematicChart ? '35%' : '20%') : '3%',
+            // 【修正】必须使用 .value
+            bottom: isMobile.value ? (isProblematicChart ? '35%' : '20%') : '3%',
             containLabel: true
           },
           xAxis: {
             type: 'category',
             data: categories,
             axisLabel: {
-              rotate: isMobile ? 35 : 0,
+              rotate: isMobile.value ? 35 : 0,
               interval: 0,
-              // 将字体大小的设置移入 rich 中，以确保对所有标签生效
               rich: {
                 customStyle: {
                   lineHeight: 20,
-                  fontSize: isMobile ? 8 : 11
+                  fontSize: isMobile.value ? 8 : 11
                 }
               },
               formatter: (value) => {
@@ -184,7 +177,6 @@ export default defineComponent({
                       default: return `{customStyle|${value}}`;
                     }
                   } else {
-                    // 对于没有使用富文本的图表，字体大小由这里的 customStyle 控制
                     return `{customStyle|${value}}`;
                   }
               }
@@ -212,6 +204,8 @@ export default defineComponent({
     };
 
     watch(() => props.chartData, updateChart, { immediate: true, deep: true });
+    // 4. 【关键】新增对 isMobile 的监听
+    watch(isMobile, updateChart);
 
     return {
       chartOption,

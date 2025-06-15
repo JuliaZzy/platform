@@ -12,9 +12,23 @@
 
 <script>
 import { defineComponent, ref, watch } from 'vue';
+import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
+
+/**
+ * 在文本中手动插入换行符
+ * @param {string} str
+ * @param {number} charsPerLine
+ * @returns {string}
+ */
+function wordWrap(str, charsPerLine) {
+  if (!str) return '';
+  const regex = new RegExp(`.{1,${charsPerLine}}`, 'g');
+  const lines = str.match(regex);
+  return lines ? lines.join('\n') : str;
+}
 
 export default defineComponent({
   name: 'ComboBarLineChart',
@@ -23,77 +37,47 @@ export default defineComponent({
     ChartSpinner
   },
   props: {
-    chartTitle: {
-      type: String,
-      default: '柱状图 + 折线图'
-    },
-    categories: {
-      type: Array,
-      default: () => []  // ✅ 防止未传时报错
-    },
-    barSeries: {
-      type: Array,
-      default: () => []  // ✅ 防止未传时报错
-    },
-    lineSeries: {
-      type: Object,
-      default: () => ({ name: '折线', data: [] }) // ✅ 保底结构
-    },
-    yAxisBarName: {
-      type: String,
-      default: '数量（个）'
-    },
-    yAxisLineName: {
-      type: String,
-      default: '金额（亿元）'
-    },
-    // ▼▼▼ 新增代码开始 ▼▼▼
-    // 左侧 Y 轴（柱状图）的最大值
-    yAxisBarMax: {
-        type: Number,
-        default: 120
-    },
-    // 左侧 Y 轴（柱状图）的刻度间隔
-    yAxisBarInterval: {
-        type: Number,
-        default: 20
-    },
-    // 右侧 Y 轴（折线图）的最大值
-    yAxisLineMax: {
-        type: Number,
-        default: 24
-    },
-    // 右侧 Y 轴（折线图）的刻度间隔
-    yAxisLineInterval: {
-        type: Number,
-        default: 4
-    },
-    // ▼▼▼ 新增代码开始 ▼▼▼
-    // 用于图表注释的文本，可选
-    chartAnnotation: {
-      type: String,
-      default: '' // 默认值为空字符串
-    },
-
-    // 用于控制图表组件的整体高度
-    chartHeight: {
-      type: Number,
-      default: 440 // 默认高度为 440px
-    }
+    chartTitle: { type: String, default: '柱状图 + 折线图' },
+    categories: { type: Array, default: () => [] },
+    barSeries: { type: Array, default: () => [] },
+    lineSeries: { type: Object, default: () => ({ name: '折线', data: [] }) },
+    yAxisBarName: { type: String, default: '数量（个）' },
+    yAxisLineName: { type: String, default: '金额（亿元）' },
+    yAxisBarMax: { type: Number, default: 120 },
+    yAxisBarInterval: { type: Number, default: 20 },
+    yAxisLineMax: { type: Number, default: 24 },
+    yAxisLineInterval: { type: Number, default: 4 },
+    chartAnnotation: { type: String, default: '' },
+    chartHeight: { type: Number, default: 440 }
   },
   setup(props) {
+    const { isMobile } = useResponsiveCharts();
     const chartOption = ref({});
     const loading = ref(false);
 
     const updateChart = () => {
       loading.value = true;
       setTimeout(() => {
+        const gridConfig = {
+          left: '3%',
+          right: '4%',
+          bottom: isMobile.value ? '20%' : '60px',
+          containLabel: true
+        };
+        const xAxisLabelConfig = {
+          fontSize: isMobile.value ? 10 : 11,
+          rotate: isMobile.value ? 35 : 0,
+          interval: 0,
+          formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val)
+        };
+        const yAxisNameGap = isMobile.value ? 35 : 45;
+        const annotationBottom = isMobile.value ? '10%' : 25;
         const barLabelOption = {
-          show: true,         // 是否显示标签
-          position: 'top',    // 标签的位置，'top'表示在柱子顶部
+          show: true,
+          position: 'top',
           formatter: '{c}',
-          fontSize: 12,       // 标签字体大小
-          color: '#005f73',   // 标签字体颜色，深灰色
+          fontSize: 12,
+          color: '#005f73',
         };
 
         const bar = (props.barSeries || []).map((s, idx) => ({
@@ -151,38 +135,19 @@ export default defineComponent({
             formatter: function (params) {
               let tooltipContent = '';
               if (params && params.length > 0) {
-                // params[0].name 是X轴的类目名 (例如 'Q1')
-                // params[0].axisValueLabel 也是X轴的类目名，更推荐使用这个
                 tooltipContent += (params[0].axisValueLabel || params[0].name) + '<br />'; 
-                
                 params.forEach(param => {
-                  // param 是每个系列在该点的数据对象
-                  // param.seriesName 是系列名 (例如 "数据资源入表数量", "数据资源入表总额")
-                  // param.value 是数据值
-                  // param.marker 是图例颜色块的HTML标记
-
-                  let valueToShow = param.value; // 默认直接显示值
-
-                  // 判断是否是金额系列 (折线图系列)
+                  let valueToShow = param.value;
                   if (param.seriesName === actualLineSeriesName) {
                     const num = parseFloat(param.value);
-                    if (!isNaN(num)) {
-                      valueToShow = num.toFixed(2); // 金额保留两位小数
-                    } else if (param.value == null) {
-                        valueToShow = '-'; // 处理 null 或 undefined
-                    } else {
-                        valueToShow = String(param.value); // 如果不是数字，原样显示
-                    }
+                    if (!isNaN(num)) valueToShow = num.toFixed(2);
+                    else if (param.value == null) valueToShow = '-';
+                    else valueToShow = String(param.value);
                   } else {
-                    // 其他系列（例如柱状图的数量），可以格式化为整数
                     const num = parseFloat(param.value);
-                    if (!isNaN(num)) {
-                      valueToShow = num.toFixed(0); // 数量取整
-                    } else if (param.value == null) {
-                        valueToShow = '—';
-                    } else {
-                        valueToShow = String(param.value);
-                    }
+                    if (!isNaN(num)) valueToShow = num.toFixed(0);
+                    else if (param.value == null) valueToShow = '—';
+                    else valueToShow = String(param.value);
                   }
                   tooltipContent += param.marker + ' ' + param.seriesName + ': <b>' + valueToShow + '</b><br />';
                 });
@@ -191,64 +156,43 @@ export default defineComponent({
             }
           },
           legend: { top: 10 },
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '60px',
-            containLabel: true
-          },
+
+          grid: gridConfig,
+
           xAxis: {
             type: 'category',
             data: props.categories || [],
-            axisLabel: {
-              fontSize: 11,
-              rotate: 0,
-              interval: 0,
-              formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val)
-            }
+            axisLabel: xAxisLabelConfig
           },
           yAxis: [
             {
-              type: 'value',
-              name: props.yAxisBarName,
-              min: 0,
-              max: props.yAxisBarMax,
-              interval: props.yAxisBarInterval,
-              nameLocation: 'middle',
-              nameGap: 45,
+              type: 'value', name: props.yAxisBarName, min: 0, max: props.yAxisBarMax,
+              interval: props.yAxisBarInterval, nameLocation: 'middle', nameGap: yAxisNameGap,
               nameTextStyle: { fontSize: 14 }
             },
             {
-              type: 'value',
-              name: props.yAxisLineName,
-              min: 0,
-              max: props.yAxisLineMax,
-              interval: props.yAxisLineInterval,
-              nameLocation: 'middle',
-              nameGap: 45,
+              type: 'value', name: props.yAxisLineName, min: 0, max: props.yAxisLineMax,
+              interval: props.yAxisLineInterval, nameLocation: 'middle', nameGap: yAxisNameGap,
               nameTextStyle: { fontSize: 14 }
             }
           ],
           series: [...bar, line]
         };
 
-        // ▼▼▼ 新增代码开始 ▼▼▼
-        // 如果父组件传入了注释文本，则添加 graphic 配置
         if (props.chartAnnotation) {
-          chartOption.value.graphic = {
-            type: 'text', // 类型为文本
-            left: 'center',   // 位置：距离左侧 10%
-            bottom: 25,    // 位置：距离底部 25px
-            style: {
-              text: props.chartAnnotation, // 使用传入的文本
-              fill: '#BDA36C',               // 文本颜色
-              fontSize: 12,               // 字体大小
-              textAlign: 'center', // 文本内容也居中
+          const charsPerLine = isMobile.value ? 30 : 60;
+          const wrappedAnnotationText = wordWrap(props.chartAnnotation, charsPerLine);
 
-              // ▼▼▼ 限制宽度和自动换行 ▼▼▼
-              width: '30%',      // 设置宽度为父容器的 30%
-              overflow: 'break', // 超出宽度时自动换行
-              lineHeight: 18     // 可选：调整行高，使换行文本更易读
+          chartOption.value.graphic = {
+            type: 'text',
+            left: 'center',
+            bottom: annotationBottom,
+            style: {
+              text: wrappedAnnotationText,
+              fill: '#BDA36C',
+              fontSize: 12,
+              textAlign: 'center',
+              lineHeight: 18,
             }
           };
         }
@@ -262,6 +206,8 @@ export default defineComponent({
       updateChart,
       { immediate: true, deep: true }
     );
+    
+    watch(isMobile, updateChart);
 
     return {
       chartOption,

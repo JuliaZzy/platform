@@ -13,11 +13,11 @@
 
 <script>
 import { defineComponent, ref, watch } from 'vue';
+// Correctly importing the composable
+import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js'; 
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
-
-// ECharts 核心模块和组件的按需引入（保持不变）
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart } from 'echarts/charts';
@@ -50,14 +50,16 @@ export default defineComponent({
     }
   },
   setup(props) {
+    // This is correct!
+    const { isMobile } = useResponsiveCharts();
     const chartOption = ref({});
     const loading = ref(false);
 
     const updateChart = () => {
       loading.value = true;
       setTimeout(() => {
-        // 1. 添加响应式判断
-        const isMobile = window.innerWidth <= 768;
+        // 1. 【已删除】移除了下面这行错误的代码
+        // const isMobile = window.innerWidth <= 768;
 
         const barLabelOption = {
           show: true,
@@ -67,27 +69,26 @@ export default defineComponent({
           color: '#005f73',
         };
 
+        // Now all instances of "isMobile" correctly refer to the reactive `isMobile.value`
         chartOption.value = {
           color: chartColors,
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          // 2. 新增 grid 配置，控制边距
           grid: {
             left: '3%',
             right: '4%',
-            bottom: isMobile ? '25%' : '15%', // 手机端增加底边距
+            bottom: isMobile.value ? '25%' : '15%',
             containLabel: true
           },
           xAxis: {
             type: 'category',
             data: props.chartData.map(item => item.name),
             axisLabel: {
-              // 3. 修改 x轴标签的响应式行为
-              rotate: isMobile ? 35 : 0,
+              rotate: isMobile.value ? 35 : 0,
               interval: 0,
               rich: {
                 customStyle: {
-                  lineHeight: 18, // 调整行高
-                  fontSize: isMobile ? 8 : 11 // 确保富文本也使用正确的字体大小
+                  lineHeight: 18,
+                  fontSize: isMobile.value ? 8 : 11
                 }
               },
               formatter: val => {
@@ -100,7 +101,7 @@ export default defineComponent({
             type: 'value',
             name: '入表企业数量（家）',
             nameLocation: 'middle',
-            nameGap: isMobile ? 45 : 60, // 手机端减小间距
+            nameGap: isMobile.value ? 45 : 60,
             nameTextStyle: { fontSize: 14 }
           },
           series: [{
@@ -114,6 +115,9 @@ export default defineComponent({
     };
 
     watch(() => props.chartData, updateChart, { immediate: true, deep: true });
+
+    // 2. 【已新增】添加对 isMobile 状态的监听
+    watch(isMobile, updateChart);
 
     return {
       chartOption,

@@ -13,10 +13,10 @@
 
 <script>
 import { defineComponent, ref, watch } from 'vue';
+import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js'; 
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
-
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart } from 'echarts/charts';
@@ -49,6 +49,9 @@ export default defineComponent({
     }
   },
   setup(props) {
+    // 3. ✨ 调用 composable，一行代码即可获得响应式的 isMobile 状态
+    const { isMobile } = useResponsiveCharts();
+
     const barChartOption = ref({});
     const loading = ref(false);
     const vueChartRef = ref(null);
@@ -56,9 +59,7 @@ export default defineComponent({
     const updateChart = () => {
       loading.value = true;
       setTimeout(() => {
-        // 【新增】判断是否为移动端
-        const isMobile = window.innerWidth <= 768;
-
+        // 这里的逻辑完全不需要改变，直接使用 isMobile.value
         const barLabelOption = {
           show: true,
           position: 'top',
@@ -70,29 +71,26 @@ export default defineComponent({
         barChartOption.value = {
           color: chartColors,
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          // 【新增】grid 配置，用于控制图表主体的位置和边距
           grid: {
             left: '3%',
             right: '4%',
-            bottom: isMobile ? '25%' : '3%', // 手机端增加底边距，为倾斜的标签留出空间
+            bottom: isMobile.value ? '25%' : '3%', // 使用 isMobile.value
             containLabel: true
           },
           xAxis: {
             type: 'category',
             data: props.chartData.map(item => item.name),
             axisLabel: {
-              // 【修改】在移动端倾斜标签
-              rotate: isMobile ? 35 : 0,
-              interval: 0, // 确保所有标签都显示
-              fontSize: isMobile ? 8 : 12, // 手机端字体稍小
+              rotate: isMobile.value ? 35 : 0, // 使用 isMobile.value
+              interval: 0,
+              fontSize: isMobile.value ? 8 : 12, // 使用 isMobile.value
             }
           },
           yAxis: {
             type: 'value',
             name: '入表企业数量（家）',
             nameLocation: 'middle',
-            // 【修改】调整y轴名称与轴线的距离
-            nameGap: isMobile ? 35 : 45,
+            nameGap: isMobile.value ? 35 : 45, // 使用 isMobile.value
             nameTextStyle: { fontSize: 12 }
           },
           series: [{
@@ -105,8 +103,11 @@ export default defineComponent({
       }, 500);
     };
 
-    // 监听数据变化
+    // 监听数据变化，更新图表
     watch(() => props.chartData, updateChart, { immediate: true });
+
+    // 4. ✨ 同样，监听 isMobile 的变化来更新图表
+    watch(isMobile, updateChart);
 
     return {
       barChartOption,

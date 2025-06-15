@@ -144,12 +144,12 @@ export default {
 
 /* 2. 为两个饼图设置灵活的基础宽度 */
 .pie-30 {
-  flex: 1 1 30%; 
+  flex: 0 1 45%; 
   min-width: 250px;
 }
 
 .pie-70 {
-  flex: 1 1 65%; 
+  flex: 0 1 45%; 
   min-width: 250px;
 }
 

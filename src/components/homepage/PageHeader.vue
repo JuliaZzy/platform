@@ -64,14 +64,13 @@ export default {
   align-items: center;
   justify-content: flex-start;
   left: 15%;
-  min-height: 310px;
-  /* 【修改】增加上内边距，使标题整体下移 */
+  min-height: 300px;
   padding-top: 50px; 
   box-sizing: border-box; /* 确保 padding 不会影响容器总高度 */
 }
 
 .header-content .left {
-  background-color: rgba(74, 90, 156, 0.7);
+  background-color: rgba(74, 90, 156, 0.5);
   padding: 30px 50px;
 }
 
