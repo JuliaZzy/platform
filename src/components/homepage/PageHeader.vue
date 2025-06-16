@@ -5,7 +5,6 @@
     </div>
     <img class="header-bg-image" src="@/assets/header_image.png" alt="Header Image" />
     <div class="header-content">
-      <!-- 这个 .left 容器现在是蓝色的标题背景盒子 -->
       <div class="left">
         <h1>中国企业数据资产<br />入表名录</h1>
       </div>
@@ -20,7 +19,6 @@ export default {
 </script>
 
 <style scoped>
-/* 整体 Header 容器样式 */
 .header {
   position: relative;
   width: 100%;
@@ -30,7 +28,6 @@ export default {
   box-sizing: border-box;
 }
 
-/* 背景图片样式 */
 .header .header-bg-image {
   position: absolute;
   top: 0;
@@ -56,7 +53,6 @@ export default {
   margin-top: 0;
 }
 
-/* 标题内容的容器，用于定位 */
 .header-content {
   position: relative;
   z-index: 2;
@@ -66,11 +62,11 @@ export default {
   left: 15%;
   min-height: 300px;
   padding-top: 50px; 
-  box-sizing: border-box; /* 确保 padding 不会影响容器总高度 */
+  box-sizing: border-box;
 }
 
 .header-content .left {
-  background-color: rgba(74, 90, 156, 0.5);
+  background-color: rgba(74, 90, 156, 0.8);
   padding: 30px 50px;
 }
 
@@ -82,8 +78,6 @@ export default {
   line-height: 1.5;
 }
 
-
-/* 响应式样式同步修改 */
 @media (max-width: 768px) {
   .header {
     min-height: 300px;
@@ -91,12 +85,9 @@ export default {
     text-align: center;
   }
   .header-content {
-    /* 重置桌面端的定位和边距 */
     left: 0;
     width: 100%;
-    padding: 20px 0 0 0; /* 只保留上边距 */
-
-    /* 这两行是居中的关键 */
+    padding: 20px 0 0 0;
     justify-content: center;
     align-items: center;
     

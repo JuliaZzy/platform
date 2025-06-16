@@ -68,7 +68,9 @@
 
         <!-- 2. 报告下载区域 -->
         <h2 class="section-title">往期报告下载</h2>
-        <PdfReport />
+        <div class="pdf-report-wrapper">
+          <PdfReport />
+        </div>
 
         <!-- 3. 榜单区域 -->
         <h2 class="section-title">企业名单</h2>
@@ -246,17 +248,20 @@ export default {
   margin: 0;
   padding: 0;
   background-color: #F5F3F4;
-  color: #333; /* 修改了默认文字颜色，使其更易读 */
+  color: #333;
   overflow-x: hidden;
 }
 
-/* 【新增】主内容容器 */
-.main-content {
-  width: 70%;
-  margin: 0 auto; /* 水平居中 */
+.pdf-report-wrapper {
+  margin-left: 14px;
+  margin-bottom: 60px; 
 }
 
-/* 【新增】统一的蓝色区域大标题 */
+.main-content {
+  width: 70%;
+  margin: 0 auto;
+}
+
 .section-title {
   font-size: 20px;
   color: #171d8f;

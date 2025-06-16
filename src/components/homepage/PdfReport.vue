@@ -2,11 +2,9 @@
   <div class="report-container">
     <div class="report-section">
       <ul v-if="reports.length > 0" class="file-grid">
-        <!-- 【修改】给 li 添加了 file-item 类，用于CSS定位 -->
         <li v-for="report in reports" :key="report.name" class="file-item">
           <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
             <i class="fas fa-file-pdf"></i>
-            <!-- 【修改】span 用于更好地控制文本溢出 -->
             <span>{{ formatReportName(report.name) }}</span>
           </a>
         </li>
@@ -14,7 +12,6 @@
       <p v-else class="no-files">暂无文件可供下载。</p>
     </div>
     
-    <!-- 确保 Font Awesome 图标库已加载 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   </div>
 </template>
@@ -26,7 +23,7 @@ export default {
   name: 'PdfReport',
   data() {
     return {
-      reports: [] // 存储从后端获取的报告列表
+      reports: []
     };
   },
   async mounted() {
@@ -50,39 +47,31 @@ export default {
 
 <style scoped>
 .report-container {
-  padding: 20px 0;
+  padding: 0; 
 }
 
-/* 1. 将网格精确地分为5个虚拟列，用于定位 */
-.file-grid {
+.file-list {
   list-style: none;
-  padding: 0;
+  padding-left: 0; 
   margin: 0;
-  display: grid;
-  /* 1. 实现三列对称布局 */
-  grid-template-columns: repeat(3, 1fr);
-  /* 40px 的列间距，20px的行间距 */
-  gap: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .file-item {
-  position: relative;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
 }
 
-/* 2. 添加垂直虚线分隔符 */
-.file-item:not(:nth-child(3n))::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -20px; /* 位于列间距的正中间 */
-  height: 80%;
-  transform: translateY(-50%);
-  border-left: 1px dashed #ccc;
+.file-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .file-link {
   display: flex;
-  align-items: center;
+  align-items: left;
   gap: 10px;
   text-decoration: none;
   color: #333;
@@ -114,36 +103,4 @@ export default {
   padding: 40px 0;
 }
 
-/* 3. 响应式布局 */
-@media (max-width: 992px) {
-  .file-grid {
-    /* 在中等屏幕上变为2列 */
-    grid-template-columns: repeat(2, 1fr);
-  }
-  /* 隐藏所有分隔线 */
-  .file-item::after {
-    display: none;
-  }
-  /* 只在奇数项后显示分隔线 */
-  .file-item:nth-child(odd)::after {
-    display: block;
-  }
-}
-
-
-@media (max-width: 768px) {
-  .report-container {
-    padding: 10px 0;
-  }
-  .file-grid {
-    /* 在小屏幕上变回1列 */
-    grid-template-columns: 1fr;
-    gap: 20px 0; /* 只保留行间距 */
-  }
-  
-  /* 在手机上隐藏所有分隔线 */
-  .file-item::after {
-    display: none;
-  }
-}
 </style>

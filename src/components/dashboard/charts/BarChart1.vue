@@ -49,9 +49,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    // 3. ✨ 调用 composable，一行代码即可获得响应式的 isMobile 状态
     const { isMobile } = useResponsiveCharts();
-
     const barChartOption = ref({});
     const loading = ref(false);
     const vueChartRef = ref(null);
@@ -59,7 +57,6 @@ export default defineComponent({
     const updateChart = () => {
       loading.value = true;
       setTimeout(() => {
-        // 这里的逻辑完全不需要改变，直接使用 isMobile.value
         const barLabelOption = {
           show: true,
           position: 'top',
@@ -74,23 +71,23 @@ export default defineComponent({
           grid: {
             left: '3%',
             right: '4%',
-            bottom: isMobile.value ? '25%' : '3%', // 使用 isMobile.value
+            bottom: isMobile.value ? '25%' : '3%',
             containLabel: true
           },
           xAxis: {
             type: 'category',
             data: props.chartData.map(item => item.name),
             axisLabel: {
-              rotate: isMobile.value ? 35 : 0, // 使用 isMobile.value
+              rotate: isMobile.value ? 35 : 0, 
               interval: 0,
-              fontSize: isMobile.value ? 8 : 12, // 使用 isMobile.value
+              fontSize: isMobile.value ? 8 : 12,
             }
           },
           yAxis: {
             type: 'value',
             name: '入表企业数量（家）',
             nameLocation: 'middle',
-            nameGap: isMobile.value ? 35 : 45, // 使用 isMobile.value
+            nameGap: isMobile.value ? 35 : 45,
             nameTextStyle: { fontSize: 12 }
           },
           series: [{
@@ -103,10 +100,8 @@ export default defineComponent({
       }, 500);
     };
 
-    // 监听数据变化，更新图表
     watch(() => props.chartData, updateChart, { immediate: true });
 
-    // 4. ✨ 同样，监听 isMobile 的变化来更新图表
     watch(isMobile, updateChart);
 
     return {
@@ -119,13 +114,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 【修改】移除了 min-width，让容器可以自由缩放 */
 .chart-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 0;
-  width: 100%; /* 宽度占满父容器 */
+  width: 100%;
 }
 
 .chart-title {
@@ -136,7 +131,6 @@ export default defineComponent({
   color: #2e3968;
 }
 
-/* 【新增】响应式样式 */
 @media (max-width: 768px) {
   .chart-title {
     font-size: 16px;

@@ -13,6 +13,7 @@
 
 <script>
 import { defineComponent, watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -48,6 +49,7 @@ export default defineComponent({
     mode: { type: String, default: 'nls' }
   },
   setup(props) {
+    const { isMobile } = useResponsiveCharts();
     const chartOption = ref({});
     const loading = ref(false);
     const pieChartRef = ref(null);
@@ -56,9 +58,6 @@ export default defineComponent({
     let childPieData = [];
 
     const updateConnectingLines = () => {
-      // 在函数开头就判断当前是否为移动端
-      const isMobile = window.innerWidth <= 768;
-
       if (!chartInstance) { return; }
       if (!chartOption.value.series || chartOption.value.series.length < 2) { return; }
       const W = chartInstance.getWidth();
@@ -88,12 +87,12 @@ export default defineComponent({
 
         let line1_shape, line2_shape;
 
-        if (isMobile) {
-          // 在手机端（垂直布局），连接饼图的左右顶点
+        if (isMobile.value) {
+          // 手机端
           line1_shape = { x1: p1_center_x - p1RadiusPixels, y1: p1_center_y, x2: p2_center_x - p2RadiusPixels, y2: p2_center_y };
           line2_shape = { x1: p1_center_x + p1RadiusPixels, y1: p1_center_y, x2: p2_center_x + p2RadiusPixels, y2: p2_center_y };
         } else {
-          // 在桌面端（水平布局），连接饼图的上下顶点
+          // 桌面端
           line1_shape = { x1: p1_center_x, y1: p1_center_y - p1RadiusPixels, x2: p2_center_x, y2: p2_center_y - p2RadiusPixels };
           line2_shape = { x1: p1_center_x, y1: p1_center_y + p1RadiusPixels, x2: p2_center_x, y2: p2_center_y + p2RadiusPixels };
         }
@@ -110,12 +109,10 @@ export default defineComponent({
     };
     
     const reapplyChartOptions = () => {
-        const isMobile = window.innerWidth <= 768;
-
-        const pie1_center = isMobile ? ['50%', '30%'] : ['35%', '50%'];
-        const pie1_radius = isMobile ? '35%' : '45%';
-        const pie2_center = isMobile ? ['50%', '70%'] : ['65%', '50%'];
-        const pie2_radius = isMobile ? '25%' : '35%';
+        const pie1_center = isMobile.value ? ['50%', '30%'] : ['35%', '50%'];
+        const pie1_radius = isMobile.value ? '35%' : '45%';
+        const pie2_center = isMobile.value ? ['50%', '70%'] : ['65%', '50%'];
+        const pie2_radius = isMobile.value ? '25%' : '35%';
 
         chartOption.value = {
           color: chartColors,
@@ -128,9 +125,7 @@ export default defineComponent({
               radius: pie1_radius, 
               center: pie1_center, 
               label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, 
-              // 【修改】动态设置起始角度
-              startAngle: isMobile ? 60 : 145, // 手机端旋转90度 (145+90)
-              labelLine: { show: true }, 
+              startAngle: isMobile ? 60 : 145,
               data: parentPieData, 
               z: 101 
             },
@@ -140,8 +135,7 @@ export default defineComponent({
               radius: pie2_radius, 
               center: pie2_center, 
               label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, 
-              // 【修改】动态设置起始角度
-              startAngle: isMobile ? 0 : 90, // 手机端旋转90度 (90+90)
+              startAngle: isMobile ? 0 : 90,
               labelLine: { show: true }, 
               data: childPieData, 
               z: 101 
@@ -224,6 +218,7 @@ export default defineComponent({
 
 <style scoped>
 .chart-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

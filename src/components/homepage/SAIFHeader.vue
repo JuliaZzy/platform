@@ -51,24 +51,25 @@
 
 <script>
 export default {
-  name: 'NewHeader',
+  name: 'SAIFHeader',
   data() {
     return {
       isSearchVisible: false,
-      searchKeyword: '' // 使用 v-model 绑定输入框内容
+      searchKeyword: ''
     };
   },
   methods: {
     toggleSearch(state) {
       this.isSearchVisible = state;
       if (!state) {
-        this.searchKeyword = ''; // 关闭时清空关键词
+        this.searchKeyword = '';
       }
     },
     performSearch() {
-      if (this.searchKeyword) {
-        // 在新标签页中打开搜索链接
-        window.open('https://www.saif.sjtu.edu.cn/search/index/?keyword=' + this.searchKeyword, '_blank');
+      if (this.searchKeyword.trim()) {
+        const url = 'https://www.saif.sjtu.edu.cn/search/index/?keyword=' + encodeURIComponent(this.searchKeyword);
+        window.open(url, '_blank');
+        this.toggleSearch(false);
       }
     }
   }
@@ -76,54 +77,52 @@ export default {
 </script>
 
 <style>
-/* 使用 @import 在 <style> 标签中导入外部CSS */
-/* 确保您的 `高金智库_files` 文件夹在 `src/assets` 目录下 */
-
 @import '@/assets/SAIF_css/global.css';
 @import '@/assets/SAIF_css/24-nav.css';
 @import '@/assets/SAIF_css/index.css';
 @import '@/assets/SAIF_css/mobile1.css';
 @import '@/assets/SAIF_css/mobile2.css';
 
-/* 来自原HTML的内联样式 */
 .n24-header-menu {
-    position: unset;
-    z-index: 1009;
+  position: unset;
+  z-index: 1009;
+  box-sizing: border-box !important;
 }
+
+.n24-header-menu .n24-header-menu-inner {
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.n24-header-menu .n24-header-menu-inner-left,
+.n24-header-menu .n24-header-menu-inner-right {
+  float: none;
+}
+
 .n24-header-menu .n24-header-menu-list li:hover .n24-header-menu-dropdown-list {
-    z-index: 1001;
-}
-@media (max-width: 768px) {
-    .n24-header-menu {
-        position: relative;
-    }
+  z-index: 1001;
 }
 
-/* 确保搜索框能被Vue正确地显示和隐藏 */
 .n24-page-search-input {
-    display: block;
+    position: absolute;
+    top: 40px;
+    right: 0;
+    z-index: 1100;
+    display: block !important;
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 350px;
 }
 
-
-  /* 1. 修正宽度问题，确保 padding 不会撑开容器 */
+@media (max-width: 768px) {
   .n24-header-menu {
-    box-sizing: border-box;
+    position: relative;
   }
-
-  /* 2. 将 Header 内部容器设置为 Flex 布局 */
-  .n24-header-menu .n24-header-menu-inner {
-      max-width: 100%; /* 限制内容最大宽度，在大屏幕上更美观 */
-      margin: 0 auto;    /* 让内容在页面中水平居中 */
-
-      /* --- 以下是 Flexbox 核心指令 --- */
-      display: flex;                 /* 启用 Flex 布局 */
-      justify-content: space-between;/* 子元素两端对齐：logo在最左，右侧内容在最右 */
-      align-items: center;           /* 子元素在垂直方向上居中对齐 */
-  }
-
-  /* 3. 清除可能存在的旧的浮动布局，因为 Flexbox 会接管 */
-  .n24-header-menu .n24-header-menu-inner-left,
-  .n24-header-menu .n24-header-menu-inner-right {
-    float: none;
-  }
+}
 </style>

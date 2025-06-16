@@ -30,6 +30,11 @@
         @page-change="handlePageChange"
       />
     </div>
+
+    <footer class="page-footer" v-show="!isLoading">
+      {{ footerText }}
+    </footer>
+
   </div>
 </template>
 
@@ -58,7 +63,8 @@ export default {
       totalRows: 0,
       charts: {},
       options: {},
-      comboChartData: []
+      comboChartData: [],
+      footerText: '数据来源：公开信息、高金智库数据资产研究课题组'
     };
   },
   methods: {
@@ -74,14 +80,12 @@ export default {
     async fetchSummaryData(page) {
       console.log('【前端 NLSDashboardPage】fetchSummaryData 发送的 filters:', JSON.stringify(this.filters, null, 2), '请求页码:', page);
       try {
-        // 确保你请求的 API 地址 /api/nlasset/summary 是我们之前修改过的那个
         const res = await axios.post('/api/nlasset/summary', {
           filters: this.filters,
           page,
           pageSize: this.pageSize
         });
         
-        // ▼▼▼ 2. 从 API 响应中提取 cumulativeComboChart 数据并存储起来 ▼▼▼
         this.comboChartData = res.data.cumulativeComboChart || [];
         
         this.charts = res.data.charts || {};
@@ -124,7 +128,14 @@ export default {
   overflow-x: hidden;
 }
 
-/* --- 【新增】响应式布局 --- */
+.page-footer {
+  padding: 20px 30px;
+  text-align: left;
+  font-size: 14px;
+  color: #888;
+  line-height: 1.6;
+}
+
 @media (max-width: 1200px) {
   .dashboard-content {
     width: 85%;
@@ -149,6 +160,11 @@ export default {
   }
   .dashboard-container {
     padding: 15px;
+  }
+
+  .page-footer {
+    padding: 15px; /* 在手机端减小边距 */
+    font-size: 12px; /* 在手机端减小字体 */
   }
 }
 

@@ -10,7 +10,7 @@ let FONT_DESCRIPTORS = null; // 使用 null 初始化，表示尚未加载
  */
 function loadFonts() {
     if (FONT_DESCRIPTORS !== null) {
-        return FONT_DESCRIPTORS; // 如果已加载，直接返回
+        return FONT_DESCRIPTORS;
     }
 
     console.log("Initializing PDF fonts...");

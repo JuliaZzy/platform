@@ -155,6 +155,10 @@
           </el-button>
       </div>
     </div>
+
+    <footer class="page-footer" v-show="!isLoading">
+      {{ footerText }}
+    </footer>
   </div>
 </template>
 
@@ -185,29 +189,26 @@ export default {
           other_dl: false
       },
       apiBase: '/api/finance',
-      // ✅ 2. 为分页增加数据
       pagination: {
         bank: { currentPage: 1, pageSize: 10, totalRows: 0, totalPages: 1 },
         stock: { currentPage: 1, pageSize: 10, totalRows: 0, totalPages: 1 },
         other: { currentPage: 1, pageSize: 10, totalRows: 0, totalPages: 1 },
       },
-      // ✅ 3. 银行表列名映射
       bankTableDisplayConfig: {
         columnMap: {
           month_time: '入表月份',
-          show_name: '入表企业', // 确保您的数据中此字段为 show_name
+          show_name: '入表企业',
           dataasset_content: '数据资产内容',
           finance_value: '融资金额（万元）',
           finance_type: '融资类型',
           finance_orgs: '融资机构'
         },
-        // 定义显示顺序
         columnOrder: ['month_time', 'show_name', 'dataasset_content', 'finance_value', 'finance_type', 'finance_orgs']
-      }
+      },
+      footerText: '数据来源：公开信息、高金智库数据资产研究课题组'
     };
   },
   mounted() {
-    // ✅ 2. 获取第一页数据
     this.fetchData('bank', 1);
     this.fetchData('stock', 1);
     this.fetchData('other', 1);
@@ -216,28 +217,26 @@ export default {
     formatToChineseYearMonth,
     formatNumber,
     formatPercentage,
-    getHeaders(dataArray, type) { // ✅ 3. 调整 getHeaders 以处理银行表
+    getHeaders(dataArray, type) {
       if (type === 'bank' && dataArray && dataArray.length > 0) {
         return this.bankTableDisplayConfig.columnOrder; 
       }
       if (dataArray && dataArray.length > 0) {
-        // ✨ 在这里添加 .filter
         return Object.keys(dataArray[0]).filter(key => key !== 'updated_at');
       }
       return [];
     },
     formatValue(value) {
-        return value !== null && value !== undefined ? String(value) : ''; // 确保转为字符串
+        return value !== null && value !== undefined ? String(value) : '';
     },
     /**
      * @description: 从后端获取指定类型的数据。
      * @param {string} type - 数据类型 ('bank', 'stock', 'other')。
      * @param {number} page - 请求的页码。
      */
-    async fetchData(type, page, pageSize) { // (3) fetchData 接收 pageSize
+    async fetchData(type, page, pageSize) {
       this.loading[type] = true;
       const currentPagination = this.pagination[type];
-      // 如果 pageSize 未传入，则使用当前分页对象中的 pageSize
       const effectivePageSize = pageSize !== undefined ? pageSize : currentPagination.pageSize;
 
       try {
@@ -251,7 +250,7 @@ export default {
         if (response && response.data && Array.isArray(response.data.data)) {
             this[`${type}Data`] = response.data.data;
             currentPagination.totalRows = response.data.total || 0;
-            currentPagination.pageSize = effectivePageSize; // (3) 确保更新 pageSize
+            currentPagination.pageSize = effectivePageSize;
             currentPagination.totalPages = Math.ceil(currentPagination.totalRows / currentPagination.pageSize) || 1;
             currentPagination.currentPage = page;
         } else {
@@ -286,16 +285,14 @@ export default {
     async download(type) {
       const apiUrl = `${this.apiBase}/export/${type}`;
       const loadingKey = `${type}_dl`;
-      let specificFilename = ''; // 用于存储为各种类型定制的文件名
+      let specificFilename = '';
     
-      // 获取当前日期用于文件名 (可选)
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
       const dateString = `${year}${month}${day}`;
     
-      // 根据 type 设置不同的文件名
       switch (type) {
         case 'bank':
           specificFilename = `数据资产增信银行贷款清单_${dateString}.pdf`;
@@ -313,30 +310,24 @@ export default {
       try {
         this.loading[loadingKey] = true;
 
-        // 1. 发起 POST 请求，并指明期望的响应类型是 'blob'
         const response = await axios({
           url: apiUrl,
-          method: 'POST', // 后端接口是 POST
-          responseType: 'blob', // 非常重要：告诉axios期望接收二进制数据
-          // 如果你的 POST 接口需要请求体 (body)，可以在这里用 data: {} 传递
-          // data: {}
+          method: 'POST',
+          responseType: 'blob',
         });
 
-        // 2. 用接收到的二进制数据创建一个 Blob 对象，类型是 PDF
         const blob = new Blob([response.data], { type: 'application/pdf' });
 
-        // 3. 创建一个隐藏的 <a> 标签用于触发下载
         const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob); // 创建一个指向 Blob 的临时 URL
-        link.download = specificFilename; // 设置下载的文件名
+        link.href = window.URL.createObjectURL(blob);
+        link.download = specificFilename;
 
-        // 4. 将链接添加到页面，模拟点击，然后移除并释放 URL
         document.body.appendChild(link);
-        link.click(); // 模拟用户点击下载链接
-        document.body.removeChild(link); // 从页面移除该链接
-        window.URL.revokeObjectURL(link.href); // 释放之前创建的临时 URL
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
 
-        if (this.$message) { // 如果使用了 Element UI 等组件库的消息提示
+        if (this.$message) {
             this.$message.success('文件已开始下载');
         }
 
@@ -344,32 +335,26 @@ export default {
         console.error(`导出 ${type} 报告失败:`, err);
         let errorMessage = '导出失败，请稍后重试';
         if (err.response) {
-            // 尝试从错误响应中读取服务器返回的JSON错误信息
-            // （例如，如果后端PDF生成失败，它会返回一个JSON错误对象）
             try {
-                // 后端返回的是blob，所以错误信息也在response.data（blob类型）里，需要转换
-                const errorText = await err.response.data.text(); // 将blob转为文本
-                const errorData = JSON.parse(errorText); // 尝试解析为JSON
+                const errorText = await err.response.data.text();
+                const errorData = JSON.parse(errorText);
                 if (errorData && errorData.error) {
                     errorMessage = errorData.error;
                 }
             } catch (e) {
-                // 如果解析JSON失败，或者不是预期的错误格式，使用通用错误消息或HTTP状态文本
                 errorMessage = `导出失败: ${err.response.statusText || '服务器发生错误'}`;
             }
         }
-        // 显示错误消息
         this.$message ? this.$message.error(errorMessage) : alert(errorMessage);
       } finally {
         this.loading[loadingKey] = false; // 结束加载状态
       }
     },
 
-    // ✅ 2. 新增翻页方法
+    // 翻页
     changePage(type, newPage) {
       const currentPagination = this.pagination[type];
       if (newPage >= 1 && newPage <= currentPagination.totalPages && newPage !== currentPagination.currentPage) {
-        // fetchData 现在会使用 currentPagination.pageSize
         this.fetchData(type, newPage, currentPagination.pageSize);
       }
     }
@@ -379,15 +364,15 @@ export default {
 
 <style scoped>
 .finance-page {
-  padding: 0px 30px 20px; /* Top padding reduced due to title block's margin */
+  padding: 0px 30px 20px;
   background-color: #f4f7f6;
-  min-height: calc(100vh - 50px); /* Assumes 50px is header/nav height */
+  min-height: calc(100vh - 50px);
 }
 
 .dashboard-title-block {
-  margin: 20px 0 20px; /* Adjusted from original to remove side margins if finance-page handles them */
+  margin: 20px 0 20px;
   padding: 30px;
-  overflow-x: hidden; /* Prevents horizontal scroll */
+  overflow-x: hidden;
 }
 
 .section-divider {
@@ -396,9 +381,6 @@ export default {
   margin: 40px 0;
 }
 
-/* ============================================= */
-/* Dashboard & Section Titles                    */
-/* ============================================= */
 .dashboard-title {
   font-size: 28px;
   font-weight: bold;
@@ -413,9 +395,6 @@ export default {
   margin: 0;
 }
 
-/* ============================================= */
-/* Table Section Wrapper                         */
-/* ============================================= */
 .table-section {
   background-color: white;
   padding: 25px;
@@ -436,22 +415,18 @@ export default {
 
 .table-wrapper {
   overflow-x: auto;
-  min-height: 200px; /* To maintain consistent height during pagination/loading */
+  min-height: 200px;
 }
 
-/* ============================================= */
-/* Data Table Styles                             */
-/* ============================================= */
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-/* Table Headers (th) */
 .data-table th {
   color: #2e3968;
-  border: 1px solid #e0e0e0; /* Default left/right border */
+  border: 1px solid #e0e0e0; 
   font-weight: bold;
   padding: 12px 15px;
   text-align: center;
@@ -460,34 +435,28 @@ export default {
   white-space: nowrap;
 }
 
-/* Table Data Cells (td) */
 .data-table td {
   border: 1px solid #e0e0e0;
   padding: 10px 15px;
-  text-align: left; /* Default alignment for data cells */
+  text-align: left;
   vertical-align: middle;
 }
 
-/* Row Hover Effect */
 .data-table tbody tr:hover {
   background-color: #f1f1f1;
 }
 
-.data-table tr:last-child td { /* Ensures the last data row has a strong bottom border */
+.data-table tr:last-child td {
   border-bottom: 2px solid #2e3968;
 }
 
-/* --- Column-Specific Table Styles --- */
-
-/* Column 1: "序号" (Serial Number) */
 .data-table th:first-child,
 .data-table td:first-child {
-  text-align: center; /* This rule makes inline styles for '序号' redundant */
+  text-align: center;
   width: 30px;
   min-width: 20px;
 }
 
-/* Column 2: General styling (e.g., for month_time or similar ID-like columns) */
 .data-table th:nth-child(2),
 .data-table td:nth-child(2) {
   width: 90px;
@@ -495,13 +464,11 @@ export default {
   text-align: center;
 }
 
-/* Bank Table Specific Columns */
-#bank-table th:nth-child(5), /* Example: '融资金额（万元）' */
+#bank-table th:nth-child(5),
 #bank-table td:nth-child(5) {
   text-align: right;
 }
 
-/* Stock Table Specific Columns (example: amount fields) */
 #stock-table th:nth-child(6),
 #stock-table td:nth-child(6),
 #stock-table th:nth-child(7),
@@ -511,24 +478,20 @@ export default {
   text-align: right;
 }
 
-/* Other Table Specific Columns */
-#other-table th:nth-child(3) { /* Example: a wider text field */
+#other-table th:nth-child(3) {
   min-width: 90px;
 }
-#other-table td:nth-child(3) { /* Ensure td matches if min-width is for content */
+#other-table td:nth-child(3) {
   min-width: 90px;
 }
 
-#other-table th:nth-child(8), /* Example: an amount field */
+#other-table th:nth-child(8),
 #other-table td:nth-child(8) {
   text-align: right;
 }
 
 .text-right { text-align: right; }
 
-/* ============================================= */
-/* No Data Placeholder                           */
-/* ============================================= */
 .no-data {
   padding: 30px;
   text-align: center;
@@ -544,20 +507,18 @@ export default {
   padding: 12px 20px;
   border-radius: 5px;
   font-size: 13px;
-  /* transition is often handled by Element UI itself, but can be added if needed */
 }
 
 .download-btn-pagination.el-button:hover {
-  background-color: #f0f0f0; /* Standard hover: light background, dark text */
+  background-color: #f0f0f0;
   color: #2e3968;
 }
 
-/* Page Navigation Buttons (native <button>) */
 .page-button {
   background-color: #2e3968;
   color: white;
   border: none;
-  padding: 8px 16px; /* Standard padding */
+  padding: 8px 16px;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
@@ -573,12 +534,19 @@ export default {
   cursor: not-allowed;
 }
 
-/* Page Info Text */
 .page-info {
   font-weight: bold;
   color: #2e3968;
 }
-/* --- 响应式布局 --- */
+
+.page-footer {
+  padding: 20px 30px;
+  text-align: left;
+  font-size: 14px;
+  color: #888;
+  line-height: 1.6;
+}
+
 @media (max-width: 1200px) {
   .dashboard-content {
     width: 85%;
@@ -617,6 +585,11 @@ export default {
     flex-direction: column-reverse;
     align-items: center;
     gap: 15px;
+  }
+
+  .page-footer {
+    padding: 15px; /* 在手机端减小边距 */
+    font-size: 12px; /* 在手机端减小字体 */
   }
 }
 

@@ -13,7 +13,6 @@
 
 <script>
 import { defineComponent, ref, watch } from 'vue';
-// Correctly importing the composable
 import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js'; 
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
@@ -50,7 +49,6 @@ export default defineComponent({
     }
   },
   setup(props) {
-    // This is correct!
     const { isMobile } = useResponsiveCharts();
     const chartOption = ref({});
     const loading = ref(false);
@@ -58,8 +56,6 @@ export default defineComponent({
     const updateChart = () => {
       loading.value = true;
       setTimeout(() => {
-        // 1. 【已删除】移除了下面这行错误的代码
-        // const isMobile = window.innerWidth <= 768;
 
         const barLabelOption = {
           show: true,
@@ -69,7 +65,6 @@ export default defineComponent({
           color: '#005f73',
         };
 
-        // Now all instances of "isMobile" correctly refer to the reactive `isMobile.value`
         chartOption.value = {
           color: chartColors,
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -116,7 +111,6 @@ export default defineComponent({
 
     watch(() => props.chartData, updateChart, { immediate: true, deep: true });
 
-    // 2. 【已新增】添加对 isMobile 状态的监听
     watch(isMobile, updateChart);
 
     return {
@@ -128,8 +122,8 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 4. 修改容器样式，移除 min-width */
 .chart-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -145,7 +139,6 @@ export default defineComponent({
   color: #2e3968;
 }
 
-/* 5. 新增响应式样式 */
 @media (max-width: 768px) {
   .chart-title {
     font-size: 16px;
