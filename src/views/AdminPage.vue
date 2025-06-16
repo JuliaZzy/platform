@@ -266,7 +266,6 @@ export default {
       searchDebounceTimer: null,
       showFilterDropdown: {}, 
       
-      // 报告管理相关数据
       reportsData: [],
       isReportUploadModalVisible: false,
       selectedReportFile: null,
@@ -345,11 +344,6 @@ export default {
     },
   },
   methods: {
-    // =================================================================
-    //  所有的方法都必须放在这个 methods 对象内部
-    // =================================================================
-
-    // --- 健壮的格式化函数 ---
     formatFileSize(bytes) {
       if (bytes == null || isNaN(bytes)) return 'N/A';
       if (bytes === 0) return '0 Bytes';
@@ -445,6 +439,7 @@ export default {
       formData.append('report', this.selectedReportFile);
       try {
         await axios.post('/api/reports/upload', formData, {
+          timeout: 120000,
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         alert('文件上传成功！');
