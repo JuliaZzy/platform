@@ -125,7 +125,7 @@ export default defineComponent({
               radius: pie1_radius, 
               center: pie1_center, 
               label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, 
-              startAngle: isMobile ? 60 : 145,
+              startAngle: isMobile.value ? 60 : 145,
               data: parentPieData, 
               z: 101 
             },
@@ -135,7 +135,7 @@ export default defineComponent({
               radius: pie2_radius, 
               center: pie2_center, 
               label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'inside' }, 
-              startAngle: isMobile ? 0 : 90,
+              startAngle: isMobile.value ? 0 : 90,
               labelLine: { show: true }, 
               data: childPieData, 
               z: 101 

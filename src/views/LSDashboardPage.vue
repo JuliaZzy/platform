@@ -260,11 +260,11 @@ export default {
   }
 
   .page-footer {
-    padding: 20px 30px; /* 内边距，与表格容器的左右边距对齐 */
-    text-align: left;   /* 文字左对齐 */
-    font-size: 14px;    /* 字体大小 */
-    color: #888;         /* 字体颜色，灰色，不那么显眼 */
-    line-height: 1.6;   /* 增加行高，以便自动换行时有足够间距 */
+    padding: 20px 30px;
+    text-align: left;
+    font-size: 14px;
+    color: #888;
+    line-height: 1.6;
   }
 
 @media (max-width: 1200px) {
