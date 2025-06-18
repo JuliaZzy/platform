@@ -223,6 +223,7 @@ export default {
 
   }
   .data-table td {
+    color: #333;
     border: 1px solid #ccc;
     padding: 10px 12px;
   }

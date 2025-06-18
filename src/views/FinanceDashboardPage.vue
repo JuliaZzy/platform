@@ -436,6 +436,7 @@ export default {
 }
 
 .data-table td {
+  color: #333;
   border: 1px solid #e0e0e0;
   padding: 10px 15px;
   text-align: left;
@@ -578,9 +579,11 @@ export default {
   .data-table {
     font-size: 13px;
   }
+  
   .data-table th, .data-table td {
     padding: 8px 10px;
   }
+
   .table-footer-controls {
     flex-direction: column-reverse;
     align-items: center;
