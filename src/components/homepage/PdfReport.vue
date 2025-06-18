@@ -6,7 +6,7 @@
       <li v-for="report in reports" :key="report.name">
         <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
           <i class="fas fa-file-pdf"></i>
-          <span class="file-name">{{ report.filename }}</span>
+          <span class="file-name">{{ report.name }}</span>
         </a>
       </li>
     </ul>
