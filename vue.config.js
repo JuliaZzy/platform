@@ -6,22 +6,20 @@ module.exports = {
   devServer: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',  // 设置为后端服务器地址
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
     },
   },
 
-  // 配置 Webpack（例如，路径别名）
   configureWebpack: {
     resolve: {
       alias: {
-        '@': require('path').resolve(__dirname, 'src'), // 设置 '@' 为 src 目录的别名
+        '@': require('path').resolve(__dirname, 'src'),
       },
     },
   },
 
-  // 可以开启 Vue Router 的 history 模式
 };
 

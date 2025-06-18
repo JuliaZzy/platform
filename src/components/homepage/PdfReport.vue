@@ -1,17 +1,16 @@
 <template>
-  <div class="report-container">
-    <div class="report-section">
-      <ul v-if="reports.length > 0" class="file-grid">
-        <li v-for="report in reports" :key="report.name" class="file-item">
-          <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
-            <i class="fas fa-file-pdf"></i>
-            <span>{{ formatReportName(report.name) }}</span>
-          </a>
-        </li>
-      </ul>
-      <p v-else class="no-files">暂无文件可供下载。</p>
-    </div>
-    
+  <div class="pdf-list-container">
+    <div v-if="isLoading">正在加载...</div>
+    <div v-else-if="error" class="error-message">{{ error }}</div>
+    <ul v-else-if="reports.length > 0" class="pdf-list">
+      <li v-for="report in reports" :key="report.name">
+        <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
+          <i class="fas fa-file-pdf"></i>
+          {{ report.name }}
+        </a>
+      </li>
+    </ul>
+    <div v-else>暂无最新报告。</div>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   </div>
 </template>
@@ -23,25 +22,32 @@ export default {
   name: 'PdfReport',
   data() {
     return {
-      reports: []
+      reports: [],
+      isLoading: false,
+      error: null,
     };
   },
-  async mounted() {
-    try {
-      const response = await axios.get('/api/reports');
-      this.reports = response.data;
-    } catch (error) {
-      console.error('Failed to fetch reports:', error);
-    }
-  },
   methods: {
-    getDownloadUrl(filename) {
-      return `/api/reports/download/${encodeURIComponent(filename)}`;
+    async fetchReports() {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/reports`);
+        this.reports = response.data;
+      } catch (err) {
+        console.error('Failed to fetch reports for homepage:', err);
+        this.error = '无法加载报告列表，请稍后再试。';
+      } finally {
+        this.isLoading = false;
+      }
     },
-    formatReportName(filename) {
-      return filename.replace(/\.pdf$/i, '');
-    }
-  }
+    getDownloadUrl(filename) {
+      return `${process.env.VUE_APP_API_URL}/api/reports/download/${encodeURIComponent(filename)}`;
+    },
+  },
+  created() {
+    this.fetchReports();
+  },
 };
 </script>
 

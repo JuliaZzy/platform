@@ -40,9 +40,17 @@
         </div>
       </div>
 
-      <!-- 70%居中 -->
+      <div v-if="isDisclaimerModalVisible" class="disclaimer-modal">
+        <div class="disclaimer-modal-content">
+          <span class="close-disclaimer" @click="closeDisclaimerModal">×</span>
+          <h2>免责声明</h2>
+          <ol class="disclaimer-list">
+            <li v-for="(item, index) in disclaimerItems" :key="index">{{ item }}</li>
+          </ol>
+        </div>
+      </div>
+
       <div class="main-content">
-        <!-- 1. 数据概览区域 -->
         <h2 class="section-title">数据资产入表情况概览</h2>
         <div class="status-row">
           <StatusCard
@@ -66,13 +74,11 @@
           />
         </div>
 
-        <!-- 2. 报告下载区域 -->
         <h2 class="section-title">往期报告下载</h2>
         <div class="pdf-report-wrapper">
           <PdfReport />
         </div>
 
-        <!-- 3. 榜单区域 -->
         <h2 class="section-title">企业名单</h2>
         <div class="grid-container">
           <InfoTable
@@ -93,14 +99,17 @@
         </div>
       </div>
 
-      <PageFooter @open-login="openLoginModal" @open-feedback="openFeedbackModal" />
+      <PageFooter 
+        @open-login="openLoginModal" 
+        @open-feedback="openFeedbackModal"
+        @open-disclaimer="openDisclaimerModal"
+      />
       <SAIFFooter />
     </div>
   </div>
 </template>
 
 <script>
-//脚本部分与您原有的保持一致，无需修改
 import axios from 'axios';
 import { formatToChineseYearMonth } from '@/utils/formatters.js';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
@@ -141,6 +150,15 @@ export default {
       nonListedCompanies: [],
       financingCompanies: [],
       isLoginModalVisible: false,
+      isDisclaimerModalVisible: false,
+      // 新增：免责声明内容数组
+      disclaimerItems: [
+        '1. 本数据库提供的所有数据均来源于公开渠道，包括但不限于政府部门、国际组织、学术研究等。数据库运营方力求确保数据的准确性与及时性，但不对任何数据来源的完整性、准确性或时效性作明示或默示的担保。',
+        '2. 本数据库提供的数据可能因统计方法修订、源数据调整或延迟更新而产生差异。数据库运营方保留在不另行通知的情况下修改、删除或补充数据的权利，且不承担因数据滞后、误差或遗漏导致的直接或间接责任。',
+        '3. 本数据库内容仅供学术研究、市场分析或一般参考用途，不构成任何投资形式的投资建议。',
+        '4. 本数据库运营方及其关联方不对因数据使用导致的任何损失（包括但不限于直接、间接、附带或衍生损失）承担责任。使用方在使用本数据库数据时，应遵守适用的法律法规、行业规范和道德准则。',
+        '5. 用户使用本数据库即视为同意本免责声明，并承诺遵守相关法律法规。'
+      ],
       isFeedbackModalVisible: false,
       feedbackForm: {
         name: '',
@@ -223,6 +241,15 @@ export default {
       this.isFeedbackModalVisible = false;
       this.feedbackForm = { name: '', contact: '', organization: '', details: '' };
     },
+
+    // 免责声明弹窗
+    openDisclaimerModal() {
+      this.isDisclaimerModalVisible = true;
+    },
+    closeDisclaimerModal() {
+      this.isDisclaimerModalVisible = false;
+    },
+
     async submitFeedback() {
       if (!this.feedbackForm.name || !this.feedbackForm.contact || !this.feedbackForm.details) {
         alert('请填写所有必填项（姓名、联系方式、反馈事项）。');
@@ -279,18 +306,16 @@ export default {
   flex-wrap: wrap;
 }
 .status-row > :deep(.status-box) {
-  width: 30%; /* 每个卡片占据大约三分之一的宽度，剩余空间由 justify-content 分配 */
+  width: 30%;
 }
 
-/* 【修改】调整表格栅格布局的边距 */
 .grid-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 50px; /* 减小了表格之间的间距 */
-  margin: 0 0 60px 0; /* 移除了左右边距，增加了底部边距 */
+  gap: 50px;
+  margin: 0 0 60px 0;
 }
 
-/* 弹窗样式保持不变 */
 .login-modal {
   position: fixed;
   top: 0;
@@ -334,7 +359,6 @@ export default {
   background-color: transparent !important;
 }
 
-/* 反馈弹窗样式保持不变 */
 .feedback-modal {
   position: fixed;
   top: 0;
@@ -412,7 +436,6 @@ export default {
   background-color: #b3b3b3;
 }
 
-/* 加载动画样式保持不变 */
 .chart-spinner-container {
   position: absolute;
   top: 50%;
@@ -422,18 +445,85 @@ export default {
   pointer-events: none;
 }
 
-/* 【修改】响应式布局 */
+/* 免责声明 */
+.disclaimer-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: -90px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+.disclaimer-modal-content {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", "Heiti SC", "WenQuanYi Micro Hei", sans-serif;
+  background-color: white;
+  color: #000;
+  padding: 30px 40px;
+  width: 70%;
+  max-width: 800px;
+  border-radius: 8px;
+  position: relative;
+  line-height: 1.7;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.disclaimer-modal-content h2 {
+  color: #004B87;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.disclaimer-modal-content .disclaimer-list {
+  overflow-y: auto;
+  flex-grow: 1;
+  margin: 0;
+  padding-left: 25px;
+}
+
+.disclaimer-modal-content .disclaimer-list li {
+  margin-bottom: 15px;
+  padding-left: 0.8em;
+  text-indent: -1.1em;
+}
+.disclaimer-modal-content .disclaimer-list li:last-child {
+  margin-bottom: 0;
+}
+
+.close-disclaimer {
+  position: absolute;
+  right: 25px;
+  top: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.close-disclaimer:hover {
+  color: #000;
+}
+
+/* 响应式布局 */
 @media (max-width: 992px) {
-  /* 在中等屏幕上，稍微增加内容宽度 */
   .main-content {
     width: 85%;
   }
 }
 
 @media (max-width: 768px) {
-  /* 在小屏幕上，内容区几乎占满 */
   .main-content {
-    width: 90%;
+    width: 95%;
   }
   .section-title {
     font-size: 22px;
@@ -452,6 +542,17 @@ export default {
   .grid-container {
     grid-template-columns: 1fr;
     gap: 40px;
+  }
+
+  .disclaimer-modal-content {
+    width: 90%;
+    padding: 20px;
+  }
+  .disclaimer-modal-content h2 {
+    font-size: 20px;
+  }
+  .disclaimer-list {
+    font-size: 14px;
   }
 }
 </style>
