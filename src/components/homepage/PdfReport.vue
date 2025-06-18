@@ -40,9 +40,9 @@ export default {
         this.isLoading = false;
       }
     },
-    getDownloadUrl(filename) {
-      if (!filename) return "#";
-      return `${process.env.VUE_APP_API_URL}/api/reports/download/${filename}`;
+    getDownloadUrl(name) {
+      if (!name) return "#";
+      return `${process.env.VUE_APP_API_URL}/api/reports/download/${name}`;
     },
   },
   created() {
