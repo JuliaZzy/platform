@@ -42,7 +42,7 @@ export default {
     },
     getDownloadUrl(filename) {
       if (!filename) return "#";
-      return `${process.env.VUE_APP_API_URL}/reports/download/${filename}`;
+      return `${process.env.VUE_APP_API_URL}/api/reports/download/${filename}`;
     },
   },
   created() {
