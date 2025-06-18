@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const dbAdmin = require('../db/db'); // PostgreSQL 连接模块
+const dbAdmin = require('../db/db');
 
 router.post('/', async (req, res) => {
   const { username, password } = req.body;

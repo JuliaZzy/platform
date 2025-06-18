@@ -232,12 +232,12 @@ export default {
   }
 
   .row-actions {
-    justify-content: flex-end; /* 让 row 最右对齐 */
+    justify-content: flex-end;
   }
 
   .action-buttons {
     display: flex;
-    gap: 30px; /* 按钮之间的间距 */
+    gap: 30px;
     margin-right: 100px;
   }
   .confirm-btn,
@@ -250,7 +250,7 @@ export default {
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 20px;
-    min-width: 100px; /* ✅ 设置一致的最小宽度 */
+    min-width: 100px;
   }
 
   .confirm-btn:hover,

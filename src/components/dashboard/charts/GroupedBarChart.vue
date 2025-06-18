@@ -12,7 +12,6 @@
 
 <script>
 import { defineComponent, ref, watch, nextTick } from 'vue';
-// 1. 导入我们创建的 Composable
 import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
@@ -33,7 +32,6 @@ export default defineComponent({
     yAxisName: { type: String, default: '入表企业数量（家）' }
   },
   setup(props) {
-    // 2. 调用 Composable 获取响应式状态
     const { isMobile } = useResponsiveCharts();
 
     const chartOption = ref({});
@@ -51,12 +49,6 @@ export default defineComponent({
           loading.value = false;
           return;
         }
-
-        // 3. 【已删除】移除了这行非响应式的代码
-        // const isMobile = window.innerWidth <= 768;
-        
-        // All the logic below here that uses `isMobile` will now
-        // correctly use the reactive `isMobile.value`.
         const problematicTitles = [
           'A股数据资源入表公司分科目分布情况',
           'A股数据资源入表公司分实控人分布情况',
@@ -136,11 +128,9 @@ export default defineComponent({
             type: 'scroll'
           },
           grid: {
-            // 【修正】必须使用 .value
             top: isMobile.value ? 80 : 60,
             left: '10%',
             right: '4%',
-            // 【修正】必须使用 .value
             bottom: isMobile.value ? (isProblematicChart ? '35%' : '20%') : '3%',
             containLabel: true
           },
@@ -204,7 +194,6 @@ export default defineComponent({
     };
 
     watch(() => props.chartData, updateChart, { immediate: true, deep: true });
-    // 4. 【关键】新增对 isMobile 的监听
     watch(isMobile, updateChart);
 
     return {

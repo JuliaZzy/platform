@@ -1,5 +1,5 @@
 const express = require('express');
-const fs = require('fs').promises; // 只使用promises API
+const fs = require('fs').promises;
 const path = require('path');
 const { PDFDocument, rgb, degrees } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
@@ -7,8 +7,6 @@ const router = express.Router();
 const multer = require('multer');
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads', 'reports');
 const METADATA_PATH = path.join(UPLOADS_DIR, 'metadata.json');
-
-// 确保目录存在函数
 const ensureDirectoryExists = async () => {
   try {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -239,8 +237,8 @@ router.post('/order', async (req, res) => {
     const metadataMap = new Map(currentMetadata.map(item => [item.filename, item]));
     
     const newMetadata = orderedFilenames.map(filename => ({
-      ...(metadataMap.get(filename) || {}), // 保留原有额外字段
-      filename // 确保文件名更新
+      ...(metadataMap.get(filename) || {}),
+      filename
     }));
 
     // 写入元数据
@@ -253,7 +251,7 @@ router.post('/order', async (req, res) => {
     });
 
   } catch (error) {
-    const errorId = Date.now(); // 生成错误ID便于追踪
+    const errorId = Date.now();
     console.error(`[${errorId}] 排序更新失败:`, error);
     
     res.status(500).json({
@@ -274,15 +272,9 @@ router.post('/order', async (req, res) => {
 router.delete('/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
-    // 安全性检查
     if (filename.includes('..')) return res.status(400).send('Invalid filename.');
-    
     const filePath = path.join(UPLOADS_DIR, filename);
-
-    // 1. 从磁盘删除文件
     await fs.unlink(filePath);
-
-    // 2. 从元数据中移除记录
     let metadata = await readMetadata();
     metadata = metadata.filter(m => m.filename !== filename);
     await writeMetadata(metadata);
@@ -308,7 +300,7 @@ router.get('/download/:filename', async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, filename);
 
   try {
-    await fs.access(filePath); // 检查文件是否存在
+    await fs.access(filePath);
     
     try {
       const fontPath = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Regular.otf');
@@ -341,7 +333,7 @@ router.get('/download/:filename', async (req, res) => {
       res.send(Buffer.from(pdfBytes));
     } catch (processingError) {
       console.warn('Watermark failed, sending original file:', processingError);
-      res.download(filePath); // 降级方案
+      res.download(filePath);
     }
   } catch (error) {
     if (error.code === 'ENOENT') {

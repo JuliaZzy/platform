@@ -252,7 +252,6 @@ export default {
 </script>
 
 <style scoped>
-/* Copied from AdminPage.vue */
 .update-time { color: #2e3968; font-size: 14px; margin-bottom: 24px; }
 .search-bar { display: flex; justify-content: flex-end; align-items: center; margin-top: 60px; margin-bottom: 12px; gap: 10px; }
 .search-bar input { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }

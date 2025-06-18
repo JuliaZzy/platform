@@ -1,4 +1,3 @@
-// src/utils/queuedPost.js
 import axios from 'axios';
 
 const queue = [];

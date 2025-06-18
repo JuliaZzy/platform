@@ -16,7 +16,7 @@ const sanitizeColumnName = (name) => {
 // 验证表名函数
 const isValidTableName = (name) => /^[a-zA-Z0-9_]+$/.test(name);
 
-// 定义每个表用于“部分重复”检查的关键数据库列名
+// “部分重复”检查
 const tableKeyColumnConfigs = {
   'dataasset_listed_companies_2024': {
     keyDbColumns: ['证券代码', '报告时间'], 
@@ -36,7 +36,7 @@ const tableKeyColumnConfigs = {
   }
 };
 
-// 定义哪些数据库列在从Excel导入时需要特定的日期格式转换
+// 日期格式转换
 const columnSpecificDateFormatting = {
   'dataasset_non_listed_companies': {
     'month_time': 'YYYY-MM',        
@@ -206,7 +206,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
              day = String(cellValue.getDate()).padStart(2, '0');
              dateParsedSuccessfully = true;
           }
-          // 尝试解析 YYYY?MM?DD? 或 YYYY?MM? 格式的字符串 (其中?代表分隔符或无分隔符)
           else if (typeof cellValue === 'string') {
             const cleanedDateString = cellValue.replace(/[年月]/g, '-').replace(/[日]/g, '');
             const strictDateMatch = cleanedDateString.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})$/); // YYYY-MM-DD or YYYY/MM/DD etc.
@@ -220,7 +219,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
             } else if (yearMonthMatch) {
                  year = parseInt(yearMonthMatch[1], 10);
                  month = String(parseInt(yearMonthMatch[2], 10)).padStart(2, '0');
-                 // 对于 YYYY-MM 格式，如果目标是 YYYY-MM-DD，我们默认 day 为 01
                  day = '01'; 
                  dateParsedSuccessfully = true;
             }
@@ -256,7 +254,6 @@ router.post('/append', upload.single('file'), async (req, res) => {
 
       if (fullMatchResult.rows.length > 0) {
         results.ignoredFullDuplicate++;
-        // console.log(`[excelUpload] 行 ${rowIndex + 1}: 完全重复，已忽略。`);
         continue; 
       }
 
@@ -270,14 +267,11 @@ router.post('/append', upload.single('file'), async (req, res) => {
           keyMatchValuesFromExcel.push(excelRowValues[indexInBusinessColumns]);
         } else {
           console.error(`[excelUpload] 配置错误: 表 ${tableName} 的关键列 "${keyDbColName}" 未在其业务列列表中找到。此关键列将被忽略。`);
-          // 不再因关键列配置错误而使整行视为唯一，而是只用找到的关键列进行匹配
-          // 但如果 configuredKeyDbNames 中的列在 dbBusinessColumnNames 中根本不存在，这是一个严重的配置问题
         }
       }
       
       let statusToInsertForNewRow = null; 
       if (keyMatchConditionsForQuery.length > 0 && keyMatchConditionsForQuery.length === configuredKeyDbNames.filter(kcn => dbBusinessColumnNames.includes(kcn)).length) { 
-        // 只在所有在DB中存在的已配置key都有条件时才进行部分重复查询
         const partialMatchQuery = `SELECT id, status FROM "${tableName}" WHERE ${keyMatchConditionsForQuery.join(' AND ')}`;
         const partialMatchResult = await client.query(partialMatchQuery, keyMatchValuesFromExcel);
 
@@ -328,8 +322,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
       const placeholders = dbColumnsForInsert.map((_, i) => `$${i + 1}`).join(',');
       const insertSql = `INSERT INTO "${tableName}" (${dbColumnsForInsert.map(c => `"${c}"`).join(',')}) VALUES (${placeholders}) RETURNING *`;
       const { rows: insertedExcelRows } = await client.query(insertSql, valuesToInsertForDB);
-      // console.log(`[excelUpload] 行 ${rowIndex + 1}: 已插入到数据库，获得ID: ${insertedExcelRows[0]?.id}, 状态: ${statusToInsertForNewRow}`);
-      
+     
       if (insertedExcelRows.length > 0) {
         const idx = results.affectedRowsForFrontend.findIndex(r => r.id === insertedExcelRows[0].id);
         if (idx > -1) results.affectedRowsForFrontend[idx] = insertedExcelRows[0];
@@ -338,9 +331,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
     } 
     
     await client.query('COMMIT');
-    // ✅ 在主事务成功提交后，并且在发送响应前，检查是否需要触发同步
     if (tableName === 'dataasset_non_listed_companies') {
-      // 调用从 statusUpdateApi.js 引入的函数
       triggerBankTableSync(`excelUpload for table ${tableName}`);
     }
 

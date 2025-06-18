@@ -67,26 +67,24 @@ export default {
 .grid-item {
   position: relative;
   min-height: 160px;
-  display: flex; /* 关键：使其子元素 .table-wrapper 可以填充高度 */
-  flex-direction: column; /* 垂直排列 */
-  flex: 1; /* 可选：让每个表格平分宽度 */
+  display: flex;
+  flex-direction: column; 
+  flex: 1;
 }
 
-/* 【修改】使 .table-wrapper 填充 .grid-item 的高度 */
 .table-wrapper {
   position: relative;
   min-height: 180px;
-  flex-grow: 1; /* 关键：允许此元素拉伸以填充可用空间 */
-  display: flex; /* 关键：为内部的 table 和 pagination 提供布局控制 */
+  flex-grow: 1;
+  display: flex;
   flex-direction: column;
 }
 
-/* 【修改】使 table 元素填充 .table-wrapper 的高度 */
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
-  flex-grow: 1; /* 关键：让 table 占据所有可用垂直空间 */
+  flex-grow: 1;
 }
 
 td {
@@ -98,7 +96,6 @@ td {
   vertical-align: middle;
 }
 
-/* 【新增】为第一行数据添加上边框 */
 tbody tr:first-child td {
   border-top: 2px solid #172787;
 }
@@ -134,14 +131,14 @@ tr:last-child td {
 /* 【新增】响应式布局 */
 @media (max-width: 768px) {
   table {
-    font-size: 14px; /* 减小字体 */
+    font-size: 14px;
   }
   td {
     height: 45px;
-    padding: 6px 10px; /* 减小内边距 */
+    padding: 6px 10px;
   }
   .pagination button {
-    padding: 6px 12px; /* 减小按钮尺寸 */
+    padding: 6px 12px;
   }
   .pagination span {
     font-size: 14px;

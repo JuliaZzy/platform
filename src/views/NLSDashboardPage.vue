@@ -110,9 +110,9 @@ export default {
 
 <style scoped>
 .dashboard-title-block {
-  margin: 20px 0 20px; /* Adjusted from original to remove side margins if finance-page handles them */
+  margin: 20px 0 20px;
   padding: 30px;
-  overflow-x: hidden; /* Prevents horizontal scroll */
+  overflow-x: hidden;
 }
 
 .dashboard-title {
@@ -163,8 +163,8 @@ export default {
   }
 
   .page-footer {
-    padding: 15px; /* 在手机端减小边距 */
-    font-size: 12px; /* 在手机端减小字体 */
+    padding: 15px;
+    font-size: 12px;
   }
 }
 

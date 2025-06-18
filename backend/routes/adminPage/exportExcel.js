@@ -6,14 +6,11 @@ const db = require('../../db/db');
 // 导出 Excel 接口
 router.get('/:tableName', async (req, res) => {
   const { tableName } = req.params;
-
-  // 表名校验
   if (!/^[a-zA-Z0-9_]+$/.test(tableName)) {
     return res.status(400).json({ error: '非法表名，必须是英文、数字、下划线组成' });
   }
 
   try {
-    // 查询数据（PostgreSQL 无需反引号）
     const result = await db.query(`SELECT * FROM "${tableName}"`);
     const rows = result.rows;
 
@@ -21,7 +18,6 @@ router.get('/:tableName', async (req, res) => {
       return res.status(404).json({ error: '该表没有数据可导出' });
     }
 
-    // 创建 Excel 文件
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(tableName);
 
@@ -34,7 +30,6 @@ router.get('/:tableName', async (req, res) => {
 
     rows.forEach(row => worksheet.addRow(row));
 
-    // 响应头
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${tableName}.xlsx`);
 

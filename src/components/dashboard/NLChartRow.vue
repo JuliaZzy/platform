@@ -133,7 +133,6 @@ export default {
   border-radius: 8px;
 }
 
-/* 1. 将饼图容器改为 Flexbox 布局 */
 .fixed-pie-row {
   display: flex;
   flex-wrap: wrap; 
@@ -142,7 +141,6 @@ export default {
   justify-content: center;
 }
 
-/* 2. 为两个饼图设置灵活的基础宽度 */
 .pie-30 {
   flex: 0 1 45%; 
   min-width: 250px;
@@ -153,7 +151,7 @@ export default {
   min-width: 250px;
 }
 
-/* 3. 响应式布局：在手机端，改为垂直堆叠 */
+/* 3. 响应式布局 */
 @media (max-width: 768px) {
   .fixed-pie-row {
     flex-direction: column;

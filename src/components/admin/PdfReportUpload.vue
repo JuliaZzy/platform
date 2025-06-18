@@ -162,7 +162,7 @@ export default {
 </script>
 
 <style scoped>
-/* 覆盖层样式 */
+/* 覆盖层 */
 .upload-modal-overlay {
   position: fixed;
   top: 0;
@@ -176,7 +176,7 @@ export default {
   z-index: 1000;
 }
 
-/* 内容区域样式 */
+/* 内容 */
 .upload-modal-content {
   background-color: white;
   border-radius: 8px;
@@ -193,7 +193,7 @@ export default {
   font-size: 18px;
 }
 
-/* 文件上传区域 */
+/* 文件上传 */
 .file-input-area {
   border: 2px dashed #ccc;
   border-radius: 5px;
@@ -236,7 +236,7 @@ export default {
   word-break: break-all;
 }
 
-/* 进度条样式 */
+/* 进度条 */
 .progress-container {
   width: 100%;
   background-color: #eee;
@@ -262,7 +262,7 @@ export default {
   font-size: 12px;
 }
 
-/* 按钮区域 */
+/* 按钮 */
 .modal-actions {
   display: flex;
   justify-content: flex-end;

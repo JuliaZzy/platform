@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../db/db'); // 确保路径正确
+const db = require('../../db/db');
 
 // AdminPage 各标签页对应的数据库表名、可搜索列、可筛选列
 const adminTableConfigs = {
@@ -44,7 +44,6 @@ const adminTableConfigs = {
   }
 };
 
-// 通用数据获取接口: GET /api/admintable/tabledata/:tabKey?page=1&pageSize=15&filters={...}&searchKeyword=...
 router.get('/tabledata/:tabKey', async (req, res) => {
   const { tabKey } = req.params;
   const config = adminTableConfigs[tabKey];
@@ -74,7 +73,7 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   const queryValues = [];
   let whereConditions = [];
 
-  // 1. ✅ 处理列筛选 (clientFilters)
+  // 1. 列筛选
   if (filterableColumns && typeof clientFilters === 'object' && Object.keys(clientFilters).length > 0) {
     for (const rawColName in clientFilters) {
       if (Object.prototype.hasOwnProperty.call(clientFilters, rawColName) &&
@@ -84,10 +83,9 @@ router.get('/tabledata/:tabKey', async (req, res) => {
         const dbColName = filterableColumns.find(fc => fc.replace(/"/g, '') === rawColName.replace(/"/g, ''));
   
         if (dbColName) {
-          const filterValuesForColumn = clientFilters[rawColName]; // 获取这一列选中的所有筛选值，例如 ['北京', '上海']
+          const filterValuesForColumn = clientFilters[rawColName];
   
           if (filterValuesForColumn.length === 1) {
-            // --- 处理单个筛选值 ---
             const singleValue = filterValuesForColumn[0];
             if (singleValue === null || singleValue === 'NULL_VALUE_PLACEHOLDER') {
               whereConditions.push(`${dbColName} IS NULL`);
@@ -96,19 +94,15 @@ router.get('/tabledata/:tabKey', async (req, res) => {
               queryValues.push(singleValue);
             }
           } else {
-            // --- 处理多个筛选值 (IN 子句) ---
-            // 1. 为IN子句生成占位符
             const placeholders = filterValuesForColumn.map(() => {
               queryValues.push(0);
               return `$${queryValues.length}`;
             });
   
-            // 2. 用真实的筛选值替换 queryValues 中的占位值
             filterValuesForColumn.forEach((val, i) => {
               queryValues[queryValues.length - filterValuesForColumn.length + i] = val;
             });
   
-            // 3. 构建 IN 条件
             whereConditions.push(`${dbColName} IN (${placeholders.join(', ')})`);
           }
         } else {
@@ -118,19 +112,18 @@ router.get('/tabledata/:tabKey', async (req, res) => {
     }
   }
   
-  // 2. 处理全局关键词搜索 (searchKeyword)
+  // 2. 关键词搜索
   if (searchKeyword && searchableColumns && searchableColumns.length > 0) {
     const searchSubConditions = searchableColumns.map(col => {
       queryValues.push(`%${searchKeyword}%`);
-      // col 在 searchableColumns 中应该已经是带引号的或安全的
       return `${col}::text ILIKE $${queryValues.length}`; 
     });
     whereConditions.push(`(${searchSubConditions.join(' OR ')})`);
   }
 
-  // 3. 构建 WHERE 子句
+  // 3. WHERE
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-  const orderByClause = config.defaultSort || 'ORDER BY status ASC, id ASC'; // 全局默认排序
+  const orderByClause = config.defaultSort || 'ORDER BY status ASC, id ASC';
 
   const dataQuery = `
     SELECT * FROM "${tableName}" 
@@ -152,7 +145,7 @@ router.get('/tabledata/:tabKey', async (req, res) => {
   try {
     //const countResult = await client.query(countQuery, queryValues);
     //const totalRows = countResult.rows?.[0] ? parseInt(countResult.rows[0].total, 10) : 0;
-    const metaResult = await client.query(metaQuery, queryValues); // 执行新的metaQuery
+    const metaResult = await client.query(metaQuery, queryValues);
     const totalRows = metaResult.rows?.[0] ? parseInt(metaResult.rows[0].total, 10) : 0;
     let tableLastUpdate = metaResult.rows?.[0]?.table_last_update || null;
 
@@ -160,13 +153,9 @@ router.get('/tabledata/:tabKey', async (req, res) => {
     res.json({
       data: dataResult.rows,
       total: totalRows,
-      tableLastUpdate: tableLastUpdate // 新增返回字段
+      tableLastUpdate: tableLastUpdate
     });
-    //const dataResult = await client.query(dataQuery, [...queryValues, pageSize, offset]);
-    //res.json({
-      //data: dataResult.rows,
-      //total: totalRows
-    //});
+
   } catch (err) {
     console.error(`❌ Admin - 查询失败 - 表 ${tableName} (tab: ${tabKey}):`, err);
     res.status(500).json({ error: 'Admin 后端数据查询失败', detail: err.message, stack: err.stack });
@@ -188,7 +177,6 @@ router.get('/distinct-values/:tabKey', async (req, res) => {
   const client = await db.getClient();
 
   try {
-    // 1. 为 filterableColumns 中的每一列创建一个查询 Promise
     const distinctValuePromises = filterableColumns.map(async (dbColName) => {
       const distinctQuery = `SELECT DISTINCT ${dbColName} FROM "${tableName}" WHERE ${dbColName} IS NOT NULL ORDER BY ${dbColName} ASC`;
       const result = await client.query(distinctQuery);
@@ -201,10 +189,7 @@ router.get('/distinct-values/:tabKey', async (req, res) => {
       };
     });
 
-    // 2. 并发执行所有的查询 Promise
     const resultsArray = await Promise.all(distinctValuePromises);
-
-    // 3. 将结果组合到 distinctValues 对象中
     resultsArray.forEach(item => {
       distinctValues[item.key] = item.values;
     });

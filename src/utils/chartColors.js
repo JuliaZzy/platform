@@ -1,6 +1,4 @@
-// src/utils/chartColors.js
-
-// 统一图表配色：主色为 #2e3968，并扩展协调辅助色
+// 主色为 #2e3968
 const chartColors = [
     '#2e3968', // 深蓝 - 主色
     '#005f73', // 深青蓝

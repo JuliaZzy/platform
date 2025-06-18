@@ -294,8 +294,8 @@ export default {
   }
 
   .page-footer {
-    padding: 15px; /* 在手机端减小边距 */
-    font-size: 12px; /* 在手机端减小字体 */
+    padding: 15px;
+    font-size: 12px;
   }
 }
 

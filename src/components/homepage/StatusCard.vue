@@ -20,10 +20,9 @@ export default {
 </script>
 
 <style scoped>
-/* 从 HomePage.vue 剪切所有与 .status-box 相关的样式 */
 .status-box {
   background-color: white;
-  width: 100%; /* 在父容器控制宽度，这里设为100%即可 */
+  width: 100%;
   padding: 20px 10px;
   text-align: center;
   font-size: 32px;
@@ -85,14 +84,12 @@ export default {
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* 响应式样式 */
 @media (max-width: 768px) {
   .status-box {
     min-height: auto;
     padding: 20px;
   }
   
-  /* 【优化】在移动设备上禁用悬浮放大的效果，提升触摸体验 */
   .status-box:hover,
   .status-box.clickable:hover {
     transform: none;

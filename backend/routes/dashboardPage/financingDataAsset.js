@@ -3,18 +3,12 @@ const router = express.Router();
 const db = require('../../db/db');
 const { handleSearch } = require('../../utils/buildQueryHandlers');
 const { createPdfDocument } = require('../../utils/pdfGenerator');
-
-// ✨ 1. 移除本地格式化函数，统一引入我们标准化的模块
 const pdfFormatters = require('../../utils/pdfFormatters');
-
-// ✨ 2. 增强 tableMap，使其成为包含所有配置的“单一数据源”
 const tableMap = {
     bank: {
         name: 'dataasset_finance_bank',
         title: '数据资产增信银行贷款清单',
-        // PDF 导出的完整配置
         pdfConfig: {
-            // 列的数据库名 -> 显示名 的映射
             map: {
                 month_time: '入表月份',
                 show_name: '入表企业',
@@ -63,7 +57,7 @@ const tableMap = {
         pdfConfig: {
             map: {
                 '融资类型': '融资类型',
-                '日期': '日期', // 假设真实列名为'日期'
+                '日期': '日期',
                 '企业': '企业',
                 '数据内容': '数据内容',
                 '产品': '产品',
@@ -83,11 +77,9 @@ const tableMap = {
     }
 };
 
-// --- Search routes (保持不变) ---
 router.get('/search/company', handleSearch(db, tableMap.bank.name, 'company_name', false));
 router.get('/search/content', handleSearch(db, tableMap.bank.name, 'dataasset_content', false));
 
-// ✨ 3. 重构数据获取端点 (/data/:type)，使其更简洁
 Object.keys(tableMap).forEach(type => {
     router.get(`/data/${type}`, async (req, res) => {
         const currentTableInfo = tableMap[type];
@@ -104,14 +96,11 @@ Object.keys(tableMap).forEach(type => {
 
             const dataSql = `SELECT * FROM ${currentTableInfo.name} WHERE "status" IS DISTINCT FROM 'delete' ORDER BY 1 LIMIT $1 OFFSET $2`;
             const dataResult = await db.query(dataSql, [pageSize, offset]);
-            
-            // 为前端展示进行的简单格式化 (注意：这里只应用基础的文本格式化，而非PDF的样式对象)
             const formattedData = dataResult.rows.map(row => {
                 const formattedRow = { ...row };
                 const rules = currentTableInfo.pdfConfig.rules || {};
                 for (const key in rules) {
                     if (formattedRow.hasOwnProperty(key)) {
-                        // 这是一个简化的处理，只取格式化后的文本值
                         const tempFormatted = rules[key](formattedRow[key]);
                         if (typeof tempFormatted === 'object' && tempFormatted.text) {
                             formattedRow[key] = tempFormatted.text;
@@ -133,7 +122,6 @@ Object.keys(tableMap).forEach(type => {
     });
 });
 
-// ✨ 4. 重构PDF导出端点 (/export/:type)，采用统一逻辑
 Object.keys(tableMap).forEach(type => {
     router.post(`/export/${type}`, async (req, res) => {
         const currentTableInfo = tableMap[type];
@@ -152,19 +140,13 @@ Object.keys(tableMap).forEach(type => {
             }
 
             const { map, order, widths, rules } = currentTableInfo.pdfConfig;
-
-            // 生成表头
             const pdfTableHeaders = order.map(key => ({
                 text: map[key] || key,
                 style: 'tableHeader'
             }));
             
-            // 使用我们的格式化引擎生成表格主体
             const tableBody = pdfFormatters.applyPdfFormatting(rows, order, rules);
-
             const pdfTableBody = [pdfTableHeaders, ...tableBody];
-
-            // 创建并发送PDF
             const pdfDoc = createPdfDocument({
                 title: currentTableInfo.title,
                 tableBody: pdfTableBody,

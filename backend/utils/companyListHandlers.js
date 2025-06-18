@@ -1,10 +1,10 @@
 const db = require('../db/db');
 
 /**
- * 创建一个用于获取分页列表数据的 Express 路由处理器。
+ * 分页列表
  * @param {string} tableName - 需要查询的数据库表名。
- * @param {string} [filterType] - 过滤器类型 ('Q4', 'hide_flag', 或其他自定义类型)。默认为 'none'。
- * @returns {Function} - 返回一个 Express 路由处理器 (async (req, res) => ...)。
+ * @param {string} [filterType] - 过滤器类型
+ * @returns {Function}
  */
 
 // 分页列表查询
@@ -14,31 +14,26 @@ function handlePaginatedList(tableName, filterType = 'none') {
     const limit = 10; // 每页显示 10 条
     const offset = (page - 1) * limit;
 
-    let baseFilterCondition = ''; // 存放由 filterType 产生的条件
+    let baseFilterCondition = '';
 
-    // 根据 filterType 构建基础的筛选条件
     switch (filterType) {
       case '2024Q4':
         baseFilterCondition = `"报告时间" = '2024Q4'`;
         break;
       case 'hide_flag':
-        baseFilterCondition = `"hide_flag" NOT LIKE '%是%'`; // 假设 hide_flag 是列名
+        baseFilterCondition = `"hide_flag" NOT LIKE '%是%'`;
         break;
       case 'none':
       default:
-        baseFilterCondition = ''; // 无特定过滤
+        baseFilterCondition = '';
         break;
     }
 
-    // ✅ 构建最终的 WHERE 子句，总是包含 status 过滤
     const conditions = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
     if (baseFilterCondition) {
-      conditions.push(`(${baseFilterCondition})`); // 将原有条件用括号包裹
+      conditions.push(`(${baseFilterCondition})`);
     }
     const whereClause = `WHERE ${conditions.join(' AND ')}`;
-
-    // 确保 tableName 是安全的，推荐使用双引号包裹
-    // ✅ 假设所有表都有 "id" 列用于排序
     const dataQuery = `SELECT * FROM "${tableName}" ${whereClause} ORDER BY "id" DESC LIMIT $1 OFFSET $2`; 
     const countQuery = `SELECT COUNT(*) AS total FROM "${tableName}" ${whereClause}`;
 
@@ -46,16 +41,15 @@ function handlePaginatedList(tableName, filterType = 'none') {
     console.time(label);
 
     try {
-      // 注意：这里的查询没有使用参数化filterType的条件，因为它们是硬编码的字符串
       const dataResults = await db.query(dataQuery, [limit, offset]);
-      const countResults = await db.query(countQuery); // countQuery 也不需要额外参数
+      const countResults = await db.query(countQuery);
 
       console.timeEnd(label);
 
       const total = countResults.rows && countResults.rows[0] ? parseInt(countResults.rows[0].total, 10) : 0;
 
       res.json({
-        data: dataResults.rows, // ✅ 保持和 adminApiService.js 中 finance 接口返回的字段名一致 (data)
+        data: dataResults.rows,
         total: total,
         page,
         pageSize: limit
@@ -85,7 +79,6 @@ function handleCompanyCount(tableName, filterType = 'none') {
         break;
     }
 
-    // ✅ 构建最终的 WHERE 子句，总是包含 status 过滤
     const conditions = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
     if (baseFilterCondition) {
       conditions.push(`(${baseFilterCondition})`);
@@ -107,7 +100,6 @@ function handleCompanyCount(tableName, filterType = 'none') {
   };
 }
 
-// 公司详情查询 (✅ 此函数不添加 status 过滤，供 AdminPage 使用)
 function handleCompanyDetail(tableName) {
   return async (req, res) => {
     const detailQuery = `SELECT * FROM "${tableName}" ORDER BY "id" ASC`;

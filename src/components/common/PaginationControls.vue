@@ -136,16 +136,15 @@ export default {
 .page-jump-input {
   width: 50px;
   text-align: center;
-  margin: 0 5px; /* 输入框与 "第" 和 "/" 之间的间距 */
-  padding: 8px 5px; /* 调整内边距使其与按钮高度更协调 */
+  margin: 0 5px;
+  padding: 8px 5px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 14px; /* 与按钮字体大小一致 */
-  line-height: 1.2; /* 与按钮行高一致 */
-  box-sizing: border-box; /* 确保 padding 和 border 不增加总宽度 */
+  font-size: 14px;
+  line-height: 1.2;
+  box-sizing: border-box;
 }
 
-/* 移除 type="number" 默认的上下箭头 (可选) */
 .page-jump-input::-webkit-outer-spin-button,
 .page-jump-input::-webkit-inner-spin-button {
   -webkit-appearance: none;

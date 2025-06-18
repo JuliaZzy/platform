@@ -1,14 +1,14 @@
 <template>
   <div class="login-form">
-    <h2 class="title">管理员登录</h2>  <!-- 标题部分 -->
+    <h2 class="title">管理员登录</h2>
     
     <div class="input-group">
-      <label for="username">用户名</label>  <!-- 用户名标签 -->
+      <label for="username">用户名</label>
       <input v-model="username" type="text" id="username" placeholder="请输入用户名" />
     </div>
 
     <div class="input-group">
-      <label for="password">密码</label>  <!-- 密码标签 -->
+      <label for="password">密码</label>
       <input v-model="password" type="password" id="password" placeholder="请输入密码" />
     </div>
 
@@ -37,8 +37,6 @@ export default {
         return;
       }
     
-      // const apiUrl = process.env.VUE_APP_API_URL || '/api';  // 确保 API 地址配置正确
-    
       axios.post('/api/login', {
         username: this.username,
         password: this.password
@@ -50,7 +48,7 @@ export default {
       .then((response) => {
         if (response.data.success) {
           localStorage.setItem('adminLoggedIn', 'true');
-          this.$emit('login-success'); // 通知父组件登录成功
+          this.$emit('login-success');
         } else {
           this.errorMessage = '用户名或密码错误';
         }
@@ -66,29 +64,29 @@ export default {
 
 <style scoped>
 .login-form {
-  width: 90%;  /* 表单宽度自适应弹窗 */
-  max-width: 400px;  /* 最大宽度 400px */
+  width: 90%;
+  max-width: 400px;
   margin: 0 auto;
   padding: 10px;
-  box-sizing: border-box;  /* 确保内边距和边框不会影响总宽度 */
+  box-sizing: border-box;
 }
 
 .title {
-  font-size: 24px;  /* 标题字体大小 */
-  color: #172787;  /* 深蓝色字体 */
-  text-align: center;  /* 居中 */
-  margin-bottom: 20px;  /* 标题与表单之间的间距 */
+  font-size: 24px;
+  color: #172787;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .input-group {
-  margin-bottom: 20px;  /* 每个输入框与下一个元素之间的间距 */
+  margin-bottom: 20px;
 }
 
 label {
   font-size: 16px;
-  color: #172787;  /* 深蓝色字体 */
+  color: #172787;
   display: block;
-  margin-bottom: 5px;  /* 标签与输入框之间的间距 */
+  margin-bottom: 5px;
 }
 
 input {
@@ -106,7 +104,7 @@ button {
   width: 100%;
   padding: 12px;
   margin-top: 20px;
-  background-color: #172787;  /* 深蓝色背景 */
+  background-color: #172787;
   color: white;
   border: none;
   font-size: 18px;
@@ -115,6 +113,6 @@ button {
 }
 
 button:hover {
-  background-color: #BDA36C;  /* 鼠标悬停时的过渡色 */
+  background-color: #BDA36C;
 }
 </style>

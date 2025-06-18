@@ -1,14 +1,11 @@
-// backend/routes/dataTable.js
 const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
-
-// 工具函数：防止 SQL 注入
 function isValidTableName(name) {
   return /^[a-zA-Z0-9_]+$/.test(name);
 }
 
-// ✅ 分页查询接口：/api/dataTable/:tableName/page?page=1&pageSize=30
+// 分页查询
 router.get('/:tableName/page', async (req, res) => {
   const { tableName } = req.params;
   const page = parseInt(req.query.page, 10) || 1;

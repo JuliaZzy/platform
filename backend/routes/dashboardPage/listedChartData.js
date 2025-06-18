@@ -2,14 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../db/db');
 
-// ✅ Combo 图接口：柱状图（数量）+ 折线图（金额），按“报告时间”
+// Combo 图
 router.post('/combo1', async (req, res) => {
   const values = [];
-  const conditions = []; // 这个数组用于构建最终的 WHERE 条件
-
-  // 始终将 status 过滤作为第一个条件（不依赖外部参数）
+  const conditions = [];
   conditions.push(`"status" IS DISTINCT FROM 'delete'`);
-
   const whereClause = `WHERE ${conditions.join(' AND ')}`; 
 
   try {
@@ -51,15 +48,11 @@ router.post('/combo1', async (req, res) => {
   }
 });
 
-// ✅ Grouped Bar 图：入表科目 × 报告时间 × 数量 + 金额
+// Grouped Bar
 router.post('/subject-bars', async (req, res) => {
   const values = [];
-
-  // 构建基础的 WHERE 子句，总是包含 status 过滤
   const queryBaseConditions = [`"status" IS DISTINCT FROM 'delete'`];
   const whereClause = `WHERE ${queryBaseConditions.join(' AND ')}`;
-  
-  // 构建用于 UNION ALL 子查询内部的 WHERE 前缀
   const prefixForSubQueryWithStatusAndFilters = `${whereClause} AND`;
 
   try {
@@ -121,7 +114,7 @@ router.post('/subject-bars', async (req, res) => {
   }
 });
 
-// ✅ 通用 GroupBy 图接口（证券行业/市值规模/省份/实控人）
+// GroupBy图
 router.post('/group-field', async (req, res) => {
   const field = req.body.field;
 
@@ -130,8 +123,6 @@ router.post('/group-field', async (req, res) => {
   }
 
   const values = []; 
-
-  // 构建基础的 WHERE 子句，总是包含 status 过滤
   const baseWhereClause = `WHERE "dataasset_listed_companies_2024"."status" IS DISTINCT FROM 'delete'`;
   
   let rawRes;
@@ -168,9 +159,7 @@ router.post('/group-field', async (req, res) => {
       `;
       rawRes = await db.query(sqlActualController, values); 
       rows = rawRes.rows;
-
     } else { 
-      // 对于 '所属证券行业分布' 和 '省份' 等字段，我们使用一条 SQL 来完成所有计算和排序
       const sql = `
         WITH LatestQuarterValues AS (
           WITH LatestQuarter AS (
@@ -211,7 +200,7 @@ router.post('/group-field', async (req, res) => {
     const copyRows = [...rows]; 
     let sortedRows;
 
-    // --- 排序逻辑 ---
+    // 排序
     if (field === '市值规模') {
       const order = [
         '50亿以下', '50 - 100亿', '100 - 500亿', '500 - 1000亿',
@@ -235,10 +224,8 @@ router.post('/group-field', async (req, res) => {
         }
       });
     } else {
-      // 对于已在SQL中排序的字段，直接使用从数据库返回的顺序
       sortedRows = copyRows;
     }
-    // --- 排序逻辑结束 ---
 
     res.json(sortedRows);
   } catch (err) {

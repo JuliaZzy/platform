@@ -14,8 +14,6 @@ function buildWhereClause(filters, values, enableHideFlag = false, mode = 'non-l
       
       const startYYYYMM = filters.startDate;
       const endYYYYMM = filters.endDate;
-
-      // 校验格式是否真的是 YYYY-MM，并且它们都有值 (不是空字符串)
       if (startYYYYMM && typeof startYYYYMM === 'string' && startYYYYMM.match(/^\d{4}-\d{2}$/) && 
           endYYYYMM && typeof endYYYYMM === 'string' && endYYYYMM.match(/^\d{4}-\d{2}$/)) {
           
@@ -77,18 +75,15 @@ function handleQuery(db, tableName, enableHideFlag) {
     const { page = 1, pageSize = 10, filters = {} } = req.body;
     const offset = (page - 1) * pageSize;
     const values = [];
-    // ✅ whereClause 将自动包含 status 过滤 (来自修改后的 buildWhereClause)
     const whereClause = buildWhereClause(filters, values, enableHideFlag); 
 
-    const countSql = `SELECT COUNT(*) AS total FROM "${tableName}" ${whereClause}`; // ✅ table名用双引号包裹
+    const countSql = `SELECT COUNT(*) AS total FROM "${tableName}" ${whereClause}`;
     db.query(countSql, values, (err, countResult) => {
       if (err) return res.status(500).json({ error: '统计失败', detail: err.message });
       if (!countResult || !countResult.rows || countResult.rows.length === 0) {
         return res.status(500).json({ error: '统计失败：无法获取总数' });
       }
       const total = parseInt(countResult.rows[0].total, 10);
-
-      // ✅ 建议明确列出需要的列，而不是 SELECT *，或者确保 AdminPage 不使用此 handler
       const dataSql = `
         SELECT * FROM "${tableName}" 
         ${whereClause}
@@ -107,15 +102,12 @@ function handleQuery(db, tableName, enableHideFlag) {
 function handleStats(db, tableName, enableHideFlag) {
   return (req, res) => {
     const { field, filters = {} } = req.body;
-    // ✅ 增加对 field 的校验，防止SQL注入
-    if (!field || !/^[a-zA-Z0-9_"]+$/.test(field.replace(/\"/g, ''))) { // 允许双引号包裹的字段名
+    if (!field || !/^[a-zA-Z0-9_"]+$/.test(field.replace(/\"/g, ''))) {
         return res.status(400).json({ error: '提供的字段名不合法' });
     }
 
     const values = [];
-    // ✅ whereClause 将自动包含 status 过滤
     const whereClause = buildWhereClause(filters, values, enableHideFlag); 
-    // ✅ 使用双引号包裹动态字段名，以防是保留字或含特殊字符
     const safeField = field.startsWith('"') && field.endsWith('"') ? field : `"${field}"`;
     const sql = `
       SELECT ${safeField} AS name, COUNT(*) AS value
@@ -139,7 +131,6 @@ function handleOptions(db, tableName, fields, enableHideFlag) {
     try {
       const results = {};
       for (const field of fields) {
-        // ✅ 增加对 field 的校验
         if (!field || !/^[a-zA-Z0-9_"]+$/.test(field.replace(/\"/g, ''))) {
             results[field] = [];
             console.warn(`handleOptions: 非法字段名 '${field}' 被跳过 for table ${tableName}`);
@@ -147,7 +138,6 @@ function handleOptions(db, tableName, fields, enableHideFlag) {
         }
         const safeField = field.startsWith('"') && field.endsWith('"') ? field : `"${field}"`;
         
-        // ✅ 构建 WHERE 子句，包含 status 过滤
         const conditions = [`"status" IS DISTINCT FROM 'delete'`];
         if (enableHideFlag) {
           conditions.push(`"hide_flag" NOT LIKE '%是%'`);
@@ -171,25 +161,23 @@ function handleSearch(db, tableName, field, enableHideFlag) {
     const query = req.query.q?.trim();
     if (!query || query.length < 2) return res.json([]);
 
-    // ✅ 增加对 field 的校验
     if (!field || !/^[a-zA-Z0-9_"\u4e00-\u9fa5]+$/.test(field.replace(/\"/g, ''))) {
         return res.status(400).json({ error: '搜索字段名不合法' });
     }
     const safeField = field.startsWith('"') && field.endsWith('"') ? field : `"${field}"`;
 
     const values = [];
-    const whereParts = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`]; // ✅ 始终包含 status 过滤 (带表名更安全)
+    const whereParts = [`"${tableName}"."status" IS DISTINCT FROM 'delete'`];
 
     if (enableHideFlag) {
-      whereParts.push(`"${tableName}"."hide_flag" NOT LIKE '%是%'`); // ✅ 带表名更安全
+      whereParts.push(`"${tableName}"."hide_flag" NOT LIKE '%是%'`);
     }
 
-    // ✅ 保持原有的 trigram/ILIKE 逻辑，但确保它们在 status 和 hide_flag 之后
     if (query.length < 3) {
       whereParts.push(`${safeField} ILIKE $${values.length + 1}`);
       values.push(`%${query}%`);
     } else {
-      whereParts.push(`${safeField} % $${values.length + 1}`); // Trigram 相似度查询
+      whereParts.push(`${safeField} % $${values.length + 1}`);
       values.push(query);
     }
 
@@ -211,17 +199,13 @@ function handleSearch(db, tableName, field, enableHideFlag) {
   };
 }
 
-// handleExport 函数似乎是用于获取数据给前端，然后前端再用这些数据生成Excel
 function handleExport(db, tableName, enableHideFlag) { 
   return async (req, res) => {
     try {
       const filters = req.body.filters || {};
       const values = [];
-      // ✅ whereClause 将自动包含 status 过滤 (来自修改后的 buildWhereClause)
       const whereClause = buildWhereClause(filters, values, enableHideFlag); 
-
-      // ✅ 明确列出需要的列，避免 SELECT * (如果不需要 id 和 status 列的话)
-      const columnsToExport = [ // 示例列，您需要根据实际情况定义
+      const columnsToExport = [
         "month_time", "province_area", "company_name", "dataasset_content",
         "accounting_subject", "valuation_method", "book_value", "assess_value",
         "dataasset_register_addr"
@@ -236,7 +220,7 @@ function handleExport(db, tableName, enableHideFlag) {
       const result = await db.query(sql, values);
       const rows = result.rows;
 
-      // ✅ 映射为中文列名（一次性处理）
+      // 中文列名
       const columnMap = {
         month_time: '入表月份',
         province_area: '省级行政区',
@@ -248,12 +232,12 @@ function handleExport(db, tableName, enableHideFlag) {
         assess_value: '评估金额（万元）',
         dataasset_register_addr: '数据资产登记机构'
       };
-      const orderedKeys = Object.keys(columnMap); // 这应该基于您实际 SELECT 的列
+      const orderedKeys = Object.keys(columnMap);
 
       const translatedRows = rows.map(row => {
         const newRow = {};
         for (const key of orderedKeys) {
-          if (row.hasOwnProperty(key)) { // 确保只映射存在的键
+          if (row.hasOwnProperty(key)) {
             newRow[columnMap[key]] = row[key];
           }
         }

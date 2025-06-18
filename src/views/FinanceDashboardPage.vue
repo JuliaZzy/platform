@@ -347,7 +347,7 @@ export default {
         }
         this.$message ? this.$message.error(errorMessage) : alert(errorMessage);
       } finally {
-        this.loading[loadingKey] = false; // 结束加载状态
+        this.loading[loadingKey] = false;
       }
     },
 
@@ -588,8 +588,8 @@ export default {
   }
 
   .page-footer {
-    padding: 15px; /* 在手机端减小边距 */
-    font-size: 12px; /* 在手机端减小字体 */
+    padding: 15px;
+    font-size: 12px;
   }
 }
 

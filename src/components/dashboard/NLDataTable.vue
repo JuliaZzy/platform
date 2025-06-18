@@ -98,7 +98,7 @@ export default {
     filters: {
       handler() {
         if (this.initialized) {
-          this.loading = true; // ✅ 清空筛选后触发加载动画
+          this.loading = true;
           this.currentPage = 1;
           this.emitPageChange();
         } else {
@@ -112,14 +112,14 @@ export default {
   methods: {
     changePage(page) {
       if (page < 1 || page > this.totalPages) return;
-      this.loading = true; // ✅ 翻页时触发加载动画
+      this.loading = true;
       this.currentPage = page;
       this.emitPageChange();
     },
     emitPageChange() {
       this.$emit('page-change', this.currentPage);
     },
-    // ✅ 外部页面加载数据成功后调用
+
     stopLoading() {
       this.loading = false;
       this.$emit('data-loaded');
@@ -148,7 +148,7 @@ export default {
       const filename = `非上市公司数据资产入表清单_筛选后_${Date.now()}.pdf`;
       await downloadPdf({
           apiUrl: `${this.apiPrefix}/export`,
-          filters: this.filters, // 发送当前筛选条件
+          filters: this.filters,
           defaultFilename: filename,
           onStart: () => { this.loading = true; },
           onFinish: () => { this.loading = false; },
@@ -201,14 +201,13 @@ export default {
   }
 
   .table-wrapper {
-    overflow-x: auto; /* 这是实现横向滚动的关键 */
+    overflow-x: auto;
     width: 100%;
   }
 
-  /* 2. 让表格拥有一个最小宽度，当屏幕比这个宽度窄时，就会出现滚动条 */
   .data-table {
     width: 100%;
-    min-width: 1000px; /* 您可以根据内容的多少调整这个值 */
+    min-width: 1000px;
     border-collapse: collapse;
     font-size: 14px;
   }

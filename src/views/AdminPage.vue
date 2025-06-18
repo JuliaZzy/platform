@@ -211,29 +211,22 @@ export default {
 
     handleReportUploadSuccess() {
       this.loadReports();
-      this.reportToReplace = null; // 重置替换状态
+      this.reportToReplace = null;
     },
 
     async handleMoveReport({ index, direction }) {
-      // 边界检查（保持原有）
       if ((direction === 'up' && index === 0) || 
           (direction === 'down' && index === this.reportsData.length - 1)) {
         return;
       }
 
-      // 添加操作反馈
       this.$message.info('正在更新排序...');
       
       try {
-        // 交换位置逻辑（保持原有）
         const newReports = [...this.reportsData];
         const newIndex = direction === 'up' ? index - 1 : index + 1;
         [newReports[index], newReports[newIndex]] = [newReports[newIndex], newReports[index]];
-        
-        // 乐观更新
         this.reportsData = newReports;
-        
-        // 调用API
         await axios.post('/api/reports/order', {
           orderedFilenames: newReports.map(r => r.name)
         });
@@ -241,7 +234,7 @@ export default {
         this.$message.success('排序已保存');
       } catch (error) {
         console.error('排序失败:', error);
-        this.loadReports(); // 恢复数据
+        this.loadReports();
         this.$message.error('排序保存失败: ' + (error.response?.data?.message || '网络错误'));
       }
     },
@@ -327,14 +320,14 @@ export default {
   height: 100vh;
   font-family: "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
-  background-color: #F5F3F4; /* 整体背景色 */
+  background-color: #F5F3F4;
 }
 
 .content {
   flex: 1;
   background-color: #ffffff;
   padding: 32px;
-  overflow: auto; /* 让内容区可以独立滚动 */
+  overflow: auto;
   transition: margin-left 0.3s ease;
 }
 

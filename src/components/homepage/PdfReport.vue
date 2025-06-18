@@ -6,12 +6,11 @@
       <li v-for="report in reports" :key="report.name">
         <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
           <i class="fas fa-file-pdf"></i>
-          {{ report.name }}
+          <span class="file-name">{{ report.name }}</span>
         </a>
       </li>
     </ul>
     <div v-else>暂无最新报告。</div>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   </div>
 </template>
 
@@ -62,10 +61,11 @@ export default {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
 .file-item {
+  margin-bottom: 15px;
   border-bottom: 1px solid #eee;
   padding-bottom: 15px;
 }

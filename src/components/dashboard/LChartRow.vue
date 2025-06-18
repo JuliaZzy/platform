@@ -89,12 +89,11 @@ export default {
   },
   methods: {
     restructureDataForGroupedBarChart(flatData, seriesNameKey, categoryNameKey, valueKey) {
-      // 如果没有数据，直接返回空数组
+      // 没有数据返回空数组
       if (!flatData || flatData.length === 0) {
         return [];
       }
 
-      // 步骤 1: 提取唯一且保持后端排序的X轴分类 (Categories)
       const categories = [];
       const seenCategories = new Set();
       flatData.forEach(item => {
@@ -105,8 +104,6 @@ export default {
         }
       });
 
-      // 步骤 2: 将扁平数据按季度（Series Name）进行分组
-      // 我们得到一个 Map，键是季度名，值是那个季度的所有数据。
       const dataBySeries = new Map();
       flatData.forEach(item => {
         const seriesName = item[seriesNameKey];
@@ -116,23 +113,18 @@ export default {
         dataBySeries.get(seriesName).push(item);
       });
 
-      // 步骤 3: 构建最终的 ECharts Series 结构
-      // 确保每个季度的 series.data 都包含所有 categories，且顺序一致
-      const sortedSeriesNames = Array.from(dataBySeries.keys()).sort(); // 对季度名进行排序 ('2024Q1', '2024Q2'...)
+      const sortedSeriesNames = Array.from(dataBySeries.keys()).sort();
       
       const finalSeries = sortedSeriesNames.map(seriesName => {
         const seriesItems = dataBySeries.get(seriesName);
-        // 为当前季度的已有数据创建一个快速查找的 Map
         const valueMap = new Map(
           seriesItems.map(item => [item[categoryNameKey], parseFloat(item[valueKey]) || 0])
         );
 
         return {
           name: seriesName,
-          // 遍历我们排好序的 master categories 列表
           data: categories.map(category => ({
             [categoryNameKey]: category,
-            // 如果当前季度有这个 category 的值，就用它；否则补 0
             [valueKey]: valueMap.get(category) || 0
           }))
         };
@@ -154,7 +146,6 @@ export default {
           })
         ];
 
-        // 添加 groupedFields 的请求
         this.groupedFields.forEach(f => {
           promises.push(axios.post('/api/lchart/group-field', {
             filters: this.filters,
@@ -162,19 +153,11 @@ export default {
           }));
         });
 
-        // ✅ 使用 await Promise.all(promises) 获取所有结果
         const results = await Promise.all(promises);
-
-        // 解构结果
         const comboRes = results[0];
         const barRes = results[1];
-        // ✅ “实控人”图表的结果是第三个
         const controllerRes = results[2]; 
-        // 其他 groupedFields 的结果从索引 3 开始
         const groupedFieldsResponses = results.slice(3); 
-
-
-        // ComboData 处理
         const comboDataResponse = comboRes.data || {};
         const barRaw = comboDataResponse.barSeries || [];        
         const lineRawForChart = comboDataResponse.lineSeriesForChart || []; 
@@ -198,8 +181,7 @@ export default {
           name: '数据资源入表总额', 
           data: finalLineDataForChart
         };
-        
-        // Grouped Subject Data (Charts 2-3)
+
         const subjectBarsData = barRes.data || {};
         let rawCountSeriesData = subjectBarsData.countSeries || [];
         let rawSumSeriesData = subjectBarsData.sumSeries || [];
@@ -212,7 +194,6 @@ export default {
             sumSeries: transformedSumSeries
         };
 
-        // ✅ 新增：处理“实控人”图表数据
         const rawControllerData = controllerRes.data ?? [];
         this.actualControllerData = this.restructureDataForGroupedBarChart(
           rawControllerData, 
@@ -221,9 +202,7 @@ export default {
           'value'
         );
 
-        // Grouped Fields Data
         this.groupedFields.forEach((f, idx) => {
-          // ✅ 使用可选链和空值合并运算符简化
           const rawBackendData = groupedFieldsResponses[idx]?.data ?? [];
           const structuredChartData = this.restructureDataForGroupedBarChart(
               rawBackendData,
@@ -240,7 +219,6 @@ export default {
         this.groupedCharts = {};
         this.actualControllerData = [];
       } finally {
-          // ✅ 无论成功还是失败，最终都将加载状态设置为 false
           if (this.isTablesLoading !== undefined) this.isTablesLoading = false;
       }
     }
@@ -249,21 +227,18 @@ export default {
 </script>
 
 <style scoped>
-/* 1. 整体网格布局 */
 .chart-grid {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* 2. 每一行的布局 */
 .chart-row {
   display: flex;
-  flex-wrap: wrap; /* 允许在小屏幕上自动换行 */
+  flex-wrap: wrap;
   gap: 24px;
 }
 
-/* 3. 通用的图表容器样式 */
 .chart-full,
 .subject-chart-container {
   background: #fff;
@@ -272,21 +247,18 @@ export default {
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* 4. 占满整行的图表 */
 .chart-full {
   flex: 1 1 100%;
 }
 
-/* 5. 并排的图表 (桌面端各占约一半) */
 .subject-chart-container {
-  flex: 1 1 45%; /* 允许增长，基础宽度45%，为gap留出空间 */
-  min-width: 300px; /* 设置一个合理的最小宽度，防止在超窄屏上被过度挤压 */
+  flex: 1 1 45%;
+  min-width: 300px;
 }
 
-/* 6. 响应式布局：当屏幕宽度小于992px时，让并排的图表也开始堆叠 */
 @media (max-width: 992px) {
   .subject-chart-container {
-    flex-basis: 100%; /* 让每个图表都占满整行，实现堆叠 */
+    flex-basis: 100%;
   }
 }
 </style>
