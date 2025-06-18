@@ -15,8 +15,8 @@ const port = process.env.PORT || 3000;
 
 // 2. 全局 CORS 中间件
 app.use(cors({
-  origin: ['http://10.180.238.0:8080', 'http://localhost:8080'], // 只允许你的前端访问
-  credentials: true // 如果未来需要用到 cookie或session
+  origin: ['http://10.180.238.0:8080', 'http://localhost:8080'],
+  credentials: true
 }));
 
 // 3. 创建上传目录
@@ -51,10 +51,9 @@ app.post('/api/pdfupload', upload.single('pdfFile'), (req, res) => {
   }
   res.status(201).json({
     message: 'File uploaded successfully!',
-    filename: req.file.filename // 将保存的文件名返回给前端
+    filename: req.file.filename
   });
 });
-// 日志中间件
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.originalUrl}`);
   next();
