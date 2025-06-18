@@ -41,7 +41,8 @@ export default {
       }
     },
     getDownloadUrl(filename) {
-      return `${process.env.VUE_APP_API_URL}/api/reports/download/${encodeURIComponent(filename)}`;
+      if (!filename) return "#";
+      return `${API_BASE_URL}/reports/download/${filename}`;
     },
   },
   created() {
