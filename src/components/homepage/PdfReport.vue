@@ -6,7 +6,7 @@
       <li v-for="report in reports" :key="report.name">
         <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
           <i class="fas fa-file-pdf"></i>
-          <span class="file-name">{{ report.name }}</span>
+          <span class="file-name">{{ report.filename }}</span>
         </a>
       </li>
     </ul>
@@ -42,7 +42,7 @@ export default {
     },
     getDownloadUrl(filename) {
       if (!filename) return "#";
-      return `${API_BASE_URL}/reports/download/${filename}`;
+      return `${process.env.VUE_APP_API_URL}/reports/download/${filename}`;
     },
   },
   created() {
