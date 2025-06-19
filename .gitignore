@@ -25,3 +25,4 @@ pnpm-debug.log*
 adminBackup.vue
 pull.ps1
 push.ps1
+ecosystem.config.js 

@@ -1,0 +1,12 @@
+// ecosystem.config.js
+module.exports = {
+  apps : [{
+    name   : "platform-app",
+    script : "./server.js",
+    env: {
+      "NODE_ENV": "production",
+      "CORS_ORIGINS": "https://saifdata.cafr.cn",
+      "DATABASE_URL": "postgresql://saifadmin:Test12345@localhost:5432/platform_db"
+    }
+  }]
+}
