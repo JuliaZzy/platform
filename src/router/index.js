@@ -47,6 +47,7 @@ const router = new Router({
   routes,
 });
 
+// eslint-disable-next-line no-unused-vars
 router.afterEach((to, from) => {
   if (window._hmt) {
     window._hmt.push(['_trackPageview', to.fullPath]);
