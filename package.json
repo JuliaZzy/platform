@@ -23,6 +23,7 @@
     "@uppy/status-bar": "4.0.0",
     "@uppy/tus": "4.0.0",
     "axios": "^1.9.0",
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "core-js": "^3.8.3",
     "cors": "^2.8.5",

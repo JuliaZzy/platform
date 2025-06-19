@@ -23,7 +23,8 @@ router.get('/bank-detail', async (req, res) => {
       finance_value,
       finance_type,
       finance_orgs,
-      NULL::text AS status
+      NULL::text AS status,
+      updated_at
     FROM dataasset_non_listed_companies
     WHERE finance_value > 0 
       AND finance_type NOT ILIKE '%作价入股%'
@@ -69,7 +70,8 @@ router.post('/sync-bank-table', async (req, res) => {
       finance_value,
       finance_type,
       finance_orgs,
-      NULL::text AS status
+      NULL::text AS status,
+      updated_at
     FROM dataasset_non_listed_companies
     WHERE finance_value > 0 
       AND finance_type NOT ILIKE '%作价入股%'
@@ -86,7 +88,7 @@ router.post('/sync-bank-table', async (req, res) => {
     console.log('[sync-bank-table] 主键已添加到 dataasset_finance_bank.id');
     await db.query('COMMIT'); 
     console.timeEnd(label);
-    res.json({ success: true, message: '✅ 表 dataasset_finance_bank 同步成功 (包含id主键和status列)' });
+    res.json({ success: true, message: '✅ 表 dataasset_finance_bank 同步成功' });
   } catch (err) {
     await db.query('ROLLBACK');
     console.error('❌ 表同步失败：', err);

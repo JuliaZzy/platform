@@ -1,5 +1,7 @@
 // 1. 环境变量 + 初始化
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

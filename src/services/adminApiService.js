@@ -18,20 +18,13 @@ const handleApiError = (error, contextMessage = 'API请求失败') => {
 };
 
 /**
- * 加载Admin页面表格数据
  * @param {string} currentTab
  * @param {object} params
  * @returns {Promise<object>}
  */
 export const loadAdminTableData = async (currentTab, params = {}) => {
-  // ✅ 1: 构建指向新的 Admin 专用数据接口的 URL
   const url = `/admintable/tabledata/${currentTab}`; 
-
-  // ✅ 2: 准备要发送的查询参数
   let queryParams = { ...params };
-
-  // 如果 params 中包含 filters 对象，将其 JSON 字符串化
-  // 后端 adminTableData.js 会解析这个 JSON 字符串
   if (queryParams.filters && typeof queryParams.filters === 'object') {
     queryParams.filters = JSON.stringify(queryParams.filters);
   }
@@ -39,13 +32,12 @@ export const loadAdminTableData = async (currentTab, params = {}) => {
   console.log(`[adminApiService] Calling loadAdminTableData for tab: ${currentTab}, URL: ${url}, Params:`, queryParams);
 
   try {
-    // ✅ 3: 所有 AdminPage 的数据加载都走这条路径，并期望后端处理分页/筛选/搜索
     const response = await apiClient.get(url, { params: queryParams }); 
 
     return { 
       data: response.data?.data || [], 
       total: response.data?.total || 0,
-      tableLastUpdate: response.data?.tableLastUpdate || null // 获取新字段
+      tableLastUpdate: response.data?.tableLastUpdate || null
     };
   } catch (error) {
     return handleApiError(error, `加载 Admin Tab [${currentTab}] 数据失败`);
@@ -53,7 +45,6 @@ export const loadAdminTableData = async (currentTab, params = {}) => {
 };
 
 /**
- * 上传Excel数据到指定表格
  * @param {string} tableName
  * @param {FormData} formData
  * @returns {Promise<object>}
@@ -70,7 +61,6 @@ export const uploadExcelData = async (tableName, formData) => {
 };
 
 /**
- * 更新指定表格中某一行数据的状态
  * @param {string} tableName
  * @param {string|number} rowId
  * @param {string|null} newStatus
@@ -86,7 +76,6 @@ export const updateRowStatusInDb = async (tableName, rowId, newStatus) => {
 };
 
 /**
- * 导出指定表格的数据为Excel
  * @param {string} dbTableName
  */
 export const exportTableToExcel = (dbTableName) => {

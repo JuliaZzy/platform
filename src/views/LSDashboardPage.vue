@@ -78,7 +78,7 @@ export default {
       lsTablePageSize: 10,
       isLsTableLoading: false,
 
-      footerText: '数据来源：公司财报、wind'
+      footerText: '数据来源：公司财报、wind、高金智库数据资产研究课题组'
     };
   },
   methods: {

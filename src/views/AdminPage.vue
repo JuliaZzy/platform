@@ -140,6 +140,10 @@ export default {
     },
 
     async loadData() {
+      if (this.currentTab === 'reports') {
+        console.warn('[AdminPage] loadData() called on "reports" tab. Aborting.');
+        return;
+      }
       this.tableLoadingState[this.currentTab] = true;
       try {
         const params = {

@@ -10,7 +10,7 @@
         </a>
       </li>
     </ul>
-    <div v-else>暂无最新报告。</div>
+    <div v-else class="no-files">暂无最新报告。</div>
   </div>
 </template>
 
@@ -42,7 +42,7 @@ export default {
     },
     getDownloadUrl(name) {
       if (!name) return "#";
-      return `${process.env.VUE_APP_API_URL}/api/reports/download/${name}`;
+      return `${process.env.VUE_APP_API_URL}/api/reports/download/${encodeURIComponent(name)}`;
     },
   },
   created() {
@@ -52,62 +52,66 @@ export default {
 </script>
 
 <style scoped>
-.report-container {
-  padding: 0; 
+.pdf-list-container {
+  padding: 0;
 }
 
-.file-list {
+.pdf-list {
   list-style: none;
-  padding-left: 0; 
+  padding-left: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.file-item {
-  margin-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 15px;
-}
-
-.file-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  /* 方法一 (推荐): 使用 gap 属性控制每个列表项之间的垂直间距
+    你可以把 15px 修改为你希望的任何值，比如 20px, 1rem 等。
+  */
+  gap: 15px; 
 }
 
 .file-link {
   display: flex;
-  align-items: left;
-  gap: 10px;
+  align-items: center; /* 垂直居中图标和文字 */
+  gap: 10px; /* 图标和文字之间的间距 */
   text-decoration: none;
   color: #333;
   font-size: 16px;
   transition: color 0.2s ease;
   min-width: 0;
+  /* 方法二: 使用 line-height 控制单行内部的高度
+    增加这个值可以让每一行本身变得更高，看起来更舒展。
+    你可以尝试 1.5, 1.6, 1.8 等值。
+  */
+  line-height: 1.6;
 }
 
-.file-link span {
+.file-link .file-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.file-link:hover {
-  color: #171d8f;
+.file-link:hover .file-name {
+  color: #171d8f; /* 鼠标悬浮时只改变文字颜色 */
   text-decoration: underline;
 }
 
 .file-link i {
-  color: #e53935;
+  color: #D32F2F; /* 使用一个更现代的红色 */
   font-size: 20px;
+  /* 让图标宽度固定，防止文字对不齐 */
+  width: 20px; 
+  text-align: center;
 }
 
-.no-files {
+.no-files, .error-message {
   color: #666;
   font-size: 16px;
-  text-align: center;
-  padding: 40px 0;
+  text-align: left;
+  padding: 20px 0;
+}
+
+.error-message {
+  color: #D32F2F;
 }
 
 </style>
