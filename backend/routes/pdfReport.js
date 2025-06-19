@@ -301,7 +301,13 @@ router.get('/download/:filename', async (req, res) => {
 
   try {
     await fs.access(filePath);
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        console.error('Download callback error:', err);
+      }
+    });
     
+    /* 下载加水印
     try {
       const fontPath = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Regular.otf');
       const [existingPdfBytes, fontBytes] = await Promise.all([
@@ -335,6 +341,8 @@ router.get('/download/:filename', async (req, res) => {
       console.warn('Watermark failed, sending original file:', processingError);
       res.download(filePath);
     }
+      */
+     
   } catch (error) {
     if (error.code === 'ENOENT') {
       return res.status(404).send('File not found');
