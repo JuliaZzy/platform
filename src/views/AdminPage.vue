@@ -121,6 +121,7 @@ export default {
     },
   },
   methods: {
+    
     async switchTab(tab) {
       if (this.currentTab === tab) return;
       this.currentTab = tab;
