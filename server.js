@@ -16,12 +16,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // 2. 全局 CORS 中间件
+const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
+console.log('✅ Allowed CORS Origins:', allowedOrigins);
 app.use(cors({
-  origin: [
-    'http://10.180.238.0:8080', 
-    'http://localhost:8080',
-    'https://saifdata.cafr.cn'
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 
