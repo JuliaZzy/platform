@@ -17,7 +17,11 @@ const port = process.env.PORT || 3000;
 
 // 2. 全局 CORS 中间件
 app.use(cors({
-  origin: ['http://10.180.238.0:8080', 'http://localhost:8080'],
+  origin: [
+    'http://10.180.238.0:8080', 
+    'http://localhost:8080',
+    'https://saifdata.cafr.cn'
+  ],
   credentials: true
 }));
 
