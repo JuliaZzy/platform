@@ -3,7 +3,7 @@ import Router from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
 import NLSDashboardPage from '@/views/NLSDashboardPage.vue';
 import LSDashboardPage from '@/views/LSDashboardPage.vue';
-import FinanceDashboardPage from '../views/FinanceDashboardPage.vue'; // 确保路径正确
+import FinanceDashboardPage from '../views/FinanceDashboardPage.vue';
 import AdminPage from '@/views/AdminPage.vue';
 
 Vue.use(Router);
@@ -37,12 +37,20 @@ const routes = [
       if (localStorage.getItem('adminLoggedIn') === 'true') {
         next();
       } else {
-        next('/');  // 未登录，跳转到首页
+        next('/');
       }
     }
   }
 ];
 
-export default new Router({
-  routes
+const router = new Router({
+  routes,
 });
+
+router.afterEach((to, from) => {
+  if (window._hmt) {
+    window._hmt.push(['_trackPageview', to.fullPath]);
+  }
+});
+
+export default router;
