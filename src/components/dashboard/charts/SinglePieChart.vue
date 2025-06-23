@@ -43,7 +43,7 @@ export default defineComponent({
     const buildChart = () => {
       loading.value = true;
       setTimeout(() => {
-        const radius = isMobile.value ? '40%' : '50%';
+        const radius = isMobile.value ? '40%' : '45%';
         const labelFontSize = isMobile.value ? 10 : 12;
 
         chartOption.value = {
@@ -105,6 +105,7 @@ export default defineComponent({
   height: 500px;
   align-items: center;
   margin-top: 20px;
+  position: relative;
 }
 .chart-title {
   font-size: 18px;
@@ -116,7 +117,6 @@ export default defineComponent({
 
 @media (max-width: 768px) {
   .chart-wrapper {
-    position: relative; 
     width: 150%;
     height: 400px;
     box-sizing: border-box;

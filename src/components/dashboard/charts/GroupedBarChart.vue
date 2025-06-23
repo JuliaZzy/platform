@@ -226,7 +226,7 @@ export default defineComponent({
               //bottom: 10,
               start: 0,
               end: 50,
-              handleSize: '80%',
+              handleSize: '30%',
               handleStyle: {
                   color: '#fff',
                   shadowBlur: 3,

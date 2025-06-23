@@ -126,7 +126,7 @@ export default defineComponent({
                 xAxisIndex: [0],
                 start: 0,
                 end: (8 / props.chartData.length) * 100, 
-                handleSize: '30%',
+                handleSize: '20%',
                 handleStyle: {
                     color: '#fff',
                     shadowBlur: 3,
