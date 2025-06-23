@@ -6,42 +6,62 @@
           chartTitle="非上市公司累计入表企业数量和已融资金额"
           :categories="formattedComboData.categories"
           :barSeries="formattedComboData.barSeries"
-          y-axis-bar-name="入表企业数量（家）"
+          y-axis-bar-name="入表企业数量(家)"
           :lineSeries="formattedComboData.lineSeries"
-          y-axis-line-name="入表企业已融资金额（亿）"
+          y-axis-line-name="入表企业已融资金额(亿)"
           :y-axis-bar-max="360"
           :y-axis-bar-interval="60"
           :y-axis-line-max="18"
           :y-axis-line-interval="3"
           chart-annotation="注：由于企业融资时间往往滞后于入表时间，其融资额均指相关企业截至2025年一季度的总融资额，而非截至数据资产入表披露日期的融资额。"
-          :chart-height="500" 
+          :chart-height="dynamicChartHeight"
         />
       </div>
     </div>
+
     <div class="chart-row">
       <div class="chart-full" v-if="charts.province_area?.length">
-        <BarChart1 :chart-data="charts.province_area" />
+        <SingleBarChart
+          chartTitle="企业数量按省级行政区分布"
+          yAxisName="入表企业数量（家）"
+          :chart-data="charts.province_area"
+          :chart-height="360"
+          :xAxisMobileRotate="35" 
+        />
       </div>
     </div>
 
     <div class="chart-row">
       <div class="pie-1" v-if="charts.company_type?.length">
-        <PieChart1 :chart-data="charts.company_type" :filters="filters" :mode="mode" />
+        <ParentChildPieChart :chart-data="charts.company_type" :filters="filters" :mode="mode" />
       </div>
     </div>
 
     <div class="chart-row" v-if="charts[barChart2Field]?.length">
       <div class="chart-full">
-        <BarChart2 :chart-data="charts[barChart2Field]" />
+        <SingleBarChart
+          chartTitle="企业数量按企业业务类型分布"
+          yAxisName="入表企业数量（家）"
+          :chart-data="charts[barChart2Field]"
+          :chart-height="450"
+          :xAxisMobileRotate="0" 
+          enable-data-zoom 
+        />
       </div>
     </div>
 
     <div class="fixed-pie-row">
       <div class="pie-30" v-if="charts.dataasset_type?.length">
-        <PieChart2 :chart-data="charts.dataasset_type" />
+        <SinglePieChart 
+          chartTitle="企业数量按数据资产类型分布"
+          :chart-data="charts.dataasset_type" 
+        />
       </div>
       <div class="pie-70" v-if="charts.dataasset_register_addrtype?.length">
-        <PieChart3 :chart-data="charts.dataasset_register_addrtype" />
+        <SinglePieChart 
+          chartTitle="企业数量按资产登记机构分布"
+          :chart-data="charts.dataasset_register_addrtype" 
+        />
       </div>
     </div>
   </div>
@@ -49,23 +69,23 @@
 
 <script>
 import ComboBarLineChart from '@/components/dashboard/charts/ComboBarLineChart.vue';
-import BarChart1 from '@/components/dashboard/charts/BarChart1.vue';
-import PieChart1 from '@/components/dashboard/charts/PieChart1.vue';
-import BarChart2 from '@/components/dashboard/charts/BarChart2.vue';
-import PieChart2 from '@/components/dashboard/charts/PieChart2.vue';
-import PieChart3 from '@/components/dashboard/charts/PieChart3.vue';
+import SingleBarChart from '@/components/dashboard/charts/SingleBarChart.vue';
+import ParentChildPieChart from '@/components/dashboard/charts/ParentChildPieChart.vue';
+import SinglePieChart from '@/components/dashboard/charts/SinglePieChart.vue';
 
 export default {
   name: 'NLChartRow',
   components: {
     ComboBarLineChart,
-    BarChart1,
-    PieChart1,
-    BarChart2,
-    PieChart2,
-    PieChart3
+    SingleBarChart,
+    ParentChildPieChart,
+    SinglePieChart
   },
   props: {
+    chartHeight: {
+      type: Number,
+      default: 440
+    },
     charts: { type: Object, required: true },
     filters: { type: Object, required: true },
     mode: {
@@ -78,9 +98,18 @@ export default {
       default: () => []
     }
   },
+  data() {
+    return {
+      isMobile: false
+    }
+  },
   computed: {
+    dynamicChartHeight() {
+      return this.isMobile ? 400 : 500;
+    },
     barChart2Field() {
-      return this.mode === 'ls' ? 'business_type' : 'company_business_type';
+      //return this.mode === 'ls' ? 'business_type' : 'company_business_type';
+      return 'company_business_type';
     },
     formattedComboData() {
       const rawData = this.comboChartData || [];
@@ -102,6 +131,18 @@ export default {
         lineSeries: { name: '累计金额', data: lineData }
       };
     }
+  },
+  mounted() {
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+  },
+  methods: {
+    handleResize() {
+      this.isMobile = window.innerWidth < 768;
+    }
   }
 };
 </script>
@@ -122,7 +163,7 @@ export default {
 .chart-full {
   flex: 1 1 100%;
   background: #fff;
-  padding: 20px;
+  padding: 10px 0px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }

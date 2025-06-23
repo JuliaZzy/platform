@@ -56,7 +56,8 @@
         :current-page="currentPage"
         :total-pages="totalPages"
         :page-size="pageSize"
-        @page-changed="changePage" 
+        @page-changed="changePage"
+        :is-mobile="isMobile"
       />
       <div class="pagination-right">
         </div>
@@ -86,7 +87,8 @@ export default {
     return {
       currentPage: 1,
       initialized: false,
-      loading: false
+      loading: false,
+      isMobile: false
     };
   },
   computed: {
@@ -109,7 +111,17 @@ export default {
       deep: true
     }
   },
+  mounted() {
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+  },
   methods: {
+    handleResize() {
+      this.isMobile = window.innerWidth < 768;
+    },
     changePage(page) {
       if (page < 1 || page > this.totalPages) return;
       this.loading = true;
@@ -137,7 +149,7 @@ export default {
       const filename = `非上市公司数据资产入表清单_全部_${Date.now()}.pdf`;
       await downloadPdf({
           apiUrl: `${this.apiPrefix}/export`,
-          filters: {}, // 发送空对象，表示下载全部
+          filters: {},
           defaultFilename: filename,
           onStart: () => { this.loading = true; },
           onFinish: () => { this.loading = false; },
@@ -323,4 +335,21 @@ export default {
     font-weight: bold;
     color: #2e3968;
   }
+
+  @media (max-width: 768px) {
+  .pagination {
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .pagination-left,
+  .pagination-right {
+    flex: none; 
+  }
+
+  .pagination-left {
+    order: 2; 
+  }
+}
 </style>

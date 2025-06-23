@@ -5,17 +5,18 @@
     <v-chart 
       ref="vueChartRef"
       :option="chartOption" 
-      style="width: 90%; height: 440px;" 
+      :style="{ width: '100%', height: chartHeight + 'px' }" 
     />
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, watch, nextTick } from 'vue';
+import { defineComponent, ref, watch, nextTick, computed } from 'vue';
 import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
+//import { is } from 'core-js/core/object';
 
 export default defineComponent({
   name: 'GroupedBarChart',
@@ -24,7 +25,10 @@ export default defineComponent({
     ChartSpinner
   },
   props: {
-    // All your props remain the same...
+    chartHeight: {
+      type: Number,
+      default: 440
+    },
     chartTitle: { type: String, default: 'Grouped Bar Chart' },
     chartData: { type: Array, default: () => [] },
     rowKey: { type: String, default: '类别' },
@@ -33,10 +37,17 @@ export default defineComponent({
   },
   setup(props) {
     const { isMobile } = useResponsiveCharts();
-
     const chartOption = ref({});
     const loading = ref(false);
     const vueChartRef = ref(null);
+
+    // y轴标题
+    const yAxisNameFormatted = computed(() => {
+      if (isMobile.value) {
+        return props.yAxisName; //.replace('数量', '\n数量');
+      }
+      return props.yAxisName;
+    });
 
     const updateChart = () => {
       loading.value = true;
@@ -65,6 +76,8 @@ export default defineComponent({
         const barLabelOption = {
           show: true,
           position: 'top',
+          fontSize: isMobile.value ? 7 : 10,
+          offset: isMobile.value ? [-2, 0] : [0, 0],
           formatter: function (params) {
             if (params.value == null || isNaN(parseFloat(params.value))) {
               return '';
@@ -76,8 +89,13 @@ export default defineComponent({
               return value.toFixed(0);
             }
           },
-          fontSize: 10,
           color: '#005f73',
+        };
+
+        // y轴标题
+        const yAxisNameTextStyle = {
+          fontSize: isMobile.value ? 10 : 14,
+            padding: isMobile.value ? [0, 0, 0, 20] : [0, 0, 0, 0] // 左Y轴标题向左偏移
         };
 
         const categories = data[0].data.map(item => item[props.rowKey]);
@@ -95,6 +113,12 @@ export default defineComponent({
             label: barLabelOption
           };
         });
+
+        const isIndustryChart = props.chartTitle === 'A股数据资源入表公司分行业分布情况';
+        const titlesToRotateOnMobile = [
+          'A股数据资源入表公司分市值规模分布情况',
+          'A股数据资源入表公司分区域位置分布情况'
+        ];
         
         chartOption.value = {
           color: colorPaletteForChart,
@@ -124,28 +148,36 @@ export default defineComponent({
             }
           },
           legend: {
-            top: isMobile.value ? 35 : 10,
-            type: 'scroll'
+            ...(isMobile.value
+              ? {bottom: 5}
+              : {top: 10}
+            ),
+            type: 'scroll',
+            textStyle: {
+              fontSize: isMobile.value ? 9 : 11
+            }
           },
           grid: {
-            top: isMobile.value ? 80 : 60,
+            top: isMobile.value ? '10%' : 60,
             left: '10%',
             right: '4%',
-            bottom: isMobile.value ? (isProblematicChart ? '35%' : '20%') : '3%',
+            bottom: isMobile.value ? (isProblematicChart ? '15%' : '20%') : '3%',
             containLabel: true
           },
           xAxis: {
             type: 'category',
             data: categories,
             axisLabel: {
-              rotate: isMobile.value ? 35 : 0,
+              rotate: (isMobile.value && titlesToRotateOnMobile.includes(props.chartTitle)) ? 30 : 0,
               interval: 0,
+              margin: (isMobile.value && titlesToRotateOnMobile.includes(props.chartTitle)) ? 15 : 8,
               rich: {
                 customStyle: {
                   lineHeight: 20,
-                  fontSize: isMobile.value ? 8 : 11
+                  fontSize: isMobile.value ? 9 : 11
                 }
               },
+              align: (isMobile.value && props.chartTitle === 'A股数据资源入表公司分市值规模分布情况') ? 'right' : 'center',
               formatter: (value) => {
                   const chartTitle = props.chartTitle;
                   if (chartTitle === 'A股数据资源入表公司分实控人分布情况') {
@@ -174,13 +206,39 @@ export default defineComponent({
           },
           yAxis: {
             type: 'value',
-            name: props.yAxisName,
-            nameLocation: 'middle',
+            name: yAxisNameFormatted.value,
+            nameLocation: isMobile.value ? 'end' : 'middle',
             nameGap: 50,
-            nameTextStyle: { fontSize: 14 }
+            nameTextStyle: yAxisNameTextStyle,
+            axisLabel: {
+            fontSize: isMobile.value ? 9 : 12
+            }
           },
           series: seriesData
         };
+
+        if (isMobile.value && (isIndustryChart || props.chartTitle === 'A股数据资源入表公司分区域位置分布情况')) {
+          chartOption.value.dataZoom = [
+            {
+              type: 'slider',
+              show: true,
+              xAxisIndex: [0],
+              //bottom: 10,
+              start: 0,
+              end: 50,
+              handleSize: '80%',
+              handleStyle: {
+                  color: '#fff',
+                  shadowBlur: 3,
+                  shadowColor: 'rgba(0, 0, 0, 0.6)',
+                  shadowOffsetX: 2,
+                  shadowOffsetY: 2
+              }
+            }
+          ];
+        } else {
+          delete chartOption.value.dataZoom;
+        }
 
         loading.value = false;
         nextTick(() => {
@@ -192,6 +250,9 @@ export default defineComponent({
         });
       }, 300);
     };
+
+    
+        
 
     watch(() => props.chartData, updateChart, { immediate: true, deep: true });
     watch(isMobile, updateChart);

@@ -128,7 +128,6 @@ tr:last-child td {
   color: white;
 }
 
-/* 【新增】响应式布局 */
 @media (max-width: 768px) {
   table {
     font-size: 14px;

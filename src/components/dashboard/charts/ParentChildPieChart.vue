@@ -38,7 +38,7 @@ use([
 ]);
 
 export default defineComponent({
-  name: 'PieChart1',
+  name: 'ParentChildPieChart',
   components: {
     VChart,
     ChartSpinner
@@ -97,22 +97,24 @@ export default defineComponent({
           line2_shape = { x1: p1_center_x, y1: p1_center_y + p1RadiusPixels, x2: p2_center_x, y2: p2_center_y + p2RadiusPixels };
         }
         
-        chartInstance.setOption({
-          graphic: [
-            { id: 'line1', shape: line1_shape },
-            { id: 'line2', shape: line2_shape }
-          ]
-        });
+        setTimeout(() => {
+          chartInstance.setOption({
+            graphic: [
+              { id: 'line1', shape: line1_shape },
+              { id: 'line2', shape: line2_shape }
+            ]
+          });
+        }, 0);
       } catch (error) {
-        console.error('[PieChart1] Error in updateConnectingLines:', error);
+        console.error('[ParentChildPieChart] Error in updateConnectingLines:', error);
       }
     };
     
-    const reapplyChartOptions = () => {
+    const reapplyChartOptions = async () => {
         const pie1_center = isMobile.value ? ['50%', '30%'] : ['35%', '50%'];
-        const pie1_radius = isMobile.value ? '35%' : '45%';
+        const pie1_radius = isMobile.value ? '35%' : '55%';
         const pie2_center = isMobile.value ? ['50%', '70%'] : ['65%', '50%'];
-        const pie2_radius = isMobile.value ? '25%' : '35%';
+        const pie2_radius = isMobile.value ? '25%' : '40%'
 
         chartOption.value = {
           color: chartColors,
@@ -124,7 +126,11 @@ export default defineComponent({
               type: 'pie', 
               radius: pie1_radius, 
               center: pie1_center, 
-              label: { show: true, formatter: ({ name, value }) => `${name}: ${value}`, position: 'outside' }, 
+              label: { 
+                show: true, 
+                formatter: ({ name, value }) => `${name}: ${value}`, 
+                position: 'outside' 
+              }, 
               startAngle: isMobile.value ? 60 : 145,
               data: parentPieData, 
               z: 101 
@@ -146,7 +152,10 @@ export default defineComponent({
             { id: 'line2', type: 'line', shape: { x1: 0, y1: 0, x2: 0, y2: 0 }, style: { stroke: '#888', lineWidth: 1 }, z: 100 }
           ]
         };
-        nextTick(() => updateConnectingLines());
+
+        await nextTick();
+        chartInstance?.resize();
+        updateConnectingLines();
     };
 
     const buildChart = async () => {
@@ -163,11 +172,12 @@ export default defineComponent({
         childPieData = res.data.charts?.admin_level || [];
         reapplyChartOptions();
         await nextTick(); 
+
         if (!chartInstance) {
           await initChartInstanceAndListeners();
         }
       } catch (err) {
-        console.error('❌ [PieChart1] buildChart: 加载数据失败:', err);
+        console.error('❌ [ParentChildPieChart] buildChart: 加载数据失败:', err);
       } finally {
         loading.value = false;
       }

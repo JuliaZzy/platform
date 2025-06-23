@@ -11,14 +11,14 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, computed } from 'vue';
 import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js';
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
 
 /**
- * 在文本中手动插入换行符
+ * 插入换行符
  * @param {string} str
  * @param {number} charsPerLine
  * @returns {string}
@@ -65,18 +65,42 @@ export default defineComponent({
           containLabel: true
         };
         const xAxisLabelConfig = {
-          fontSize: isMobile.value ? 10 : 11,
-          rotate: isMobile.value ? 35 : 0,
+          fontSize: isMobile.value ? 9 : 11,
           interval: 0,
-          formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val)
+          // formatter: val => (val.length > 6 ? val.slice(0, 6) + '…' : val),
+          align: 'center'
         };
-        const yAxisNameGap = isMobile.value ? 35 : 45;
-        const annotationBottom = isMobile.value ? '10%' : 25;
+
+        const yAxisBarNameFormatted = computed(() => {
+          if (isMobile.value) {
+            return props.yAxisBarName;//.replace('数量', '\n数量')
+          }
+          return props.yAxisBarName;
+        });
+        const yAxisLineNameFormatted = computed(() => {
+          if (isMobile.value) {
+            return props.yAxisLineName;//.replace('金额', '\n金额');
+          }
+          return props.yAxisLineName;
+        });
+        const yAxisNameGap = isMobile.value ? 10 : 45;
+        const yAxisNameTextStyle = {
+            fontSize: isMobile.value ? 10 : 14,
+            padding: isMobile.value ? [0, 0, 0, 40] : [0, 0, 0, 0] // 左Y轴标题向左偏移
+        };
+        const yAxisNameTextStyleRight = {
+            fontSize: isMobile.value ? 10 : 14,
+            padding: isMobile.value ? [0, 0, 0, -40] : [0, 0, 0, 0] // 右Y轴标题向右偏移
+        };
+
+        const annotationBottom = isMobile.value ? '8%' : 25;
+        const annotationWidth = isMobile.value ? '70%' : '100%';
+
         const barLabelOption = {
           show: true,
           position: 'top',
           formatter: '{c}',
-          fontSize: 12,
+          fontSize: isMobile.value ? 10 : 12,
           color: '#005f73',
         };
 
@@ -96,8 +120,8 @@ export default defineComponent({
 
         const lineLabelOption = {
           show: true,
-          position: 'right', 
-          offset: [3, -25],
+          position: isMobile.value ? 'left' : 'right', 
+          offset: isMobile.value ? [10, -10] : [3, -25],
           distance: 8,
           formatter: function (params) {
             if (params.value == null || isNaN(parseFloat(params.value))) { 
@@ -107,7 +131,7 @@ export default defineComponent({
             const value = parseFloat(params.value);
             return value.toFixed(2);
           },
-          fontSize: 12,
+          fontSize: isMobile.value ? 10 : 12,
           color: '#ee9b00',
         };
 
@@ -166,14 +190,28 @@ export default defineComponent({
           },
           yAxis: [
             {
-              type: 'value', name: props.yAxisBarName, min: 0, max: props.yAxisBarMax,
-              interval: props.yAxisBarInterval, nameLocation: 'middle', nameGap: yAxisNameGap,
-              nameTextStyle: { fontSize: 14 }
+              type: 'value', 
+              name: yAxisBarNameFormatted.value, 
+              min: 0, max: props.yAxisBarMax,
+              interval: props.yAxisBarInterval, 
+              nameGap: yAxisNameGap,
+              nameLocation: isMobile.value ? 'end' : 'middle',
+              nameTextStyle: yAxisNameTextStyle,
+              axisLabel: {
+                fontSize: isMobile.value ? 9 : 12
+              }
             },
             {
-              type: 'value', name: props.yAxisLineName, min: 0, max: props.yAxisLineMax,
-              interval: props.yAxisLineInterval, nameLocation: 'middle', nameGap: yAxisNameGap,
-              nameTextStyle: { fontSize: 14 }
+              type: 'value', 
+              name: yAxisLineNameFormatted.value, 
+              min: 0, max: props.yAxisLineMax,
+              interval: props.yAxisLineInterval, 
+              nameGap: yAxisNameGap,
+              nameLocation: isMobile.value ? 'end' : 'middle',
+              nameTextStyle: yAxisNameTextStyleRight,
+              axisLabel: {
+                fontSize: isMobile.value ? 9 : 12
+              }
             }
           ],
           series: [...bar, line]
@@ -190,9 +228,10 @@ export default defineComponent({
             style: {
               text: wrappedAnnotationText,
               fill: '#BDA36C',
-              fontSize: 12,
+              fontSize: isMobile.value ? 9 : 12,
               textAlign: 'center',
-              lineHeight: 18,
+              lineHeight: isMobile.value ? 12 : 18,
+              width: annotationWidth 
             }
           };
         }

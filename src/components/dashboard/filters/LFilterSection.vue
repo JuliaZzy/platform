@@ -397,4 +397,57 @@ select {
   color: #2e3968;
 }
 
+@media (max-width: 992px) {
+  .filter-section {
+    padding: 15px;
+    gap: 20px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .filter-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .filter-item label {
+    width: auto;
+  }
+
+  .filter-item >>> .el-select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
+    margin-top: 0; 
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .confirm-btn,
+  .clear-all-btn,
+  .download-btn {
+    width: 100%;
+    margin: 0;
+    padding: 12px 0;
+    font-size: 15px;
+  }
+
+  .download-btn.el-button {
+    padding: 12px 15px;
+  }
+}
+
 </style>

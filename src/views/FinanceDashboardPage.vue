@@ -42,12 +42,14 @@
         </table>
         <p v-else class="no-data">没有数据可显示。</p>
       </div>
+
       <PaginationControls
         v-if="!loading.bank && bankData.length > 0 && pagination.bank.totalPages > 0"
         :current-page="pagination.bank.currentPage"
         :total-pages="pagination.bank.totalPages"
         :page-size="pagination.bank.pageSize"
         @page-changed="newPage => changePage('bank', newPage)"
+        :is-mobile="isMobile"
       />
       <div class="pagination-left-download" v-if="!loading.bank && bankData.length > 0 && pagination.bank.totalPages > 1">
           <el-button 
@@ -95,6 +97,7 @@
         :total-pages="pagination.stock.totalPages"
         :page-size="pagination.stock.pageSize"
         @page-changed="newPage => changePage('stock', newPage)"
+        :is-mobile="isMobile"
       />
        <div class="pagination-left-download" v-if="!loading.stock && stockData.length > 0 && pagination.stock.totalPages > 0">
           <el-button 
@@ -142,6 +145,7 @@
         :total-pages="pagination.other.totalPages"
         :page-size="pagination.other.pageSize"
         @page-changed="newPage => changePage('other', newPage)"
+        :is-mobile="isMobile"
       />
        <div class="pagination-left-download" v-if="!loading.other && otherData.length > 0 && pagination.other.totalPages > 0">
           <el-button 
@@ -180,6 +184,7 @@ export default {
       bankData: [],
       stockData: [],
       otherData: [],
+      isMobile: false,
       loading: {
           bank: false,
           stock: false,
@@ -212,11 +217,19 @@ export default {
     this.fetchData('bank', 1);
     this.fetchData('stock', 1);
     this.fetchData('other', 1);
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
   },
   methods: {
     formatToChineseYearMonth,
     formatNumber,
     formatPercentage,
+    handleResize() {
+      this.isMobile = window.innerWidth < 768;
+    },
     getHeaders(dataArray, type) {
       if (type === 'bank' && dataArray && dataArray.length > 0) {
         return this.bankTableDisplayConfig.columnOrder; 
@@ -229,6 +242,7 @@ export default {
     formatValue(value) {
         return value !== null && value !== undefined ? String(value) : '';
     },
+
     /**
      * @description: 从后端获取指定类型的数据。
      * @param {string} type - 数据类型 ('bank', 'stock', 'other')。
@@ -278,6 +292,7 @@ export default {
         this.loading[type] = false;
       }
     },
+    
     /**
      * @description: 下载指定类型的 PDF。
      * @param {string} type - 数据类型 ('bank', 'stock', 'other')。
@@ -365,7 +380,7 @@ export default {
 <style scoped>
 .finance-page {
   padding: 0px 30px 20px;
-  background-color: #f4f7f6;
+  background-color: #f9f9f9;
   min-height: calc(100vh - 50px);
 }
 
@@ -373,12 +388,6 @@ export default {
   margin: 20px 0 20px;
   padding: 30px;
   overflow-x: hidden;
-}
-
-.section-divider {
-  border: none;
-  border-top: 1px dashed #ccc;
-  margin: 40px 0;
 }
 
 .dashboard-title {

@@ -4,23 +4,25 @@
     <div class="filter-row">
       <div class="filter-item">
         <label>入表时间：</label>
-        <el-select 
-          v-model="startDate" 
-          placeholder="开始时间"
-          clearable
-          @clear="() => { startDate = ''; }"
-        >
-        <el-option v-for="option in options.month_time" :key="option" :label="option" :value="option"></el-option>
-        </el-select>
-        <span class="to-text">-</span>
-        <el-select 
-          v-model="endDate" 
-          placeholder="结束时间"
-          clearable
-          @clear="() => { endDate = ''; }"
-        >
+        <div class="input-group">
+          <el-select 
+            v-model="startDate" 
+            placeholder="开始时间"
+            clearable
+            @clear="() => { startDate = ''; }"
+          >
           <el-option v-for="option in options.month_time" :key="option" :label="option" :value="option"></el-option>
-        </el-select>
+          </el-select>
+          <span class="to-text">-</span>
+          <el-select 
+            v-model="endDate" 
+            placeholder="结束时间"
+            clearable
+            @clear="() => { endDate = ''; }"
+          >
+            <el-option v-for="option in options.month_time" :key="option" :label="option" :value="option"></el-option>
+          </el-select>
+        </div>
       </div>
       <div class="filter-item">
         <label>省级行政区：</label>
@@ -258,5 +260,72 @@ export default {
     background-color: white;
     color: #2e3968;
   }
+
+  @media (max-width: 992px) {
+  .filter-section {
+    padding: 15px;
+    margin: 15px;
+    gap: 15px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 0 !important;
+  }
+
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 0 1 auto; 
+  }
+
+  .filter-item label {
+    width: auto;
+  }
+
+  .filter-item > .el-select,
+  .filter-item > input {
+    width: 100%;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .input-group .el-select {
+    flex: 1;
+  }
+
+  .input-group .to-text {
+    flex: 0 0 auto;
+
+  .row-actions {
+    justify-content: center;
+    margin-top: 0;
+  }
+  
+  .action-buttons {
+    width: 100%;
+    margin-right: 0;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .confirm-btn,
+  .clear-all-btn {
+    width: 100%;
+    margin-top: 0;
+    padding: 12px;
+    font-size: 15px;
+    align-items: center;
+  }
+}
+}
 
 </style>

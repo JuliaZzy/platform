@@ -1,29 +1,34 @@
 <template>
-  <div class="chart-wrapper" style="position: relative;">
-    <div class="chart-title">企业数量按资产登记机构分布</div>
+  <div class="chart-wrapper">
+    <div class="chart-title">{{ chartTitle }}</div>
     <ChartSpinner :visible="loading" />
     <v-chart
+      ref="vueChartRef"
       :option="chartOption"
-      style="width: 100%; height: 80%;"
+      autoresize
+      style="width: 100%; height: 100%;"
     />
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, nextTick } from 'vue';
 import { useResponsiveCharts } from '@/utils/useResponsiveCharts.js'; 
-
 import VChart from 'vue-echarts';
 import ChartSpinner from '@/components/common/ChartSpinner.vue';
 import chartColors from '@/utils/chartColors.js';
 
 export default defineComponent({
-  name: 'PieChart3',
+  name: 'SinglePieChart',
   components: {
     'v-chart': VChart,
     ChartSpinner
   },
   props: {
+    chartTitle: {
+      type: String,
+      default: '饼图'
+    },
     chartData: {
       type: Array,
       default: () => []
@@ -33,33 +38,36 @@ export default defineComponent({
     const { isMobile } = useResponsiveCharts();
     const chartOption = ref({});
     const loading = ref(false);
+    const vueChartRef = ref(null);
+
     const buildChart = () => {
       loading.value = true;
       setTimeout(() => {
-        const radius = isMobile.value ? '35%' : '50%';
+        const radius = isMobile.value ? '40%' : '50%';
         const labelFontSize = isMobile.value ? 10 : 12;
-        const gridConfig = isMobile.value 
-          ? { left: '5%', right: '5%', top: '5%', bottom: '5%' } 
-          : { left: '10%', right: '10%', top: '10%', bottom: '10%' };
 
         chartOption.value = {
           color: chartColors,
           tooltip: { trigger: 'item' },
           legend: { show: false },
-          grid: gridConfig,
           series: [{
             type: 'pie',
-            radius: radius,
+            radius: radius, 
             data: props.chartData,
             label: {
               show: true,
               formatter: ({ name, value }) => `${name}: ${value}`,
               position: 'outside',
               fontSize: labelFontSize,
-              overflow: 'truncate',
-              width: 80
+              width: 80,
+              overflow: 'breakAll',
+              lineHeight: 15
             },
-            labelLine: { show: true },
+            labelLine: { 
+              show: true,
+              length: isMobile.value ? 15 : 15,
+              length2: isMobile.value ? 20 : 20
+            },
             emphasis: {
               itemStyle: {
                 shadowBlur: 10,
@@ -70,6 +78,10 @@ export default defineComponent({
           }]
         };
         loading.value = false;
+
+        nextTick(() => {
+          vueChartRef.value?.chart?.resize();
+        });
       }, 500);
     };
 
@@ -78,7 +90,8 @@ export default defineComponent({
 
     return {
       chartOption,
-      loading
+      loading,
+      vueChartRef
     };
   }
 });
@@ -91,13 +104,29 @@ export default defineComponent({
   width: 90%;
   height: 500px;
   align-items: center;
-  justify-content: center;
+  margin-top: 20px;
 }
 .chart-title {
   font-size: 18px;
   font-weight: bold;
-  margin: 20px 0;
   text-align: center;
   color: #2e3968;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .chart-wrapper {
+    position: relative; 
+    width: 150%;
+    height: 400px;
+    box-sizing: border-box;
+  }
+  .chart-title {
+    position: relative;
+    transform: translateX(-50%);
+    top: 10px;
+    margin: 0;
+    font-size: 16px;
+  }
 }
 </style>

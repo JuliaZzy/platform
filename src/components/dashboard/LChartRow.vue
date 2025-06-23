@@ -6,16 +6,16 @@
           chartTitle="A股数据资源入表企业数量和金额"
           :categories="comboData.categories"
           :barSeries="comboData.barSeries"
-          y-axis-bar-name="入表企业数量（家）"
+          y-axis-bar-name="入表企业数量(家)"
           :lineSeries="comboData.lineSeries"
-          y-axis-line-name="入表企业金额（亿）"
+          y-axis-line-name="入表企业金额(亿)"
 
           :y-axis-bar-max="120"
           :y-axis-bar-interval="20"
           :y-axis-line-max="24"
           :y-axis-line-interval="4"
 
-          :chart-height="500" 
+          :chart-height="dynamicChartHeight" 
         />
       </div>
     </div>
@@ -26,7 +26,8 @@
           :chart-data="groupedSubjectData.countSeries"
           chartTitle="A股数据资源入表公司分科目分布情况"
           row-key="入表科目"
-          col-key="报告时间" 
+          col-key="报告时间"
+          :chart-height="subjectChartHeight" 
         />
       </div>
       <div class="subject-chart-container width-60" v-if="actualControllerData?.length">
@@ -35,6 +36,7 @@
           chartTitle="A股数据资源入表公司分实控人分布情况"
           row-key="name"
           col-key="报告时间"
+          :chart-height="entityChartHeight" 
         />
       </div>
     </div>
@@ -46,6 +48,7 @@
           :chartTitle="item.title"
           row-key="name"
           col-key="报告时间"
+          :chart-height="otherChartHeight" 
         />
       </div>
     </div>
@@ -68,6 +71,7 @@ export default {
   },
   data() {
     return {
+      isMobile: false,
       comboData: { barSeries: [], lineSeries: {} },
       groupedSubjectData: { countSeries: [], sumSeries: [] },
       actualControllerData: [], 
@@ -80,6 +84,20 @@ export default {
       isTablesLoading: true
     };
   },
+  computed: {
+    dynamicChartHeight() {
+      return this.isMobile ? 400 : 500;
+    },
+    subjectChartHeight() {
+      return this.isMobile ? 300 : 440;
+    },
+    entityChartHeight() {
+      return this.isMobile ? 300 : 440;
+    },
+    otherChartHeight() {
+      return this.isMobile ? 300 : 440;
+    }
+  },
   watch: {
     filters: {
       handler() { this.loadAllData(); },
@@ -87,9 +105,18 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+  },
   methods: {
+    handleResize() {
+      this.isMobile = window.innerWidth < 768;
+    },
     restructureDataForGroupedBarChart(flatData, seriesNameKey, categoryNameKey, valueKey) {
-      // 没有数据返回空数组
       if (!flatData || flatData.length === 0) {
         return [];
       }
@@ -242,7 +269,7 @@ export default {
 .chart-full,
 .subject-chart-container {
   background: #fff;
-  padding: 20px;
+  padding: 10px 5px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }

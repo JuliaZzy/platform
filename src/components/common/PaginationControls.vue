@@ -2,11 +2,11 @@
   <div class="pagination" v-if="totalPages > 1">
     <div class="pagination-center">
       <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
-        上一页
+        <span v-if="!isMobile">上一页</span>
+        <span v-else>&lt;</span>
       </button>
 
       <span class="page-info">
-        第
         <input
           type="number"
           class="page-jump-input"
@@ -17,12 +17,14 @@
           @blur="validateAndCorrectJumpInput"
           aria-label="跳转到指定页码"
         />
-        / {{ totalPages }} 页
+        / {{ totalPages }}
       </span>
+
       <button @click="handleJump" :disabled="!isValidJumpInput">跳转</button>
 
       <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
-        下一页
+        <span v-if="!isMobile">下一页</span>
+        <span v-else>&gt;</span>
       </button>
     </div>
   </div>
@@ -40,6 +42,7 @@ export default {
       type: Number,
       required: true,
     },
+    isMobile: { type: Boolean, default: false }
   },
   data() {
     return {
@@ -152,5 +155,24 @@ export default {
 }
 .page-jump-input[type=number] {
   -moz-appearance: textfield;
+}
+
+@media (max-width: 768px) {
+  .pagination-center {
+    gap: 8px;
+  }
+  .pagination button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .page-info {
+    font-size: 13px;
+    margin: 0;
+  }
+  .page-jump-input {
+    width: 40px;
+    padding: 6px 4px;
+    font-size: 13px;
+  }
 }
 </style>

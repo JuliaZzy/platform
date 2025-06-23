@@ -38,9 +38,11 @@
     </div>
 
     <PaginationControls
-      v-if="totalPages > 0 && tableData.length > 0" :current-page="currentPage"
+      v-if="totalPages > 0 && tableData.length > 0" 
+      :current-page="currentPage"
       :total-pages="totalPages"
       @page-changed="handlePageChangeFromPagination"
+      :is-mobile="isMobile"
     />
     </div>
 </template>
@@ -70,7 +72,8 @@ export default {
     return {
       currentPage: 1,
       initialized: false,
-      loading: false
+      loading: false,
+      isMobile: false
     };
   },
   computed: {
@@ -100,7 +103,19 @@ export default {
     },
 
   },
+
+  mounted() {
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+  },
+  
   methods: {
+    handleResize() {
+      this.isMobile = window.innerWidth < 768;
+    },
     handlePageChangeFromPagination(newPage) {
       if (newPage >= 1 && newPage <= this.totalPages && newPage !== this.currentPage) {
         this.loading = true;
