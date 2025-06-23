@@ -14,7 +14,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // 2. 全局 CORS 中间件
-const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
+const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
 console.log('✅ Allowed CORS Origins:', allowedOrigins);
 app.use(cors({
   origin: function (origin, callback) {
