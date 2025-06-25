@@ -98,3 +98,17 @@ export async function loadDistinctColumnValues(tabKey) {
     throw new Error(error.response?.data?.message || `获取 '${tabKey}' 表格的筛选选项失败`);
   }
 }
+
+/**
+ * 保存报告的排序
+ * @param {Array<number|string>} orderedIds - 排序后的报告ID数组
+ * @returns {Promise<object>}
+ */
+export const saveReportOrder = async (orderedIds) => {
+  try {
+    const response = await apiClient.post('/reports/order', { orderedIds });
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, '保存报告顺序失败');
+  }
+};

@@ -10,47 +10,52 @@
             <th>PDF名称</th>
             <th>上传时间</th>
             <th>文件大小</th>
+            <th>下载次数</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(report, index) in reports" :key="report.name">
+          <tr v-for="(report, index) in reports" :key="report.id">
             <td>{{ index + 1 }}</td>
             <td>
-              <a :href="getReportDownloadUrl(report.name)" class="report-link" target="_blank">
+              <a :href="getReportDownloadUrl(report.id)" class="report-link" target="_blank">
                 {{ report.name }}
               </a>
             </td>
-            <td>{{ formatToDateTimeSec(report.uploadTime) }}</td>
+            <td>{{ formatToDateTimeSec(report.upload_time) }}</td>
             <td>{{ formatFileSize(report.size) }}</td>
+            <td>{{ report.download_count }}</td>
             <td class="report-table-cell-center">
-              <!-- 排序按钮组 -->
+              
               <span class="sort-buttons">
                 <button
                   @click.stop="$emit('move-report', { index, direction: 'up' })"
-                  :disabled="index === 0"
+                  :disabled="index === 0 || !isEditing"
                   class="sort-btn up-btn"
                   title="上移"
                 >↑</button>
                 <button
                   @click.stop="$emit('move-report', { index, direction: 'down' })"
-                  :disabled="index === reports.length - 1"
+                  :disabled="index === reports.length - 1 || !isEditing"
                   class="sort-btn down-btn"
                   title="下移"
                 >↓</button>
               </span>
               
-              <!-- 操作按钮 -->
               <button 
                 @click="handleReplace(report)" 
+                :disabled="!isEditing"
                 class="action-btn replace-btn"
                 title="替换文件"
               >替换</button>
+              
               <button 
-                @click="handleDelete(report.name)" 
+                @click="handleDelete(report)" 
+                :disabled="!isEditing"
                 class="action-btn delete-btn"
                 title="删除文件"
               >删除</button>
+
             </td>
           </tr>
         </tbody>
@@ -60,7 +65,7 @@
     </div>
 
     <div class="export-controls">
-      <button class="upload-btn" @click="$emit('open-upload-modal')">上传文件</button>
+      <button class="upload-btn" @click="$emit('open-upload-modal')" :disabled="!isEditing">上传文件</button>
     </div>
   </div>
 </template>
@@ -79,12 +84,16 @@ export default {
     isLoading: {
       type: Boolean,
       required: true,
+    },
+    isEditing: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['delete-report', 'open-upload-modal', 'replace-report'],
+  emits: ['delete-report', 'open-upload-modal', 'replace-report', 'move-report'],
   methods: {
-    getReportDownloadUrl(filename) {
-      return `/api/reports/download/${encodeURIComponent(filename)}`;
+    getReportDownloadUrl(id) {
+      return `/api/reports/download/${id}`;
     },
 
     formatFileSize(bytes) {
@@ -115,9 +124,9 @@ export default {
       }
     },
 
-    handleDelete(filename) {
-      if (confirm(`确定删除 ${filename} 吗？此操作不可恢复！`)) {
-        this.$emit('delete-report', filename);
+    handleDelete(report) {
+      if (confirm(`确定删除 ${report.name} 吗？此操作不可恢复！`)) {
+        this.$emit('delete-report', report.id);
       }
     }
   }
@@ -170,7 +179,7 @@ export default {
 
 .report-table th:nth-child(2) {text-align: center;}
 .report-table td:nth-child(2) {
-  width: 400px;
+  width: 360px;
   text-align: left;
 }
 
@@ -182,6 +191,12 @@ export default {
 
 .report-table th:nth-child(4),
 .report-table td:nth-child(4) {
+  width: 50px;
+  text-align: center;
+}
+
+.report-table th:nth-child(5),
+.report-table td:nth-child(5) {
   width: 50px;
   text-align: center;
 }

@@ -107,18 +107,13 @@ export default {
         
         // 替换模式需要传递旧文件名
         if (this.fileToReplace) {
-          formData.append('oldFilename', this.fileToReplace.name);
+          formData.append('idToReplace', this.fileToReplace.id);
         }
-
-        const { data } = await axios.post(url, formData, config);
+        await axios.post(url, formData, config);
         
         this.message = this.fileToReplace ? '替换成功！' : '上传成功！';
         setTimeout(() => {
-          this.$emit('upload-success', {
-            isReplace: !!this.fileToReplace,
-            oldFilename: this.fileToReplace?.name,
-            newFilename: data.filename
-          });
+          this.$emit('upload-success');
           this.closeModal();
         }, 1000);
 

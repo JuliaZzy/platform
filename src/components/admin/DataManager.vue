@@ -3,10 +3,7 @@
     <p class="update-time">上次更新时间：{{ lastUpdateTime }}</p>
 
     <div class="search-bar">
-      <button class="clear-all-btn" @click="$emit('clear-all-filters')">清空全部筛选</button>
-      <label>关键词检索：</label>
-      <input v-model="localSearchKeyword" @input="onSearchInput" placeholder="请输入关键词..." />
-    </div>
+      </div>
 
     <div class="table-wrapper">
       <ChartSpinner :visible="isLoading" :show-watermark="false" />
@@ -50,35 +47,32 @@
               <td
                 v-for="colName in headers"
                 :key="colName"
-                :class="{ 
-                  'status-cell': colName === 'status',
-                  'text-right': isNumericColumn(colName)
-                }"
+                :class="{ 'status-cell': colName === 'status', 'text-right': isNumericColumn(colName) }"
               >
                 <template v-if="colName === 'status'">
                   <div v-if="row.status === 'repeat'" class="status-display status-repeat">
                     <span class="status-text">重复</span>
                     <div class="action-buttons-group">
-                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small">删除</button>
-                      <button @click="$emit('update-status', { row, status: 'kept' })" class="action-btn keep-btn-small">保留</button>
+                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small" :disabled="!isEditing">删除</button>
+                      <button @click="$emit('update-status', { row, status: 'kept' })" class="action-btn keep-btn-small" :disabled="!isEditing">保留</button>
                     </div>
                   </div>
                   <div v-else-if="row.status === 'delete'" class="status-display status-deleted">
                     <span class="status-text">已删除</span>
                     <div class="action-buttons-group">
-                      <button @click="$emit('update-status', { row, status: 'kept' })" class="action-btn keep-btn-small">保留</button>
+                      <button @click="$emit('update-status', { row, status: 'kept' })" class="action-btn keep-btn-small" :disabled="!isEditing">保留</button>
                     </div>
                   </div>
                   <div v-else-if="row.status === 'kept'" class="status-display status-kept">
                     <span class="status-text">已保留</span>
                     <div class="action-buttons-group">
-                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small">删除</button>
-                      <button @click="$emit('update-status', { row, status: null })" class="action-btn restore-btn-small">恢复</button>
+                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small" :disabled="!isEditing">删除</button>
+                      <button @click="$emit('update-status', { row, status: null })" class="action-btn restore-btn-small" :disabled="!isEditing">恢复</button>
                     </div>
                   </div>
                   <div v-else class="status-display status-normal">
                     <div class="action-buttons-group">
-                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small">删除</button>
+                      <button @click="$emit('update-status', { row, status: 'delete' })" class="action-btn delete-btn-small" :disabled="!isEditing">删除</button>
                     </div>
                   </div>
                 </template>
@@ -102,9 +96,9 @@
     />
 
     <div class="export-controls">
-      <label class="upload-btn" v-if="isUploadVisible">
+      <label class="upload-btn" :class="{ 'is-disabled': !isEditing }" v-if="isUploadVisible">
         上传数据
-        <input type="file" accept=".xlsx" @change="onFileSelect" hidden ref="fileInput"/>
+        <input type="file" accept=".xlsx" @change="onFileSelect" hidden ref="fileInput" :disabled="!isEditing"/>
       </label>
       <button class="export-btn" @click="$emit('export-excel')">导出 Excel</button>
     </div>
@@ -131,6 +125,10 @@ export default {
     isUploadVisible: Boolean,
     activeFilters: { type: Object, default: () => ({}) },
     searchKeyword: String,
+    isEditing: {
+      type: Boolean,
+      default: false
+    }
   },
   emits: [
     'clear-all-filters', 'search-input', 'apply-filters', 'page-changed',
@@ -266,7 +264,9 @@ export default {
 .data-table td.text-right { text-align: right; }
 .th-wrapper { display: flex; align-items: center; justify-content: space-between; position: relative; overflow: visible; z-index: 1; }
 .filter-icon { margin-left: 6px; cursor: pointer; font-size: 13px; color: #2e3968; }
-.filter-dropdown { position: fixed; z-index: 100; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 6px; width: 220px; max-height: 300px; display: flex; flex-direction: column; }
+.filter-dropdown { 
+  position: absolute; z-index: 100; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+  border-radius: 6px; width: 220px; max-height: 300px; display: flex; flex-direction: column; top: 100%; left: 0;}
 .filter-search-input { padding: 6px 10px; margin: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; }
 .filter-options { flex: 1; overflow-y: auto; padding: 0 10px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
 .filter-options label { display: flex; align-items: center; gap: 5px; }

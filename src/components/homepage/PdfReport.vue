@@ -1,13 +1,15 @@
 <template>
   <div class="pdf-list-container">
-    <div v-if="isLoading">正在加载...</div>
+    <div v-if="isLoading" class="loading-message">正在加载...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <ul v-else-if="reports.length > 0" class="pdf-list">
-      <li v-for="report in reports" :key="report.name">
-        <a :href="getDownloadUrl(report.name)" target="_blank" class="file-link">
+      <li v-for="report in reports" :key="report.id">
+        <a :href="getDownloadUrl(report.id)" target="_blank" class="file-link" @click="trackDownload(report)">
+          
           <i class="fas fa-file-pdf"></i>
           <span class="file-name">{{ report.name }}</span>
-        </a>
+          
+          </a>
       </li>
     </ul>
     <div v-else class="no-files">暂无最新报告。</div>
@@ -62,25 +64,18 @@ export default {
   margin: 0;
   display: flex;
   flex-direction: column;
-  /* 方法一 (推荐): 使用 gap 属性控制每个列表项之间的垂直间距
-    你可以把 15px 修改为你希望的任何值，比如 20px, 1rem 等。
-  */
   gap: 15px; 
 }
 
 .file-link {
   display: flex;
-  align-items: center; /* 垂直居中图标和文字 */
-  gap: 10px; /* 图标和文字之间的间距 */
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
   color: #333;
   font-size: 16px;
   transition: color 0.2s ease;
   min-width: 0;
-  /* 方法二: 使用 line-height 控制单行内部的高度
-    增加这个值可以让每一行本身变得更高，看起来更舒展。
-    你可以尝试 1.5, 1.6, 1.8 等值。
-  */
   line-height: 1.6;
 }
 
@@ -91,14 +86,13 @@ export default {
 }
 
 .file-link:hover .file-name {
-  color: #171d8f; /* 鼠标悬浮时只改变文字颜色 */
+  color: #171d8f;
   text-decoration: underline;
 }
 
 .file-link i {
-  color: #D32F2F; /* 使用一个更现代的红色 */
+  color: #D32F2F;
   font-size: 20px;
-  /* 让图标宽度固定，防止文字对不齐 */
   width: 20px; 
   text-align: center;
 }

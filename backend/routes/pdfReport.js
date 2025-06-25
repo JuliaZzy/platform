@@ -5,33 +5,14 @@ const { PDFDocument, rgb, degrees } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 const router = express.Router();
 const multer = require('multer');
+const db = require('../db/db');
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads', 'reports');
-const METADATA_PATH = path.join(UPLOADS_DIR, 'metadata.json');
 const ensureDirectoryExists = async () => {
   try {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
   } catch (error) {
     if (error.code !== 'EEXIST') throw error;
   }
-};
-
-// 读取元数据文件
-const readMetadata = async () => {
-  await ensureDirectoryExists();
-  
-  try {
-    const data = await fs.readFile(METADATA_PATH, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') return [];
-    throw error;
-  }
-};
-
-// 写入元数据文件
-const writeMetadata = async (data) => {
-  await ensureDirectoryExists();
-  await fs.writeFile(METADATA_PATH, JSON.stringify(data, null, 2));
 };
 
 // --- Multer 配置 ---
@@ -58,134 +39,108 @@ const upload = multer({
  */
 router.get('/', async (req, res) => {
   try {
-    await ensureDirectoryExists();
-    const [metadata, filesOnDisk] = await Promise.all([
-      readMetadata(),
-      fs.readdir(UPLOADS_DIR)
-    ]);
-
-    const pdfFiles = filesOnDisk.filter(file => 
-      file.endsWith('.pdf') && file !== 'metadata.json'
+    const { rows } = await db.query(
+      'SELECT id, name, size, upload_time, download_count FROM reports ORDER BY order_index ASC'
     );
-
-    if (metadata.length === 0) {
-      const reports = await Promise.all(
-        pdfFiles.map(async (file) => {
-          const stats = await fs.stat(path.join(UPLOADS_DIR, file));
-          return {
-            name: file,
-            size: stats.size,
-            uploadTime: stats.mtime
-          };
-        })
-      );
-      return res.json(reports);
-    }
-
-    const reportDetails = await Promise.all(
-      metadata
-        .filter(meta => pdfFiles.includes(meta.filename))
-        .map(async (meta) => {
-          const stats = await fs.stat(path.join(UPLOADS_DIR, meta.filename));
-          return {
-            name: meta.filename,
-            size: stats.size,
-            uploadTime: stats.mtime
-          };
-        })
-    );
-
-    res.json(reportDetails);
+    res.json(rows);
   } catch (error) {
-    console.error('Failed to load reports:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Failed to load reports from DB:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
-
-
 
 /**
  * @route POST /api/reports/upload
  * @desc 新增文件
  */
 router.post('/upload', upload.single('pdfFile'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: '未选择文件' });
+  }
+
+  const { filename: name, size } = req.file;
+
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: '未选择文件' });
-    }
-
-    const newFilename = req.file.filename;
-    let metadata = await readMetadata();
-
-    // 检查是否已存在同名文件
-    if (metadata.some(item => item.filename === newFilename)) {
-      return res.status(409).json({ 
-        message: '文件已存在，请使用替换功能',
-        filename: newFilename
-      });
-    }
-
-    // 添加到元数据
-    metadata.unshift({ filename: newFilename });
-    await writeMetadata(metadata);
+    await db.query('UPDATE reports SET order_index = order_index + 1');
+    const { rows } = await db.query(
+      'INSERT INTO reports(name, size, order_index) VALUES($1, $2, $3) RETURNING *',
+      [name, size, 0]
+    );
 
     res.status(201).json({
       message: '文件新增成功',
-      filename: newFilename
+      report: rows[0]
     });
   } catch (error) {
+    if (error.code === '23505' && error.constraint === 'reports_name_key') {
+      return res.status(409).json({
+        message: '文件已存在，请使用替换功能或重命名文件',
+        filename: name
+      });
+    }
     console.error('新增文件失败:', error);
-    res.status(500).json({ 
-      message: '服务器错误',
-      error: error.message 
-    });
+    res.status(500).json({ message: '服务器错误', error: error.message });
   }
 });
 
 /**
- * @route PUT /api/reports/replace
+ * @route POST /api/reports/replace
  * @desc 替换指定文件
  */
 router.post('/replace', upload.single('pdfFile'), async (req, res) => {
+  const { idToReplace } = req.body;
+
+  if (!req.file || !idToReplace) {
+    return res.status(400).json({ message: '需要提供新文件和被替换文件的ID' });
+  }
+
+  const { filename: newName, size: newSize } = req.file;
+  let oldName = '';
+
   try {
-    if (!req.file || !req.body.oldFilename) {
-      return res.status(400).json({ message: '需要提供新文件和待替换文件名' });
+    // 1. 开始数据库事务
+    await db.query('BEGIN');
+
+    // 2. 查询旧记录以获取旧文件名，并锁定该行以防并发问题
+    const oldReportResult = await db.query('SELECT name FROM reports WHERE id = $1 FOR UPDATE', [idToReplace]);
+    if (oldReportResult.rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ message: '待替换的记录不存在' });
     }
+    oldName = oldReportResult.rows[0].name;
 
-    const newFilename = req.file.filename;
-    const oldFilename = req.body.oldFilename;
-    let metadata = await readMetadata();
-
-    // 验证旧文件存在
-    const oldFileExists = metadata.some(item => item.filename === oldFilename);
-    if (!oldFileExists) {
-      return res.status(404).json({ message: '待替换文件不存在' });
-    }
-
-    // 删除旧文件
-    try {
-      await fsp.unlink(path.join(UPLOADS_DIR, oldFilename));
-    } catch (err) {
-      console.warn('旧文件删除失败:', err);
-    }
-
-    // 更新元数据
-    metadata = metadata.map(item => 
-      item.filename === oldFilename ? { ...item, filename: newFilename } : item
+    // 3. 更新数据库记录为新文件的信息
+    const updateResult = await db.query(
+      'UPDATE reports SET name = $1, size = $2, upload_time = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
+      [newName, newSize, idToReplace]
     );
 
-    await writeMetadata(metadata);
+    // 4. 如果新旧文件名不同，则删除旧的物理文件
+    if (oldName && oldName !== newName) {
+      try {
+        await fs.unlink(path.join(UPLOADS_DIR, oldName));
+      } catch (unlinkError) {
+        console.warn(`旧文件 ${oldName} 删除失败:`, unlinkError.message);
+      }
+    }
+    
+    // 5. 提交事务
+    await db.query('COMMIT');
     
     res.status(200).json({
       message: '文件替换成功',
-      oldFilename,
-      newFilename
+      report: updateResult.rows[0]
     });
 
   } catch (error) {
+    await db.query('ROLLBACK');
+    if (error.code === '23505' && error.constraint === 'reports_name_key') {
+      return res.status(409).json({
+        message: `文件名 '${newName}' 已被另一个文件占用，请更换文件名。`,
+        filename: newName
+      });
+    }
+
     console.error('替换失败:', error);
     res.status(500).json({ 
       message: '替换操作失败',
@@ -194,163 +149,98 @@ router.post('/replace', upload.single('pdfFile'), async (req, res) => {
   }
 });
 
-
 /**
  * @route   POST /api/reports/order
  * @desc    更新PDF文件的排序
  */
 router.post('/order', async (req, res) => {
+  const { orderedIds } = req.body;
+
+  if (!Array.isArray(orderedIds)) {
+    return res.status(400).json({ message: '无效请求格式：需要 ID 数组' });
+  }
+
   try {
-    const { orderedFilenames } = req.body;
+    const query = `
+      UPDATE reports SET order_index = CASE id
+        ${orderedIds.map((id, index) => `WHEN ${parseInt(id, 10)} THEN ${index}`).join(' ')}
+      END
+      WHERE id IN (${orderedIds.join(',')})
+    `;
 
-    // 验证输入格式
-    if (!Array.isArray(orderedFilenames)) {
-      return res.status(400).json({ 
-        code: 40001,
-        message: '无效请求格式：需要文件名数组',
-        suggestion: '请检查参数是否为数组格式'
-      });
-    }
-
-    // 读取磁盘实际文件
-    const filesOnDisk = await fs.readdir(UPLOADS_DIR);
-    const existingPdfFiles = filesOnDisk.filter(file => 
-      file.endsWith('.pdf') && file !== 'metadata.json'
-    );
-
-    // 验证文件是否存在
-    const missingFiles = orderedFilenames.filter(
-      filename => !existingPdfFiles.includes(filename)
-    );
-    
-    if (missingFiles.length > 0) {
-      return res.status(404).json({
-        code: 40401,
-        message: '部分文件不存在',
-        missingFiles,
-        existingFiles: existingPdfFiles
-      });
-    }
-
-    // 生成新元数据（保留可能的额外字段）
-    const currentMetadata = await readMetadata();
-    const metadataMap = new Map(currentMetadata.map(item => [item.filename, item]));
-    
-    const newMetadata = orderedFilenames.map(filename => ({
-      ...(metadataMap.get(filename) || {}),
-      filename
-    }));
-
-    // 写入元数据
-    await writeMetadata(newMetadata);
-
+    await db.query(query);
     res.json({
       success: true,
-      message: `成功更新 ${orderedFilenames.length} 个文件的排序`,
-      updatedAt: new Date().toISOString()
+      message: `成功更新 ${orderedIds.length} 个文件的排序`
     });
-
   } catch (error) {
-    const errorId = Date.now();
-    console.error(`[${errorId}] 排序更新失败:`, error);
-    
-    res.status(500).json({
-      code: 50001,
-      message: '服务器处理排序时出错',
-      errorId,
-      error: process.env.NODE_ENV === 'development' ? 
-        error.message : undefined
-    });
+    console.error('排序更新失败:', error);
+    res.status(500).json({ message: '服务器处理排序时出错' });
   }
 });
 
-
 /**
- * @route   DELETE /api/reports/:filename
- * @desc    删除指定的 PDF 文件，并更新元数据
+ * @route   DELETE /api/reports/:id
+ * @desc    根据 ID 删除指定的 PDF 文件和数据库记录
  */
-router.delete('/:filename', async (req, res) => {
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  
   try {
-    const { filename } = req.params;
-    if (filename.includes('..')) return res.status(400).send('Invalid filename.');
-    const filePath = path.join(UPLOADS_DIR, filename);
-    await fs.unlink(filePath);
-    let metadata = await readMetadata();
-    metadata = metadata.filter(m => m.filename !== filename);
-    await writeMetadata(metadata);
-    
-    res.status(200).json({ message: `File '${filename}' deleted.` });
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      res.status(404).send('File not found.');
-    } else {
-      console.error('Failed to delete report:', error);
-      res.status(500).send('Server error during deletion.');
+    // 1. 从数据库删除记录，并返回被删除的文件名
+    const { rows } = await db.query('DELETE FROM reports WHERE id = $1 RETURNING name', [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).send('File not found in database.');
     }
+
+    const { name } = rows[0];
+
+    // 2. 从磁盘删除文件
+    const filePath = path.join(UPLOADS_DIR, name);
+    await fs.unlink(filePath);
+    
+    res.status(200).json({ message: `File '${name}' deleted successfully.` });
+  } catch (error) {
+    console.error('Failed to delete report:', error);
+    res.status(500).send('Server error during deletion.');
   }
 });
 
-
 /**
- * @route   GET /api/reports/download/:filename
+ * @route   GET /api/reports/download/:id
  * @desc    下载指定文件并添加中文水印
  */
-router.get('/download/:filename', async (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(UPLOADS_DIR, filename);
+router.get('/download/:id', async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    await fs.access(filePath);
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        console.error('Download callback error:', err);
-      }
-    });
-    
-    /* 下载加水印
     try {
-      const fontPath = path.join(__dirname, '..', '..', 'fonts', 'NotoSansHans-Regular.otf');
-      const [existingPdfBytes, fontBytes] = await Promise.all([
-        fs.readFile(filePath),
-        fs.readFile(fontPath)
-      ]);
+        // 1. 原子性地增加下载计数，并返回文件名
+        const { rows } = await db.query(
+            'UPDATE reports SET download_count = download_count + 1 WHERE id = $1 RETURNING name',
+            [id]
+        );
 
-      const pdfDoc = await PDFDocument.load(existingPdfBytes);
-      pdfDoc.registerFontkit(fontkit);
-      const customFont = await pdfDoc.embedFont(fontBytes);
-      
-      const pages = pdfDoc.getPages();
-      pages.forEach(page => {
-        const { width, height } = page.getSize();
-        page.drawText('高金智库数据资产研究课题组', {
-          x: width / 2 - 180,
-          y: height / 2 - 150,
-          font: customFont,
-          size: 48,
-          color: rgb(0.5, 0.5, 0.5),
-          opacity: 0.2,
-          rotate: degrees(45),
+        if (rows.length === 0) {
+            return res.status(404).send('File not found.');
+        }
+
+        const { name: filename } = rows[0];
+        const filePath = path.join(UPLOADS_DIR, filename);
+
+        // 2. 触发浏览器下载
+        res.download(filePath, filename, (err) => {
+            if (err) {
+                // res.download 会自动处理大部分错误和响应结束，
+                // 但如果头部已发送后发生错误，这里可以记录日志
+                console.error(`下载文件 ${filename} 时发生错误:`, err);
+            }
         });
-      });
 
-      const pdfBytes = await pdfDoc.save();
-      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.send(Buffer.from(pdfBytes));
-    } catch (processingError) {
-      console.warn('Watermark failed, sending original file:', processingError);
-      res.download(filePath);
+    } catch (error) {
+        console.error('Download error:', error);
+        res.status(500).send('Error processing file');
     }
-      */
-     
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return res.status(404).send('File not found');
-    }
-    console.error('Download error:', error);
-    res.status(500).send('Error processing file');
-  }
 });
-
 
 module.exports = router;
