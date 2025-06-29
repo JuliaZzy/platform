@@ -57,7 +57,6 @@ export const dataTableMixin = {
             headers.splice(statusIndex, 1);
         }
         this.processedTableHeaders = headers;
-        console.log('Final headers being set:', this.processedTableHeaders);
 
       } catch (error) {
         alert(error.message || '数据加载失败！');
@@ -65,6 +64,7 @@ export const dataTableMixin = {
         this.tableLoadingState[this.currentTab] = false;
       }
     },
+    
     async handleUpdateStatus({ row, status }) {
       if (!this.isEditMode) {
         alert('请先进入修改模式！');

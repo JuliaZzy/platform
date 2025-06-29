@@ -32,7 +32,12 @@ router.post('/export', async (req, res) => {
     const whereClause = `WHERE ${finalConditions.join(' AND ')}`;
     
     const sql = `
-      SELECT id, month_time, province_area, company_name, dataasset_content, dataasset_register_addr 
+      SELECT id, month_time, province_area, 
+      CASE 
+        WHEN parent_company_report = '' THEN company_name 
+        ELSE parent_company_report || '（' || company_name || '）'
+      END AS company_name,
+      dataasset_content, dataasset_register_addr 
       FROM "${tableName}" ${whereClause}
       ORDER BY "id" ASC 
     `;
@@ -141,7 +146,25 @@ router.post('/summary', async (req, res) => {
 
     const countSql = `SELECT COUNT(*) FROM "${tableName}" ${whereClauseForQueries}`;
     const dataSql = `
-      SELECT * FROM "${tableName}"
+      SELECT
+        id,
+        month_time,
+        province_area,
+        CASE
+          WHEN parent_company_report = '' OR parent_company_report IS NULL THEN company_name
+          ELSE parent_company_report || '（' || company_name || '）'
+        END AS company_name,
+        dataasset_content,
+        dataasset_register_addr,
+        quarter_time,
+        finance_value,
+        company_business_type,
+        company_type,
+        admin_level,
+        dataasset_type,
+        dataasset_register_addrtype,
+        status
+      FROM "${tableName}"
       ${whereClauseForQueries}
       ORDER BY "id" ASC
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}
