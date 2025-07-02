@@ -178,8 +178,14 @@ export default {
     },
   },
 
-  mounted() {
-    this.switchTab('listed');
+  async mounted() {
+    // 直接执行 'listed' 标签页首次加载需要的逻辑
+    this.currentTab = 'listed'; // 确保初始状态
+    this.clearAllFilters(false); // 清理可能存在的旧筛选
+    await this.loadFilterOptions(); // 加载筛选选项
+    await this.loadData(); // 加载表格数据
+
+    // 原有的事件监听器保持不变
     this.$on('data-restored', (backupData) => {
         if (this.currentTab === 'reports') {
             this.reportsData = backupData;
