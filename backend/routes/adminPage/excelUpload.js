@@ -93,7 +93,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
     const dbColumnsRes = await client.query(`
       SELECT column_name
       FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = $1 AND column_name NOT IN ('id', 'status')
+      WHERE table_schema = 'public' AND table_name = $1 AND column_name NOT IN ('id', 'status', 'updated_at')
       ORDER BY ordinal_position;
     `, [tableName]);
 
@@ -237,6 +237,23 @@ router.post('/append', upload.single('file'), async (req, res) => {
             return formattedDate;
           }
         }
+        const numericColumnsSet = new Set([
+            '数据资源入表总额（万元）', '市值（亿元）', '无形资产-数据资源入表金额（万元）', '开发支出-数据资源入表金额（万元）',
+            '存货-数据资源入表金额（万元）', 'book_value', 'assess_value', 'finance_value', '融资金额（万元）', '注册资本（万元）',
+            '数据资产占总资产比例', '股权占比'
+        ]);
+
+        if (numericColumnsSet.has(dbColName)) {
+            // 如果是数字列，进行转换
+            if (cellValue === null || cellValue === undefined || String(cellValue).trim() === '') {
+                return null; // 如果单元格为空，则插入NULL
+            }
+            const num = parseFloat(cellValue);
+            // 如果转换后不是一个有效的数字 (比如转换 'N/A' 会得到 NaN)，也插入NULL
+            return isNaN(num) ? null : num;
+        }
+        // --- 新增的修改结束 ---
+
         return cellValue; 
       });
       
