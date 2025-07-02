@@ -8,7 +8,7 @@ const adminTableConfigs = {
     tableName: 'dataasset_listed_companies_2024',
     searchableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
     filterableColumns: ['"status"', '"公司"', '"证券代码"', '"入表科目"', '"省份"', '"所属证券行业分布"', '"实控人"', '"市值规模"', '"报告时间"'],
-    defaultSort: 'ORDER BY status, "报告时间", "证券代码", id'
+    defaultSort: 'ORDER BY (status = \'delete\'), status, "报告时间", "证券代码", id'
   },
   'nonlisted': { 
     tableName: 'dataasset_non_listed_companies',
@@ -22,7 +22,7 @@ const adminTableConfigs = {
                         '"dataasset_register_addrtype"', '"dataasset_register_addr"', '"dataasset_content"', '"dataasset_type"', '"dataasset_type_old"', '"accounting_subject"', '"valuation_method"',
                         '"finance_type"', '"finance_orgs"', '"company_name_now"',
                         '"bond_issuer"', '"parent_company_report"', '"company_business_type"', '"hide_flag"'],
-    defaultSort: 'ORDER BY status, month_time, company_name, id'
+    defaultSort: 'ORDER BY (status = \'delete\'), status, month_time, company_name, id'
   },
   'finance-bank':{
     tableName: 'dataasset_finance_bank',
@@ -34,13 +34,13 @@ const adminTableConfigs = {
     tableName: 'dataasset_finance_stock',
     searchableColumns: ['"status"', '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
     filterableColumns: ['"status"', '"入股时间"', '"作价入股企业"', '"数据资产"', '"入股公司"'],
-    defaultSort: 'ORDER BY status, "入股时间", "入股公司", id'
+    defaultSort: 'ORDER BY (status = \'delete\'), status, "入股时间", "入股公司", id'
   },
   'finance-other':{ 
     tableName: 'dataasset_finance_other',
     searchableColumns: ['"status"', '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
     filterableColumns: ['"status"', '"融资类型"', '"日期"', '"企业"', '"数据内容"', '"产品"', '"融资支持机构"', '"融资金额（万元）"'],
-    defaultSort: 'ORDER BY status, "日期", "企业", id'
+    defaultSort: 'ORDER BY (status = \'delete\'), status, "日期", "企业", id'
   }
 };
 

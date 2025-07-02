@@ -12,7 +12,7 @@ export const dataTableMixin = {
       filters: {},
       searchKeyword: '',
       currentPage: 1,
-      pageSize: 30,
+      pageSize: 20,
       filterOptionsCache: {},
       tableLoadingState: {
         listed: true, nonlisted: true, 'finance-bank': true,
