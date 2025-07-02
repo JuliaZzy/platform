@@ -3,7 +3,17 @@
     <p class="update-time">上次更新时间：{{ lastUpdateTime }}</p>
 
     <div class="search-bar">
-      </div>
+      <button class="clear-all-btn" @click="$emit('clear-all-filters')">
+        清空全部筛选
+      </button>
+      <input
+        type="text"
+        v-model="localSearchKeyword"
+        placeholder="按关键词搜索..."
+        class="search-input"
+        @input="onSearchInput"
+      />
+    </div>
 
     <div class="table-wrapper">
       <ChartSpinner :visible="isLoading" :show-watermark="false" />
@@ -128,7 +138,7 @@ export default {
     isEditing: {
       type: Boolean,
       default: false
-    }
+    },
   },
   emits: [
     'clear-all-filters', 'search-input', 'apply-filters', 'page-changed',

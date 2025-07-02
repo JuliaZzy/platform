@@ -98,7 +98,8 @@ export default {
         'finance-bank': 'dataasset_finance_bank',
         'finance-stock': 'dataasset_finance_stock',
         'finance-other': 'dataasset_finance_other'
-      }
+      },
+      searchKeyword: '',
     };
   },
   computed: {
@@ -115,6 +116,13 @@ export default {
     },
   },
   methods: {
+    handleSearch(keyword) {
+      // 更新搜索词，重置页码，然后加载数据
+      this.searchKeyword = keyword;
+      this.currentPage = 1;
+      this.loadData(); // loadData 方法已经包含了发送 searchKeyword 的逻辑
+    },
+
     toggleSidebar() {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
