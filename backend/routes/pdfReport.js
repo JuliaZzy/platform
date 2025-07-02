@@ -209,7 +209,7 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * @route   GET /api/reports/download/:id
- * @desc    下载指定文件并添加中文水印
+ * @desc    下载指定文件
  */
 router.get('/download/:id', async (req, res) => {
     const { id } = req.params;

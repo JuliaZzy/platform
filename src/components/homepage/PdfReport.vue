@@ -4,11 +4,10 @@
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <ul v-else-if="reports.length > 0" class="pdf-list">
       <li v-for="report in reports" :key="report.id">
-        <a :href="getDownloadUrl(report.id)" target="_blank" class="file-link" @click="trackDownload(report)">
-          
-          <i class="fas fa-file-pdf"></i>
+        <!-- <a :href="getDownloadUrl(report.id)" target="_blank" class="file-link" @click="trackDownload(report)"> -->
+        <a href="#" class="file-link" @click.prevent="showUpdateMessage(report)">
+        <i class="fas fa-file-pdf"></i>
           <span class="file-name">{{ report.name }}</span>
-          
           </a>
       </li>
     </ul>
@@ -29,6 +28,18 @@ export default {
     };
   },
   methods: {
+    showUpdateMessage() {
+      // 如果您的项目使用了 Element UI / Element Plus, 请使用下面这行
+      this.$message.info('报告更新中，请稍后');
+
+      // 如果您的项目使用了 Ant Design Vue, 请确保已导入 message, 然后使用下面这行
+      // import { message } from 'ant-design-vue';
+      // message.info('报告更新中，请稍后');
+
+      // 如果没有使用UI框架，可以使用最基础的 alert, 但样式不美观
+      // alert('报告更新中，请稍后');
+    },
+    
     async fetchReports() {
       this.isLoading = true;
       this.error = null;

@@ -99,7 +99,7 @@
 
 <script>
 import axios from 'axios';
-import { downloadPdf } from '@/utils/pdfDownloader.js';
+//import { downloadPdf } from '@/utils/pdfDownloader.js';
 
 export default {
   name: 'LFilterSection',
@@ -211,6 +211,28 @@ export default {
       this.contentOptions = []; 
       this.confirmFilters(); // 清除筛选后，立即应用（将空筛选条件传递给父组件）
     },
+
+    handleDownloadCommand(quarter) {
+      if (!quarter) return;
+
+      // 您可以在这里为自己添加备注，说明这是为了暂时关闭下载
+
+      // 原有的下载逻辑已被注释掉，方便未来恢复
+      /*
+      await downloadPdf({
+        apiUrl: `${this.apiPrefix}/export`,
+        filters: { quarter: quarter },
+        defaultFilename: `A股上市公司数据资产入表清单_${quarter}.pdf`,
+        onStart: () => { this.loading.download = true; },
+        onFinish: () => { this.loading.download = false; },
+        onError: (msg) => { alert(msg); }
+      });
+      */
+
+      // 替换为新的提示信息
+      this.$message.info('报告更新中，请稍后');
+    },
+    /*
     async handleDownloadCommand(quarter) {
       if (!quarter) return;
       await downloadPdf({
@@ -223,6 +245,7 @@ export default {
         onError: (msg) => { alert(msg); }
       });
     }
+      */
   }
 };
 </script>
