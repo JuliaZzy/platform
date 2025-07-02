@@ -266,7 +266,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
         allMatchConditions.push(`"${dbCol}" IS NOT DISTINCT FROM $${index + 1}`);
         allMatchValues.push(excelRowValues[index]);
       });
-      const fullMatchQuery = `SELECT id FROM "${tableName}" WHERE ${allMatchConditions.join(' AND ')}`;
+      const fullMatchQuery = `SELECT id FROM "${tableName}" WHERE ${allMatchConditions.join(' AND ')} AND COALESCE(status, '') <> 'delete'`;
       const fullMatchResult = await client.query(fullMatchQuery, allMatchValues);
 
       if (fullMatchResult.rows.length > 0) {
@@ -289,7 +289,7 @@ router.post('/append', upload.single('file'), async (req, res) => {
       
       let statusToInsertForNewRow = null; 
       if (keyMatchConditionsForQuery.length > 0 && keyMatchConditionsForQuery.length === configuredKeyDbNames.filter(kcn => dbBusinessColumnNames.includes(kcn)).length) { 
-        const partialMatchQuery = `SELECT id, status FROM "${tableName}" WHERE ${keyMatchConditionsForQuery.join(' AND ')}`;
+        const partialMatchQuery = `SELECT id, status FROM "${tableName}" WHERE ${keyMatchConditionsForQuery.join(' AND ')} AND COALESCE(status, '') <> 'delete'`;
         const partialMatchResult = await client.query(partialMatchQuery, keyMatchValuesFromExcel);
 
         if (partialMatchResult.rows.length > 0) { 
